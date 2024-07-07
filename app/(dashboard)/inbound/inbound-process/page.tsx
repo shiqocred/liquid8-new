@@ -1,0 +1,15 @@
+import React, { Suspense } from "react";
+import { Client } from "./_components/client";
+import Loading from "./loading";
+
+const InboundProcessPage = () => {
+  return (
+    <div className="w-full">
+      <Suspense fallback={<Loading />}>
+        <Client />
+      </Suspense>
+    </div>
+  );
+};
+
+export default InboundProcessPage;
