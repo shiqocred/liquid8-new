@@ -21,6 +21,8 @@ interface SidebarButtonProps {
   pathname: string;
   setOpenMenu: Dispatch<SetStateAction<string>>;
   openMenu: string;
+  setOpenSubMenu: Dispatch<SetStateAction<string>>;
+  openSubMenu: string;
 }
 
 export const ButtonSidebar = ({
@@ -32,6 +34,8 @@ export const ButtonSidebar = ({
   pathname,
   openMenu,
   setOpenMenu,
+  setOpenSubMenu,
+  openSubMenu,
 }: SidebarButtonProps) => {
   // button width variant
   const buttonChevronVariant = {
@@ -43,12 +47,12 @@ export const ButtonSidebar = ({
     for (const menu of sidebarMenu) {
       for (const item of menu.menu) {
         // Check direct href match
-        if (item.href === pathname) {
-          return item.title;
+        if (menu.href && pathname.includes(menu.href)) {
+          return menu.title;
         }
         // Check sub_menu href match
         for (const subItem of item.sub_menu) {
-          if (subItem.href === pathname) {
+          if (subItem.href && pathname.includes(subItem.href)) {
             return item.title;
           }
         }
@@ -56,10 +60,25 @@ export const ButtonSidebar = ({
     }
     return null;
   };
+  const findActiveSubMenuTitle = () => {
+    for (const menu of sidebarMenu) {
+      for (const item of menu.menu) {
+        // Check sub_menu href match
+        for (const subItem of item.sub_menu) {
+          if (subItem.href && pathname.includes(subItem.href)) {
+            return subItem.title;
+          }
+        }
+      }
+    }
+    return null;
+  };
+
   useEffect(() => {
     // Function to find the active menu title
-
     setOpenMenu(findActiveMenuTitle());
+    // Function to find the active menu title
+    setOpenSubMenu(findActiveSubMenuTitle());
   }, [pathname]);
   return (
     <div className="w-full">
@@ -68,12 +87,12 @@ export const ButtonSidebar = ({
           <button
             type="button"
             className={cn(
-              "flex items-center leading-none h-10 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-700 px-3 transition-all text-sm font-medium rounded-md justify-between w-full",
-              pathname === href && "bg-gray-100 hover:bg-gray-200"
+              "flex items-center leading-none h-10 bg-transparent hover:bg-sky-600/70 dark:hover:bg-gray-700 px-3 transition-all text-sm font-medium rounded-md justify-between w-full",
+              pathname === href && "bg-sky-600/70 hover:bg-sky-600"
             )}
           >
-            <div className="flex gap-2 items-center w-full capitalize">
-              <span className="w-5 h-5 text-gray-500">{icon}</span>
+            <div className="flex gap-2 items-center w-full capitalize text-white">
+              <span className="w-5 h-5 text-sky-200">{icon}</span>
               <span>{label}</span>
             </div>
           </button>
@@ -83,16 +102,16 @@ export const ButtonSidebar = ({
           <button
             type="button"
             className={cn(
-              "flex items-center leading-none h-10 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-700 px-3 transition-all text-sm font-medium rounded-md justify-between w-full",
+              "flex items-center leading-none h-10 bg-transparent hover:bg-sky-600/70 dark:hover:bg-gray-700 px-3 transition-all text-sm font-medium rounded-md justify-between w-full",
               (openMenu === label || findActiveMenuTitle() === label) &&
-                "bg-gray-100 hover:bg-gray-200"
+                "bg-sky-600/70 hover:bg-sky-600"
             )}
             onClick={() =>
               label === openMenu ? setOpenMenu("") : setOpenMenu(label)
             }
           >
-            <div className="flex gap-2 items-center w-full capitalize">
-              <span className="w-5 h-5 text-gray-500">{icon}</span>
+            <div className="flex gap-2 items-center w-full capitalize text-white">
+              <span className="w-5 h-5 text-sky-200">{icon}</span>
               <span>{label}</span>
             </div>
             <motion.span
@@ -101,7 +120,7 @@ export const ButtonSidebar = ({
               variants={buttonChevronVariant}
               transition={{ delay: 0, duration: 0.5 }}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4 text-white" />
             </motion.span>
           </button>
           {subMenu && subMenu?.length > 0 && (
@@ -117,8 +136,10 @@ export const ButtonSidebar = ({
                     <Link href={item.href} className="w-full" key={item.href}>
                       <button
                         className={cn(
-                          "flex items-center leading-none capitalize h-10 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-700 pl-6 pr-3 transition-all text-sm font-light rounded-md justify-between w-full",
-                          pathname === item.href && "text-sky-500"
+                          "flex items-center leading-none capitalize h-10 text-white bg-transparent hover:bg-sky-600/70 dark:hover:bg-gray-700 pl-6 pr-3 transition-all text-sm font-light rounded-md justify-between w-full",
+                          (pathname === item.href ||
+                            openSubMenu === item.title) &&
+                            "text-black"
                         )}
                       >
                         - {item.title}

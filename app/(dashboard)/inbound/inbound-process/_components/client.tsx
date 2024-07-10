@@ -1,9 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Check, MoreHorizontal } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Ban,
+  Check,
+  ChevronDown,
+  FileSpreadsheet,
+  MoreHorizontal,
+  RefreshCcw,
+  Save,
+} from "lucide-react";
+import { useDropzone } from "react-dropzone";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { useRouter } from "next/navigation";
+
+interface UploadedFileProps {
+  file: File;
+  name: string;
+  size: number;
+}
 
 const steps = ["Step 1", "Step 2"];
 
@@ -29,11 +59,15 @@ const variants = {
 export const Client = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(0);
+  const [selectedFiles, setSelectedFiles] = useState<UploadedFileProps[]>([]);
+  const router = useRouter();
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setDirection(1);
       setCurrentStep((prev) => prev + 1);
+    } else {
+      router.push("/inbound/check-product/manifest-inbound");
     }
   };
 
@@ -43,44 +77,107 @@ export const Client = () => {
       setCurrentStep((prev) => prev - 1);
     }
   };
+
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const files = acceptedFiles.map((file) => ({
+      file,
+      name: file.name,
+      size: file.size,
+    }));
+    setSelectedFiles(files);
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
+        ".xlsx",
+      ],
+      "application/vnd.ms-excel": [".xls"],
+    },
+  });
   return (
     <div className="flex flex-col items-center justify-center bg-gray-100 w-full relative px-4 gap-4 py-4">
       <div className="grid grid-cols-4 w-full bg-white rounded-md overflow-hidden shadow">
         <div className="flex border-r px-4 items-center gap-4 w-full h-20">
-          <div className="w-10 h-10 rounded-full shadow justify-center flex items-center bg-green-50 text-green-500">
-            <Check className="w-5 h-5" />
-          </div>
+          {selectedFiles.length > 0 ? (
+            <div className="w-10 h-10 rounded-full shadow justify-center flex items-center bg-green-100 text-green-500">
+              <Check className="w-5 h-5" />
+            </div>
+          ) : (
+            <div className="w-10 h-10 rounded-full shadow justify-center flex items-center bg-gray-100">
+              <MoreHorizontal className="w-5 h-5" />
+            </div>
+          )}
           <div className="flex flex-col">
             <h5 className="font-medium capitalize">upload file</h5>
-            <p className="text-xs text-green-500">completed</p>
+            <p
+              className={cn(
+                "text-xs",
+                selectedFiles.length > 0 ? "text-green-500" : "text-gray-400"
+              )}
+            >
+              {selectedFiles.length > 0 ? "completed" : "current"}
+            </p>
           </div>
         </div>
         <div className="flex border-r px-4 items-center gap-4 w-full h-20">
-          <div className="w-10 h-10 rounded-full shadow justify-center flex items-center bg-gray-50">
+          <div className="w-10 h-10 rounded-full shadow justify-center flex items-center bg-gray-100">
             <MoreHorizontal className="w-5 h-5" />
           </div>
           <div className="flex flex-col">
-            <h5 className="font-medium">upload excel</h5>
-            <p className="text-xs text-gray-400">not complete</p>
+            <h5 className="font-medium capitalize">pick header</h5>
+            <p className="text-xs text-gray-400">
+              {currentStep === 1 ? "current" : "not complete"}
+            </p>
           </div>
         </div>
         <button
           onClick={handlePrev}
           className={cn(
-            "border-r px-4 justify-center flex-col w-full h-20",
+            "border-r px-4 items-center w-full h-20 hover:gap-4 gap-2 group transition-all",
             currentStep === 0 ? "hidden" : "flex"
           )}
         >
-          <h5>previous</h5>
+          <div className="w-10 h-10 rounded-full group-hover:shadow justify-center flex items-center group-hover:bg-gray-100 transition-all">
+            <ArrowLeft className="w-5 h-5" />
+          </div>
+          <h5 className="font-medium capitalize">previous</h5>
         </button>
         <button
           onClick={handleNext}
           className={cn(
-            "flex px-4 justify-center flex-col w-full h-20",
+            "border-r px-4 items-center w-full h-20 hover:gap-4 gap-2 group transition-all flex disabled:cursor-not-allowed",
             currentStep === 0 ? "col-span-2" : "col-span-1"
           )}
+          disabled={selectedFiles.length === 0}
         >
-          <h5>{currentStep === steps.length - 1 ? "completed" : "next"}</h5>
+          <div
+            className={cn(
+              "w-10 h-10 rounded-full group-hover:shadow justify-center flex items-center  transition-all",
+              currentStep === steps.length - 1
+                ? "group-hover:bg-green-300"
+                : "group-hover:bg-gray-100"
+            )}
+          >
+            {currentStep === steps.length - 1 ? (
+              <Save className="w-5 h-5" />
+            ) : selectedFiles.length > 0 ? (
+              <ArrowRight className="w-5 h-5" />
+            ) : (
+              <Ban className="w-5 h-5" />
+            )}
+          </div>
+          <div className="flex flex-col items-start">
+            <h5 className="font-medium capitalize">
+              {currentStep === steps.length - 1 ? "completed" : "next"}
+            </h5>
+            {selectedFiles.length === 0 && (
+              <p className="px-2 rounded bg-red-100 text-xs">
+                Upload file, please!
+              </p>
+            )}
+          </div>
         </button>
       </div>
       <div className="w-full relative">
@@ -97,14 +194,186 @@ export const Client = () => {
           >
             {currentStep === 0 && (
               <div className="p-4 bg-white rounded shadow">
-                <h2 className="text-xl font-bold mb-4">Step 1</h2>
-                <p>This is the content for Step 1</p>
+                {selectedFiles.length === 0 ? (
+                  <>
+                    <h2 className="text-xl font-bold mb-4">Add new files</h2>
+                    <div
+                      {...getRootProps()}
+                      className={`border-2 border-dashed rounded h-52 flex items-center justify-center text-center cursor-default ${
+                        isDragActive ? "border-blue-500" : "border-gray-300"
+                      }`}
+                    >
+                      <input {...getInputProps()} />
+                      {isDragActive ? (
+                        <p className="text-blue-500">Drop the files here ...</p>
+                      ) : (
+                        <div className="flex justify-center flex-col items-center gap-2">
+                          <p>
+                            Drag & drop some files here, or click to select
+                            files
+                          </p>
+                          <p className="text-sky-500 text-sm font-semibold">
+                            (.xlsx, .xlx)
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="">
+                    {selectedFiles.length > 0 && (
+                      <div>
+                        <div className="flex justify-between items-center">
+                          <h2 className="text-xl font-bold mb-4">
+                            Selected Files
+                          </h2>
+                          <button
+                            className="flex text-sm items-center text-gray-500 hover:underline"
+                            type="button"
+                            onClick={() => setSelectedFiles([])}
+                          >
+                            <RefreshCcw className="w-4 h-4 mr-2" />
+                            Change File
+                          </button>
+                        </div>
+                        <ul className="flex flex-col gap-2">
+                          {selectedFiles.map((file, index) => (
+                            <li
+                              key={index}
+                              className="text-sm flex gap-4 px-5 py-3 rounded-md bg-gray-100"
+                            >
+                              <div className="w-10 h-10 rounded-full shadow justify-center flex items-center bg-gradient-to-br from-green-400 to-green-600 text-white">
+                                <FileSpreadsheet className="w-5 h-5" />
+                              </div>
+                              <div className="flex flex-col">
+                                <p className="font-semibold">{file.name}</p>
+                                <p className="font-light text-gray-500 text-xs">
+                                  {(file.size / 1024).toFixed(2)} KB
+                                </p>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
             {currentStep === 1 && (
-              <div className="p-4 bg-white rounded shadow">
-                <h2 className="text-xl font-bold mb-4">Step 2</h2>
-                <p>This is the content for Step 2</p>
+              <div className="p-4 bg-white rounded shadow flex flex-col gap-6">
+                <h2 className="text-xl font-bold">Pick Header</h2>
+                <div className="flex flex-col w-full">
+                  <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
+                    <p className="w-10 text-center flex-none">No</p>
+                    <p className="flex-none w-60">Data Name</p>
+                    <div className="flex w-full gap-4">
+                      <p className="w-1/4 text-center">Resi Number</p>
+                      <p className="w-1/4 text-center">Product Name</p>
+                      <p className="w-1/4 text-center">Quantity</p>
+                      <p className="w-1/4 text-center">Price</p>
+                    </div>
+                  </div>
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <div
+                      className="flex w-full px-5 py-5 text-sm gap-4 border-b border-sky-100 items-center hover:border-sky-200"
+                      key={i}
+                    >
+                      <p className="w-10 flex-none text-center">{i + 1}</p>
+                      <p className="w-60 flex-none">LQD-812129</p>
+                      <div className="flex w-full gap-4 items-center">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              className="w-1/4 justify-between shadow-none hover:bg-sky-50"
+                              variant={"outline"}
+                            >
+                              Choose Header
+                              <ChevronDown className="w-4 h-4" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="p-0 w-52">
+                            <Command>
+                              <CommandGroup>
+                                <CommandList>
+                                  <CommandItem>Header-1</CommandItem>
+                                  <CommandItem>Header-2</CommandItem>
+                                  <CommandItem>Header-3</CommandItem>
+                                </CommandList>
+                              </CommandGroup>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              className="w-1/4 justify-between shadow-none hover:bg-sky-50"
+                              variant={"outline"}
+                            >
+                              Choose Header
+                              <ChevronDown className="w-4 h-4" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="p-0 w-52">
+                            <Command>
+                              <CommandGroup>
+                                <CommandList>
+                                  <CommandItem>Header-1</CommandItem>
+                                  <CommandItem>Header-2</CommandItem>
+                                  <CommandItem>Header-3</CommandItem>
+                                </CommandList>
+                              </CommandGroup>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              className="w-1/4 justify-between shadow-none hover:bg-sky-50"
+                              variant={"outline"}
+                            >
+                              Choose Header
+                              <ChevronDown className="w-4 h-4" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="p-0 w-52">
+                            <Command>
+                              <CommandGroup>
+                                <CommandList>
+                                  <CommandItem>Header-1</CommandItem>
+                                  <CommandItem>Header-2</CommandItem>
+                                  <CommandItem>Header-3</CommandItem>
+                                </CommandList>
+                              </CommandGroup>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              className="w-1/4 justify-between shadow-none hover:bg-sky-50"
+                              variant={"outline"}
+                            >
+                              Choose Header
+                              <ChevronDown className="w-4 h-4" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="p-0 w-52">
+                            <Command>
+                              <CommandGroup>
+                                <CommandList>
+                                  <CommandItem>Header-1</CommandItem>
+                                  <CommandItem>Header-2</CommandItem>
+                                  <CommandItem>Header-3</CommandItem>
+                                </CommandList>
+                              </CommandGroup>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </motion.div>

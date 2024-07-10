@@ -10,7 +10,6 @@ import {
   FileCog,
   FolderClock,
   Home,
-  LockKeyhole,
   PackageSearch,
   RailSymbol,
   Recycle,
@@ -28,11 +27,11 @@ interface MenuInboundProps {
 const sidebarMenu = [
   {
     id: 1,
-    title: undefined,
+    title: "dashboard",
     href: undefined,
     menu: [
       {
-        title: "Dashboard",
+        title: "Analystic",
         href: "/dashboard",
         icon: <Home className="w-5 h-5 stroke-[1.5]" />,
         sub_menu: [],
@@ -213,7 +212,7 @@ const sidebarMenu = [
     ],
   },
   {
-    id: 4,
+    id: 6,
     title: "Account",
     href: undefined,
     menu: [
@@ -229,19 +228,22 @@ const sidebarMenu = [
 
 const MenuInbound = ({ pathname }: MenuInboundProps) => {
   const [openMenu, setOpenMenu] = useState<string>("");
+  const [openSubMenu, setOpenSubMenu] = useState<string>("");
   return (
-    <div className="flex relative flex-col h-full overflow-y-scroll w-full gap-1">
+    <div className="flex flex-col h-full w-full gap-1">
       {sidebarMenu.map((item, i) => (
         <div key={item.id} className="flex flex-col gap-1 items-center w-full">
           {item.title !== undefined && (
-            <div className="h-10 flex justify-start items-center w-full px-6 bg-gray-200">
-              <h3 className="text-sm uppercase font-semibold">{item.title}</h3>
+            <div className="h-10 flex justify-start items-center w-full px-6 bg-sky-600">
+              <h3 className="text-sm uppercase font-semibold text-white">
+                {item.title}
+              </h3>
             </div>
           )}
           <div className="flex flex-col gap-1 w-full px-3">
             {item.menu.map((item, i) => (
               <ButtonSidebar
-                key={item.title}
+                key={i}
                 label={item.title}
                 icon={item.icon}
                 href={item.href}
@@ -250,6 +252,8 @@ const MenuInbound = ({ pathname }: MenuInboundProps) => {
                 subMenu={item.sub_menu}
                 setOpenMenu={setOpenMenu}
                 openMenu={openMenu}
+                setOpenSubMenu={setOpenSubMenu}
+                openSubMenu={openSubMenu}
               />
             ))}
           </div>

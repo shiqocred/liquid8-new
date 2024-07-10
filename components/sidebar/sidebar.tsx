@@ -2,14 +2,13 @@
 
 import React from "react";
 import { usePathname } from "next/navigation";
-import { MenuAtas, MenuSidebar } from "./menu";
+import { MenuSidebar } from "./menu";
 
 export const Sidebar = () => {
   const pathname = usePathname();
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-gray-900 border-gray-500 border-r relative w-80">
-      <MenuAtas />
+    <div className="bg-sky-500 w-80 h-full overflow-y-scroll shadow-md">
       <MenuSidebar pathname={pathname} />
     </div>
   );
