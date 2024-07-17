@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Dispatch, SetStateAction, useState } from "react";
 import { ButtonSidebar } from "../button-sidebar";
 import {
   BadgeDollarSign,
@@ -22,6 +22,7 @@ import {
 
 interface MenuInboundProps {
   pathname: string;
+  setOpen?: Dispatch<SetStateAction<boolean>>;
 }
 
 const sidebarMenu = [
@@ -226,7 +227,7 @@ const sidebarMenu = [
   },
 ];
 
-const MenuInbound = ({ pathname }: MenuInboundProps) => {
+const MenuInbound = ({ pathname, setOpen }: MenuInboundProps) => {
   const [openMenu, setOpenMenu] = useState<string>("");
   const [openSubMenu, setOpenSubMenu] = useState<string>("");
   return (
@@ -254,6 +255,7 @@ const MenuInbound = ({ pathname }: MenuInboundProps) => {
                 openMenu={openMenu}
                 setOpenSubMenu={setOpenSubMenu}
                 openSubMenu={openSubMenu}
+                setOpen={setOpen}
               />
             ))}
           </div>

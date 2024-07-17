@@ -9,41 +9,37 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-  CommandShortcut,
-} from "@/components/ui/command";
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDebounce } from "@/hooks/use-debounce";
-import { cn, formatRupiah } from "@/lib/utils";
-import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
-import {
-  ArrowLeftCircle,
-  ArrowRightCircle,
-  ArrowUpDown,
-  Check,
-  CircleFadingPlus,
-  Copy,
-  PlusCircle,
-  ReceiptText,
-  ShieldCheck,
-  Trash2,
-  XCircle,
-} from "lucide-react";
+import { ArrowLeft, Search, Send, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
+import { Textarea } from "@/components/ui/textarea";
+import BarcodePrinted from "@/components/barcode";
+import { formatRupiah } from "@/lib/utils";
+
+const FormSchema = z.object({
+  type: z.enum(["all", "mentions", "none"], {
+    required_error: "You need to select a notification type.",
+  }),
+});
 
 export const Client = () => {
   const [isFilter, setIsFilter] = useState(false);
@@ -105,6 +101,12 @@ export const Client = () => {
     [searchParams, router]
   );
 
+  const form = useForm<z.infer<typeof FormSchema>>({
+    resolver: zodResolver(FormSchema),
+  });
+
+  function onSubmit(data: z.infer<typeof FormSchema>) {}
+
   useEffect(() => {
     handleCurrentId(searchValue, filter, orientation);
   }, [searchValue]);
@@ -134,300 +136,369 @@ export const Client = () => {
           <BreadcrumbItem>Check</BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-      <div className="flex text-sm text-gray-500 py-8 rounded-md shadow bg-white w-full px-5">
-        <div className="flex flex-col w-full border-r border-gray-500 pr-5 mr-5">
-          <p>Data Name</p>
-          <h3 className="text-black font-semibold text-xl">Tester.xlsx</h3>
+      <div className="flex text-sm text-gray-500 py-6 rounded-md shadow bg-white w-full px-5 gap-4 items-center relative">
+        <div className="w-full text-xs flex items-center">
+          <Link
+            href={"/inbound/check-product/manifest-inbound/detail"}
+            className="group"
+          >
+            <button
+              type="button"
+              className="flex items-center text-black group-hover:mr-6 mr-4 transition-all w-auto"
+            >
+              <div className="w-10 h-10 rounded-full group-hover:shadow justify-center flex items-center group-hover:bg-gray-100 transition-all">
+                <ArrowLeft className="w-5 h-5" />
+              </div>
+            </button>
+          </Link>
+          <div className="w-2/3">
+            <p>Data Name</p>
+            <h3 className="text-black font-semibold text-xl">0096/07/2024</h3>
+          </div>
         </div>
-        <div className="flex w-full">
-          <div className="flex flex-col items-end w-1/4 border-r border-gray-500 pr-5 mr-5">
-            <p>Status</p>
-            <h3 className="text-gray-700 font-light text-xl">Pending</h3>
-          </div>
-          <div className="flex flex-col items-end w-2/4 border-r border-gray-700 pr-5 mr-5">
-            <p>Merged Data</p>
-            <h3 className="text-gray-700 font-light text-xl">0096/07/2024</h3>
-          </div>
-          <div className="flex flex-col items-end w-1/4">
-            <p>Total</p>
-            <h3 className="text-gray-700 font-light text-xl">
-              {(3521).toLocaleString()}
-            </h3>
+        <Separator orientation="vertical" className="h-16 bg-gray-500" />
+        <div className="w-full flex-col flex gap-1">
+          <Label className="text-xs">Search Barcode Product</Label>
+          <div className="flex">
+            <Input
+              className="w-full border-sky-400/80 focus-visible:ring-sky-400 rounded-r-none"
+              value={dataSearch}
+              onChange={(e) => setDataSearch(e.target.value)}
+              placeholder="Search..."
+            />
+            <Button className="rounded-l-none flex-none p-0 w-9 bg-sky-400/80 hover:bg-sky-400 text-black">
+              <Search className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </div>
-      <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 py-3 gap-10 flex-col">
-        <h2 className="text-xl font-bold">Detail Data Process</h2>
-        <div className="flex flex-col w-full gap-4">
-          <div className="flex w-full justify-between">
-            <div className="flex gap-2 items-center w-full flex-auto">
-              <Input
-                className="w-2/5 border-sky-400/80 focus-visible:ring-sky-400 flex-none"
-                value={dataSearch}
-                onChange={(e) => setDataSearch(e.target.value)}
-                placeholder="Search..."
-              />
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-3">
-                  <Popover open={isFilter} onOpenChange={setIsFilter}>
-                    <PopoverTrigger asChild>
-                      <Button className="border-sky-400/80 border text-black bg-transparent border-dashed hover:bg-transparent flex px-3 hover:border-sky-400">
-                        <ArrowUpDown className="h-4 w-4 mr-2" />
-                        Sort by
-                        {filter && (
-                          <Separator
-                            orientation="vertical"
-                            className="mx-2 bg-gray-500 w-[1.5px]"
-                          />
-                        )}
-                        {filter && (
-                          <Badge
-                            className={cn(
-                              "rounded w-20 px-0 justify-center text-black font-normal capitalize",
-                              filter === "barcode" &&
-                                "bg-sky-200 hover:bg-sky-200",
-                              filter === "product" &&
-                                "bg-indigo-200 hover:bg-indigo-200",
-                              filter === "price" &&
-                                "bg-green-200 hover:bg-green-200"
-                            )}
-                          >
-                            {filter === "barcode" && "Barcode"}
-                            {filter === "product" && "Product"}
-                            {filter === "price" && "Price"}
-                          </Badge>
-                        )}
-                        {orientation && (
-                          <Badge
-                            className={cn(
-                              "rounded w-12 px-0 justify-center text-black font-normal lowercase ml-2",
-                              orientation === "asc" &&
-                                "bg-gray-200 hover:bg-gray-200",
-                              orientation === "desc" &&
-                                "bg-black hover:bg-black text-white"
-                            )}
-                          >
-                            {orientation === "asc" && "asc"}
-                            {orientation === "desc" && "desc"}
-                          </Badge>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="p-0 w-52" align="start">
-                      <Command>
-                        <CommandGroup>
-                          <CommandList>
-                            <CommandItem
-                              onSelect={() => {
-                                handleCurrentId(dataSearch, "barcode", "asc");
-                                setIsFilter(false);
-                              }}
-                            >
-                              <Checkbox
-                                className="w-4 h-4 mr-2"
-                                checked={
-                                  filter === "barcode" && orientation === "asc"
-                                }
-                                onCheckedChange={() => {
-                                  handleCurrentId(dataSearch, "barcode", "asc");
-                                  setIsFilter(false);
-                                }}
-                              />
-                              Barcode
-                              <CommandShortcut>asc</CommandShortcut>
-                            </CommandItem>
-                            <CommandItem
-                              onSelect={() => {
-                                handleCurrentId(dataSearch, "barcode", "desc");
-                                setIsFilter(false);
-                              }}
-                            >
-                              <Checkbox
-                                className="w-4 h-4 mr-2"
-                                checked={
-                                  filter === "barcode" && orientation === "desc"
-                                }
-                                onCheckedChange={() => {
-                                  handleCurrentId(
-                                    dataSearch,
-                                    "barcode",
-                                    "desc"
-                                  );
-                                  setIsFilter(false);
-                                }}
-                              />
-                              Barcode
-                              <CommandShortcut>desc</CommandShortcut>
-                            </CommandItem>
-                            <CommandItem
-                              onSelect={() => {
-                                handleCurrentId(dataSearch, "product", "asc");
-                                setIsFilter(false);
-                              }}
-                            >
-                              <Checkbox
-                                className="w-4 h-4 mr-2"
-                                checked={
-                                  filter === "product" && orientation === "asc"
-                                }
-                                onCheckedChange={() => {
-                                  handleCurrentId(dataSearch, "product", "asc");
-                                  setIsFilter(false);
-                                }}
-                              />
-                              Product
-                              <CommandShortcut>asc</CommandShortcut>
-                            </CommandItem>
-                            <CommandItem
-                              onSelect={() => {
-                                handleCurrentId(dataSearch, "product", "desc");
-                                setIsFilter(false);
-                              }}
-                            >
-                              <Checkbox
-                                className="w-4 h-4 mr-2"
-                                checked={
-                                  filter === "product" && orientation === "desc"
-                                }
-                                onCheckedChange={() => {
-                                  handleCurrentId(
-                                    dataSearch,
-                                    "product",
-                                    "desc"
-                                  );
-                                  setIsFilter(false);
-                                }}
-                              />
-                              Product
-                              <CommandShortcut>desc</CommandShortcut>
-                            </CommandItem>
-                            <CommandItem
-                              onSelect={() => {
-                                handleCurrentId(dataSearch, "price", "asc");
-                                setIsFilter(false);
-                              }}
-                            >
-                              <Checkbox
-                                className="w-4 h-4 mr-2"
-                                checked={
-                                  filter === "price" && orientation === "asc"
-                                }
-                                onCheckedChange={() => {
-                                  handleCurrentId(dataSearch, "price", "asc");
-                                  setIsFilter(false);
-                                }}
-                              />
-                              Price
-                              <CommandShortcut>asc</CommandShortcut>
-                            </CommandItem>
-                            <CommandItem
-                              onSelect={() => {
-                                handleCurrentId(dataSearch, "price", "desc");
-                                setIsFilter(false);
-                              }}
-                            >
-                              <Checkbox
-                                className="w-4 h-4 mr-2"
-                                checked={
-                                  filter === "price" && orientation === "desc"
-                                }
-                                onCheckedChange={() => {
-                                  handleCurrentId(dataSearch, "price", "desc");
-                                  setIsFilter(false);
-                                }}
-                              />
-                              Price
-                              <CommandShortcut>desc</CommandShortcut>
-                            </CommandItem>
-                          </CommandList>
-                        </CommandGroup>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  {filter && (
-                    <Button
-                      variant={"ghost"}
-                      className="flex px-3"
-                      onClick={() => {
-                        handleCurrentId(dataSearch, "", "");
-                      }}
-                    >
-                      Reset
-                      <XCircle className="h-4 w-4 ml-2" />
-                    </Button>
-                  )}
+      <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 items-center">
+        <div className="w-full flex gap-2">
+          <p>Keterangan:</p>
+          <p>&gt; 100K</p>
+        </div>
+        <div className="w-full flex justify-end">
+          <Button className="bg-sky-400/80 hover:bg-sky-400 text-black">
+            <ShieldCheck className="w-4 h-4 mr-2" />
+            Done Check All
+          </Button>
+        </div>
+      </div>
+      <div className="flex w-full gap-4">
+        <div className="w-full">
+          <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 flex-col">
+            <h2 className="text-xl font-bold">Old Data</h2>
+            <div className="flex w-full items-center gap-4 flex-col">
+              <div className="w-full flex gap-4">
+                <div className="flex flex-col w-full gap-1">
+                  <Label>Barcode</Label>
+                  <Input className="w-full border-sky-400/80 focus-visible:ring-sky-400" />
                 </div>
-                <div className="flex gap-2 items-center">
-                  <Link href={"/inbound/check-product/manifest-inbound"}>
-                    <Button className="bg-gray-300/80 hover:bg-gray-300 text-black">
-                      <ArrowLeftCircle className="w-4 h-4 mr-1" />
-                      Back
-                    </Button>
-                  </Link>
-                  <Link href={"/inbound/check-product/manifest-inbound/check"}>
-                    <Button className="bg-sky-400/80 hover:bg-sky-400 text-black">
-                      <ArrowRightCircle className="w-4 h-4 mr-1" />
-                      Next
-                    </Button>
-                  </Link>
+                <div className="flex flex-col w-full gap-1">
+                  <Label>Name</Label>
+                  <Input className="w-full border-sky-400/80 focus-visible:ring-sky-400" />
+                </div>
+              </div>
+              <div className="flex w-full gap-4">
+                <div className="flex flex-col w-full gap-1">
+                  <Label>Price</Label>
+                  <Input className="w-full border-sky-400/80 focus-visible:ring-sky-400" />
+                </div>
+                <div className="flex flex-col w-full gap-1">
+                  <Label>Qty</Label>
+                  <Input className="w-full border-sky-400/80 focus-visible:ring-sky-400" />
                 </div>
               </div>
             </div>
-          </div>
-          <div className="w-full p-4 rounded-md border border-sky-400/80">
-            <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-2 font-semibold items-center hover:bg-sky-200/80">
-              <p className="w-10 text-center flex-none">No</p>
-              <p className="w-52 flex-none">Resi Number</p>
-              <p className="w-full">Product Name</p>
-              <p className="w-24 text-center flex-none">QTY</p>
-              <p className="w-28 flex-none">Price</p>
-              <p className="w-32 flex-none text-center">Action</p>
-            </div>
-            {Array.from({ length: 5 }, (_, i) => (
-              <div
-                className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
-                key={i}
-              >
-                <p className="w-10 text-center flex-none">{i + 1}</p>
-                <div className="w-52 flex-none flex items-center">
-                  <p>NLIDAP1655193210</p>
-                  <TooltipProviderPage
-                    value={<p>{copied === i ? "Copied" : "Copy Barcode"}</p>}
-                  >
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleCopy("NLIDAP1655193210", i);
-                      }}
-                      disabled={copied === i}
-                    >
-                      {copied === i ? (
-                        <Check className="w-3 h-3 ml-2" />
-                      ) : (
-                        <Copy className="w-3 h-3 ml-2" />
-                      )}
-                    </button>
-                  </TooltipProviderPage>
-                </div>
-                <p className="w-full">
-                  Mainan Batang Blok Magnetik Set 130pcs Building Blocks
-                  Montessori Edukasi Anak
-                </p>
-                <p className="w-24 text-center flex-none">1</p>
-                <p className="w-28 flex-none">{formatRupiah(100000)}</p>
-                <div className="w-32 flex-none">
-                  <Button
-                    className="items-center w-full border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
-                    variant={"outline"}
-                  >
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
+        <div className="w-full">
+          <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 flex-col">
+            <h2 className="text-xl font-bold">New Data</h2>
+            <div className="flex w-full items-center gap-4 flex-col">
+              <div className="flex flex-col w-full gap-1">
+                <Label>Name</Label>
+                <Input className="w-full border-sky-400/80 focus-visible:ring-sky-400" />
+              </div>
+              <div className="w-full flex gap-4">
+                <div className="flex flex-col w-full gap-1">
+                  <Label>Price</Label>
+                  <Input className="w-full border-sky-400/80 focus-visible:ring-sky-400" />
+                </div>
+                <div className="flex flex-col w-full gap-1">
+                  <Label>Qty</Label>
+                  <Input className="w-full border-sky-400/80 focus-visible:ring-sky-400" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 items-center">
+        <Tabs defaultValue="good" className="w-full">
+          <div className="w-full flex justify-center">
+            <TabsList className="bg-sky-100">
+              <TabsTrigger className="w-32" value="good">
+                Good
+              </TabsTrigger>
+              <TabsTrigger className="w-32" value="damaged">
+                Damaged
+              </TabsTrigger>
+              <TabsTrigger className="w-32" value="abnormal">
+                Abnormal
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          <TabsContent value="good">
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="w-full space-y-6 mt-6"
+              >
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3 w-full">
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="flex w-full gap-4"
+                        >
+                          <div className="flex flex-col gap-6 w-full">
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="all" />
+                              </FormControl>
+                              <FormLabel className="flex flex-col gap-1">
+                                <p className="font-bold">All new messages</p>
+                                <p className="text-xs font-light">50%</p>
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="mentions" />
+                              </FormControl>
+                              <FormLabel className="flex flex-col gap-1">
+                                <p className="font-bold">All new messages</p>
+                                <p className="text-xs font-light">50%</p>
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="none" />
+                              </FormControl>
+                              <FormLabel className="flex flex-col gap-1">
+                                <p className="font-bold">All new messages</p>
+                                <p className="text-xs font-light">50%</p>
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="none" />
+                              </FormControl>
+                              <FormLabel className="flex flex-col gap-1">
+                                <p className="font-bold">All new messages</p>
+                                <p className="text-xs font-light">50%</p>
+                              </FormLabel>
+                            </FormItem>
+                          </div>
+                          <div className="flex flex-col gap-6 w-full">
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="all" />
+                              </FormControl>
+                              <FormLabel className="flex flex-col gap-1">
+                                <p className="font-bold">All new messages</p>
+                                <p className="text-xs font-light">50%</p>
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="mentions" />
+                              </FormControl>
+                              <FormLabel className="flex flex-col gap-1">
+                                <p className="font-bold">All new messages</p>
+                                <p className="text-xs font-light">50%</p>
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="none" />
+                              </FormControl>
+                              <FormLabel className="flex flex-col gap-1">
+                                <p className="font-bold">All new messages</p>
+                                <p className="text-xs font-light">50%</p>
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="none" />
+                              </FormControl>
+                              <FormLabel className="flex flex-col gap-1">
+                                <p className="font-bold">All new messages</p>
+                                <p className="text-xs font-light">50%</p>
+                              </FormLabel>
+                            </FormItem>
+                          </div>
+                          <div className="flex flex-col gap-6 w-full">
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="all" />
+                              </FormControl>
+                              <FormLabel className="flex flex-col gap-1">
+                                <p className="font-bold">All new messages</p>
+                                <p className="text-xs font-light">50%</p>
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="mentions" />
+                              </FormControl>
+                              <FormLabel className="flex flex-col gap-1">
+                                <p className="font-bold">All new messages</p>
+                                <p className="text-xs font-light">50%</p>
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="none" />
+                              </FormControl>
+                              <FormLabel className="flex flex-col gap-1">
+                                <p className="font-bold">All new messages</p>
+                                <p className="text-xs font-light">50%</p>
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="none" />
+                              </FormControl>
+                              <FormLabel className="flex flex-col gap-1">
+                                <p className="font-bold">All new messages</p>
+                                <p className="text-xs font-light">50%</p>
+                              </FormLabel>
+                            </FormItem>
+                          </div>
+                          <div className="flex flex-col gap-6 w-full">
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="all" />
+                              </FormControl>
+                              <FormLabel className="flex flex-col gap-1">
+                                <p className="font-bold">All new messages</p>
+                                <p className="text-xs font-light">50%</p>
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="mentions" />
+                              </FormControl>
+                              <FormLabel className="flex flex-col gap-1">
+                                <p className="font-bold">All new messages</p>
+                                <p className="text-xs font-light">50%</p>
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="none" />
+                              </FormControl>
+                              <FormLabel className="flex flex-col gap-1">
+                                <p className="font-bold">All new messages</p>
+                                <p className="text-xs font-light">50%</p>
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="none" />
+                              </FormControl>
+                              <FormLabel className="flex flex-col gap-1">
+                                <p className="font-bold">All new messages</p>
+                                <p className="text-xs font-light">50%</p>
+                              </FormLabel>
+                            </FormItem>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  className="w-full bg-sky-400/80 hover:bg-sky-400 text-black"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Submit
+                </Button>
+              </form>
+            </Form>
+          </TabsContent>
+          <TabsContent value="damaged">
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="w-full space-y-6 mt-6"
+              >
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description:</FormLabel>
+                      <Textarea
+                        rows={6}
+                        className="border-sky-400/80 focus-visible:ring-sky-400"
+                      />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  className="w-full bg-sky-400/80 hover:bg-sky-400 text-black"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Submit
+                </Button>
+              </form>
+            </Form>
+          </TabsContent>
+          <TabsContent value="abnormal">
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="w-full space-y-6 mt-6"
+              >
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description:</FormLabel>
+                      <Textarea
+                        rows={6}
+                        className="border-sky-400/80 focus-visible:ring-sky-400"
+                      />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  className="w-full bg-sky-400/80 hover:bg-sky-400 text-black"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Submit
+                </Button>
+              </form>
+            </Form>
+          </TabsContent>
+        </Tabs>
+        {/* <BarcodePrinted
+          barcode="LQC12345"
+          category="TOYS HOBBIES (200-699)"
+          newPrice={formatRupiah(20000) ?? ""}
+          oldPrice={formatRupiah(10000) ?? ""}
+        /> */}
       </div>
     </div>
   );

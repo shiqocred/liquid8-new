@@ -1,26 +1,60 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import { Button } from "../ui/button";
-import { Bell, Crown, LogOut, Wifi } from "lucide-react";
+import { Bell, Crown, LogOut, Menu, Wifi } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Separator } from "../ui/separator";
 import Image from "next/image";
 import { Badge } from "../ui/badge";
 import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
 import Link from "next/link";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "../ui/sheet";
+import { MenuSidebar } from "../sidebar/menu";
+import { usePathname } from "next/navigation";
 
 const Navbar = () => {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
   return (
     <div className="w-full h-16 shadow-md flex justify-between items-center px-4 gap-4 py-2 flex-none bg-white border-b">
-      <Link href={"/"}>
-        <button
-          type="button"
-          className="flex items-center leading-none h-10 transition-all rounded-md justify-start"
-        >
-          <h3 className="w-40 relative aspect-[260/87]">
-            <Image src={"/images/liquid8.png"} alt="" fill />
-          </h3>
-        </button>
-      </Link>
+      <div className="flex items-center gap-4">
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <Button size={"icon"} variant={"outline"} className="xl:hidden">
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent
+            className="bg-sky-400 overflow-y-scroll w-80 p-0"
+            side={"left"}
+          >
+            <SheetHeader className="px-5 py-3">
+              <SheetTitle className="text-lg font-bold text-white flex items-center">
+                <Menu className="w-5 h-5 mr-2" />
+                Navigation
+              </SheetTitle>
+            </SheetHeader>
+            <MenuSidebar pathname={pathname} setOpen={setOpen} />
+          </SheetContent>
+        </Sheet>
+        <Link href={"/"}>
+          <button
+            type="button"
+            className="flex items-center leading-none h-10 transition-all rounded-md justify-start"
+          >
+            <h3 className="w-40 relative aspect-[260/87]">
+              <Image src={"/images/liquid8.png"} alt="" fill />
+            </h3>
+          </button>
+        </Link>
+      </div>
       <div className="flex gap-4 h-full items-center">
         <div>
           <Badge className="bg-sky-500 hover:bg-sky-500 text-white rounded-full gap-2 p-1 pr-2">

@@ -26,6 +26,8 @@ import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 import {
+  ChevronLeft,
+  ChevronRight,
   CircleFadingPlus,
   PlusCircle,
   ReceiptText,
@@ -218,7 +220,7 @@ export const Client = () => {
           <div className="w-full p-4 rounded-md border border-sky-400/80">
             <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-2 font-semibold items-center hover:bg-sky-200/80">
               <p className="w-10 text-center flex-none">No</p>
-              <p className="w-72 flex-none">Data Name</p>
+              <p className="w-44 flex-none">Data Name</p>
               <p className="w-48 flex-none">Date</p>
               <p className="w-28 flex-none">Total</p>
               <p className="w-28 flex-none">Status</p>
@@ -230,9 +232,15 @@ export const Client = () => {
                 key={i}
               >
                 <p className="w-10 text-center flex-none">{i + 1}</p>
-                <p className="w-72 flex-none">tester.xlsx</p>
-                <p className="w-48 flex-none">Senin, 8 Agustus 2024</p>
-                <p className="w-28 flex-none">3454</p>
+                <p className="w-44 flex-none overflow-hidden text-ellipsis">
+                  testersjkbdjkasgdiukashbdik.xlsx
+                </p>
+                <p className="w-48 flex-none overflow-hidden text-ellipsis">
+                  Senin, 8 Agustus 2024
+                </p>
+                <p className="w-28 flex-none overflow-hidden text-ellipsis">
+                  3454
+                </p>
                 <div className="w-28 flex-none">
                   <Badge
                     className={cn(
@@ -242,41 +250,52 @@ export const Client = () => {
                     Pending
                   </Badge>
                 </div>
-                <p className="w-full flex gap-4">
+                <div className="w-full flex gap-4 justify-center">
                   <Link
                     href={"/inbound/check-product/manifest-inbound/check"}
-                    className="w-1/3"
+                    className="xl:w-1/3 w-9"
                   >
                     <Button
-                      className="items-center w-full border-green-400 text-green-700 hover:text-green-700 hover:bg-green-50"
+                      className="items-center w-full px-0 xl:px-4 border-green-400 text-green-700 hover:text-green-700 hover:bg-green-50"
                       variant={"outline"}
                     >
-                      <ShieldCheck className="w-4 h-4 mr-1" />
-                      Check
+                      <ShieldCheck className="w-4 h-4 xl:mr-1" />
+                      <p className="hidden xl:flex">Check</p>
                     </Button>
                   </Link>
                   <Link
                     href={"/inbound/check-product/manifest-inbound/detail"}
-                    className="w-1/3"
+                    className="xl:w-1/3 w-9"
                   >
                     <Button
-                      className="items-center w-full border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
+                      className="items-center w-full px-0 xl:px-4 border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
                       variant={"outline"}
                     >
-                      <ReceiptText className="w-4 h-4 mr-1" />
-                      Detail
+                      <ReceiptText className="w-4 h-4 xl:mr-1" />
+                      <p className="hidden xl:flex">Detail</p>
                     </Button>
                   </Link>
                   <Button
-                    className="items-center w-1/3 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
+                    className="items-center xl:w-1/3 px-0 xl:px-4 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50 w-9"
                     variant={"outline"}
                   >
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Delete
+                    <Trash2 className="w-4 h-4 xl:mr-1" />
+                    <p className="hidden xl:flex">Delete</p>
                   </Button>
-                </p>
+                </div>
               </div>
             ))}
+          </div>
+          <div className="flex gap-5 ml-auto items-center">
+            <p className="text-sm">Page 1 of 3</p>
+            <div className="flex items-center gap-2">
+              <Button className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black">
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <Button className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black">
+                <ChevronRight className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>

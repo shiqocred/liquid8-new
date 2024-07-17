@@ -25,21 +25,18 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/use-debounce";
-import { cn, formatRupiah } from "@/lib/utils";
-import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
+import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
-  ArrowRightCircle,
   ArrowUpDown,
-  Check,
   ChevronLeft,
   ChevronRight,
-  Copy,
+  ReceiptText,
   Trash2,
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
 
@@ -52,14 +49,7 @@ export const Client = () => {
   const router = useRouter();
   const [filter, setFilter] = useState(searchParams.get("f") ?? "");
   const [orientation, setOrientation] = useState(searchParams.get("s") ?? "");
-  const [copied, setCopied] = useState<number | null>(null);
-
-  const handleCopy = (code: string, id: number) => {
-    navigator.clipboard.writeText(code).then(() => {
-      setCopied(id);
-      setTimeout(() => setCopied(null), 2000); // Reset the icon after 2 seconds
-    });
-  };
+  const params = useParams();
 
   const handleCurrentId = useCallback(
     (q: string, f: string, s: string) => {
@@ -92,7 +82,7 @@ export const Client = () => {
 
       const url = qs.stringifyUrl(
         {
-          url: "/inbound/check-product/manifest-inbound/detail",
+          url: `/inbound/check-product/approvement-product/${params.id}`,
           query: updateQuery,
         },
         { skipNull: true }
@@ -124,8 +114,8 @@ export const Client = () => {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href="/inbound/check-product/manifest-inbound/">
-              Manifest Inbound
+            <BreadcrumbLink href="/inbound/check-product/approvement-product">
+              Approvement Product
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
@@ -135,7 +125,7 @@ export const Client = () => {
       <div className="flex text-sm text-gray-500 py-8 rounded-md shadow bg-white w-full px-5">
         <div className="w-full text-xs flex items-center">
           <Link
-            href={"/inbound/check-product/manifest-inbound"}
+            href={"/inbound/check-product/approvement-product"}
             className="group"
           >
             <button
@@ -153,18 +143,20 @@ export const Client = () => {
           </div>
         </div>
         <div className="flex w-full">
-          <div className="flex flex-col items-end w-1/4 border-r border-gray-500 pr-5 mr-5">
-            <p>Status</p>
-            <h3 className="text-gray-700 font-light text-xl">Pending</h3>
+          <div className="flex flex-col items-end w-2/4 border-r border-gray-500 pr-5 mr-5 overflow-hidden text-ellipsis">
+            <p>Base Documents</p>
+            <h3 className="text-gray-700 font-semibold text-xl">
+              JNT 09.07.2024.xlsx
+            </h3>
           </div>
-          <div className="flex flex-col items-end w-2/4 border-r border-gray-700 pr-5 mr-5">
-            <p>Merged Data</p>
-            <h3 className="text-gray-700 font-light text-xl">0096/07/2024</h3>
+          <div className="flex flex-col items-end w-1/4 border-r border-gray-700 pr-5 mr-5">
+            <p>Status</p>
+            <h3 className="text-gray-700 font-semibold text-xl">Done</h3>
           </div>
           <div className="flex flex-col items-end w-1/4">
-            <p>Total</p>
-            <h3 className="text-gray-700 font-light text-xl">
-              {(3521).toLocaleString()}
+            <p>Approvement Data</p>
+            <h3 className="text-gray-700 font-semibold text-xl">
+              {(2600).toLocaleString()}
             </h3>
           </div>
         </div>
@@ -180,7 +172,7 @@ export const Client = () => {
                 onChange={(e) => setDataSearch(e.target.value)}
                 placeholder="Search..."
               />
-              <div className="flex items-center justify-between w-full">
+              <div className="flex items-center justify-start w-full">
                 <div className="flex items-center gap-3">
                   <Popover open={isFilter} onOpenChange={setIsFilter}>
                     <PopoverTrigger asChild>
@@ -196,18 +188,18 @@ export const Client = () => {
                         {filter && (
                           <Badge
                             className={cn(
-                              "rounded w-20 px-0 justify-center text-black font-normal capitalize",
-                              filter === "barcode" &&
+                              "rounded w-24 px-0 justify-center text-black font-normal capitalize",
+                              filter === "old-barcode" &&
                                 "bg-sky-200 hover:bg-sky-200",
-                              filter === "product" &&
+                              filter === "new-barcode" &&
                                 "bg-indigo-200 hover:bg-indigo-200",
-                              filter === "price" &&
+                              filter === "name" &&
                                 "bg-green-200 hover:bg-green-200"
                             )}
                           >
-                            {filter === "barcode" && "Barcode"}
-                            {filter === "product" && "Product"}
-                            {filter === "price" && "Price"}
+                            {filter === "old-barcode" && "Old Barcode"}
+                            {filter === "new-barcode" && "New Barcode"}
+                            {filter === "name" && "Name"}
                           </Badge>
                         )}
                         {orientation && (
@@ -232,124 +224,152 @@ export const Client = () => {
                           <CommandList>
                             <CommandItem
                               onSelect={() => {
-                                handleCurrentId(dataSearch, "barcode", "asc");
+                                handleCurrentId(
+                                  dataSearch,
+                                  "old-barcode",
+                                  "asc"
+                                );
                                 setIsFilter(false);
                               }}
                             >
                               <Checkbox
                                 className="w-4 h-4 mr-2"
                                 checked={
-                                  filter === "barcode" && orientation === "asc"
-                                }
-                                onCheckedChange={() => {
-                                  handleCurrentId(dataSearch, "barcode", "asc");
-                                  setIsFilter(false);
-                                }}
-                              />
-                              Barcode
-                              <CommandShortcut>asc</CommandShortcut>
-                            </CommandItem>
-                            <CommandItem
-                              onSelect={() => {
-                                handleCurrentId(dataSearch, "barcode", "desc");
-                                setIsFilter(false);
-                              }}
-                            >
-                              <Checkbox
-                                className="w-4 h-4 mr-2"
-                                checked={
-                                  filter === "barcode" && orientation === "desc"
+                                  filter === "old-barcode" &&
+                                  orientation === "asc"
                                 }
                                 onCheckedChange={() => {
                                   handleCurrentId(
                                     dataSearch,
-                                    "barcode",
+                                    "old-barcode",
+                                    "asc"
+                                  );
+                                  setIsFilter(false);
+                                }}
+                              />
+                              Old Barcode
+                              <CommandShortcut>asc</CommandShortcut>
+                            </CommandItem>
+                            <CommandItem
+                              onSelect={() => {
+                                handleCurrentId(
+                                  dataSearch,
+                                  "old-barcode",
+                                  "desc"
+                                );
+                                setIsFilter(false);
+                              }}
+                            >
+                              <Checkbox
+                                className="w-4 h-4 mr-2"
+                                checked={
+                                  filter === "old-barcode" &&
+                                  orientation === "desc"
+                                }
+                                onCheckedChange={() => {
+                                  handleCurrentId(
+                                    dataSearch,
+                                    "old-barcode",
                                     "desc"
                                   );
                                   setIsFilter(false);
                                 }}
                               />
-                              Barcode
+                              Old Barcode
                               <CommandShortcut>desc</CommandShortcut>
                             </CommandItem>
                             <CommandItem
                               onSelect={() => {
-                                handleCurrentId(dataSearch, "product", "asc");
+                                handleCurrentId(
+                                  dataSearch,
+                                  "new-barcode",
+                                  "asc"
+                                );
                                 setIsFilter(false);
                               }}
                             >
                               <Checkbox
                                 className="w-4 h-4 mr-2"
                                 checked={
-                                  filter === "product" && orientation === "asc"
-                                }
-                                onCheckedChange={() => {
-                                  handleCurrentId(dataSearch, "product", "asc");
-                                  setIsFilter(false);
-                                }}
-                              />
-                              Product
-                              <CommandShortcut>asc</CommandShortcut>
-                            </CommandItem>
-                            <CommandItem
-                              onSelect={() => {
-                                handleCurrentId(dataSearch, "product", "desc");
-                                setIsFilter(false);
-                              }}
-                            >
-                              <Checkbox
-                                className="w-4 h-4 mr-2"
-                                checked={
-                                  filter === "product" && orientation === "desc"
+                                  filter === "new-barcode" &&
+                                  orientation === "asc"
                                 }
                                 onCheckedChange={() => {
                                   handleCurrentId(
                                     dataSearch,
-                                    "product",
+                                    "new-barcode",
+                                    "asc"
+                                  );
+                                  setIsFilter(false);
+                                }}
+                              />
+                              New Barcode
+                              <CommandShortcut>asc</CommandShortcut>
+                            </CommandItem>
+                            <CommandItem
+                              onSelect={() => {
+                                handleCurrentId(
+                                  dataSearch,
+                                  "new-barcode",
+                                  "desc"
+                                );
+                                setIsFilter(false);
+                              }}
+                            >
+                              <Checkbox
+                                className="w-4 h-4 mr-2"
+                                checked={
+                                  filter === "new-barcode" &&
+                                  orientation === "desc"
+                                }
+                                onCheckedChange={() => {
+                                  handleCurrentId(
+                                    dataSearch,
+                                    "new-barcode",
                                     "desc"
                                   );
                                   setIsFilter(false);
                                 }}
                               />
-                              Product
+                              New Barcode
                               <CommandShortcut>desc</CommandShortcut>
                             </CommandItem>
                             <CommandItem
                               onSelect={() => {
-                                handleCurrentId(dataSearch, "price", "asc");
+                                handleCurrentId(dataSearch, "name", "asc");
                                 setIsFilter(false);
                               }}
                             >
                               <Checkbox
                                 className="w-4 h-4 mr-2"
                                 checked={
-                                  filter === "price" && orientation === "asc"
+                                  filter === "name" && orientation === "asc"
                                 }
                                 onCheckedChange={() => {
-                                  handleCurrentId(dataSearch, "price", "asc");
+                                  handleCurrentId(dataSearch, "name", "asc");
                                   setIsFilter(false);
                                 }}
                               />
-                              Price
+                              Name
                               <CommandShortcut>asc</CommandShortcut>
                             </CommandItem>
                             <CommandItem
                               onSelect={() => {
-                                handleCurrentId(dataSearch, "price", "desc");
+                                handleCurrentId(dataSearch, "name", "desc");
                                 setIsFilter(false);
                               }}
                             >
                               <Checkbox
                                 className="w-4 h-4 mr-2"
                                 checked={
-                                  filter === "price" && orientation === "desc"
+                                  filter === "name" && orientation === "desc"
                                 }
                                 onCheckedChange={() => {
-                                  handleCurrentId(dataSearch, "price", "desc");
+                                  handleCurrentId(dataSearch, "name", "desc");
                                   setIsFilter(false);
                                 }}
                               />
-                              Price
+                              Name
                               <CommandShortcut>desc</CommandShortcut>
                             </CommandItem>
                           </CommandList>
@@ -370,25 +390,17 @@ export const Client = () => {
                     </Button>
                   )}
                 </div>
-                <div className="flex gap-2 items-center">
-                  <Link href={"/inbound/check-product/manifest-inbound/check"}>
-                    <Button className="bg-sky-400/80 hover:bg-sky-400 text-black">
-                      <ArrowRightCircle className="w-4 h-4 mr-1" />
-                      Next
-                    </Button>
-                  </Link>
-                </div>
               </div>
             </div>
           </div>
           <div className="w-full p-4 rounded-md border border-sky-400/80">
             <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-2 font-semibold items-center hover:bg-sky-200/80">
               <p className="w-10 text-center flex-none">No</p>
-              <p className="w-52 flex-none">Resi Number</p>
-              <p className="w-full">Product Name</p>
-              <p className="w-24 text-center flex-none">QTY</p>
-              <p className="w-28 flex-none">Price</p>
-              <p className="xl:w-32 w-20 flex-none text-center">Action</p>
+              <p className="w-36 flex-none">Old Barcode</p>
+              <p className="w-36 flex-none">New Barcode</p>
+              <p className="w-full text-center">Name</p>
+              <p className="w-28 flex-none">Status</p>
+              <p className="xl:w-48 w-28 flex-none text-center">Action</p>
             </div>
             {Array.from({ length: 5 }, (_, i) => (
               <div
@@ -396,36 +408,31 @@ export const Client = () => {
                 key={i}
               >
                 <p className="w-10 text-center flex-none">{i + 1}</p>
-                <div className="w-52 flex-none flex items-center">
-                  <p>NLIDAP1655193210</p>
-                  <TooltipProviderPage
-                    value={<p>{copied === i ? "Copied" : "Copy Barcode"}</p>}
-                  >
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleCopy("NLIDAP1655193210", i);
-                      }}
-                      disabled={copied === i}
-                    >
-                      {copied === i ? (
-                        <Check className="w-3 h-3 ml-2" />
-                      ) : (
-                        <Copy className="w-3 h-3 ml-2" />
-                      )}
-                    </button>
-                  </TooltipProviderPage>
+                <div className="w-36 flex-none flex items-center">
+                  <p>106000868w</p>
                 </div>
-                <p className="w-full">
-                  Mainan Batang Blok Magnetik Set 130pcs Building Blocks
-                  Montessori Edukasi Anak
-                </p>
-                <p className="w-24 text-center flex-none">1</p>
-                <p className="w-28 flex-none">{formatRupiah(100000)}</p>
-                <div className="xl:w-32 w-20 flex-none flex justify-center">
+                <p className="w-36 flex-none">LTJRDROR</p>
+                <p className="w-full text-start">Lorem ipsum dolor sit amet.</p>
+                <div className="w-28 flex-none">
+                  <span className="px-3 py-0.5 bg-yellow-100 rounded">
+                    display
+                  </span>
+                </div>
+                <div className="xl:w-48 w-28 flex-none flex justify-center gap-4">
+                  <Button
+                    className="items-center xl:w-full w-9 px-0 xl:px-4 border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
+                    variant={"outline"}
+                    type="button"
+                    onClick={() => alert("pop up")}
+                  >
+                    <ReceiptText className="w-4 h-4 xl:mr-1" />
+                    <p className="hidden xl:flex">Detail</p>
+                  </Button>
                   <Button
                     className="items-center xl:w-full w-9 px-0 xl:px-4 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
                     variant={"outline"}
+                    type="button"
+                    onClick={() => alert("pop up")}
                   >
                     <Trash2 className="w-4 h-4 xl:mr-1" />
                     <div className="hidden xl:flex">Delete</div>
