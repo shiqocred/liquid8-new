@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  Dispatch,
-  ReactNode,
-  SetStateAction,
-  useEffect,
-  useState,
-} from "react";
+import React, { Dispatch, ReactNode, SetStateAction, useEffect } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
@@ -23,6 +17,7 @@ interface SidebarButtonProps {
   openMenu: string;
   setOpenSubMenu: Dispatch<SetStateAction<string>>;
   openSubMenu: string;
+  setOpen?: Dispatch<SetStateAction<boolean>>;
 }
 
 export const ButtonSidebar = ({
@@ -36,6 +31,7 @@ export const ButtonSidebar = ({
   setOpenMenu,
   setOpenSubMenu,
   openSubMenu,
+  setOpen,
 }: SidebarButtonProps) => {
   // button width variant
   const buttonChevronVariant = {
@@ -63,7 +59,6 @@ export const ButtonSidebar = ({
   const findActiveSubMenuTitle = () => {
     for (const menu of sidebarMenu) {
       for (const item of menu.menu) {
-        // Check sub_menu href match
         for (const subItem of item.sub_menu) {
           if (subItem.href && pathname.includes(subItem.href)) {
             return subItem.title;
@@ -88,8 +83,9 @@ export const ButtonSidebar = ({
             type="button"
             className={cn(
               "flex items-center leading-none h-10 bg-transparent hover:bg-sky-600/70 dark:hover:bg-gray-700 px-3 transition-all text-sm font-medium rounded-md justify-between w-full",
-              pathname === href && "bg-sky-600/70 hover:bg-sky-600"
+              pathname.includes(href) && "bg-sky-600/70 hover:bg-sky-600"
             )}
+            onClick={() => setOpen?.(false)}
           >
             <div className="flex gap-2 items-center w-full capitalize text-white">
               <span className="w-5 h-5 text-sky-200">{icon}</span>
@@ -141,6 +137,8 @@ export const ButtonSidebar = ({
                             openSubMenu === item.title) &&
                             "text-black"
                         )}
+                        type="button"
+                        onClick={() => setOpen?.(false)}
                       >
                         - {item.title}
                       </button>
