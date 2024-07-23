@@ -28,7 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDebounce } from "@/hooks/use-debounce";
 import { ArrowLeft, Search, Send, ShieldCheck } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,6 +46,7 @@ export const Client = () => {
   const [isMounted, setIsMounted] = useState(false);
   const [dataSearch, setDataSearch] = useState("");
   const searchValue = useDebounce(dataSearch);
+  const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [filter, setFilter] = useState(searchParams.get("f") ?? "");
@@ -90,7 +91,7 @@ export const Client = () => {
 
       const url = qs.stringifyUrl(
         {
-          url: "/inbound/check-product/manifest-inbound/check",
+          url: `/inbound/check-product/manifest-inbound/${params.manifestInboundId}/check`,
           query: updateQuery,
         },
         { skipNull: true }
@@ -139,7 +140,7 @@ export const Client = () => {
       <div className="flex text-sm text-gray-500 py-6 rounded-md shadow bg-white w-full px-5 gap-4 items-center relative">
         <div className="w-full text-xs flex items-center">
           <Link
-            href={"/inbound/check-product/manifest-inbound/detail"}
+            href={`/inbound/check-product/manifest-inbound/${params.manifestInboundId}/detail`}
             className="group"
           >
             <button
