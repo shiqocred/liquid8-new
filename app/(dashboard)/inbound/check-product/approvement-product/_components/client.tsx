@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useModal } from "@/hooks/use-modal";
 import { cn } from "@/lib/utils";
 import {
   ChevronLeft,
@@ -40,6 +41,7 @@ import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
 
 export const Client = () => {
+  const { onOpen } = useModal();
   const [isFilter, setIsFilter] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [dataSearch, setDataSearch] = useState("");
@@ -255,6 +257,8 @@ export const Client = () => {
                   <Button
                     className="items-center xl:w-full w-9 px-0 xl:px-4 border-green-400 text-green-700 hover:text-green-700 hover:bg-green-50"
                     variant={"outline"}
+                    type="button"
+                    onClick={() => onOpen("approve-documents", "id")}
                   >
                     <ShieldCheck className="w-4 h-4 xl:mr-1" />
                     <p className="hidden xl:flex">Approve</p>

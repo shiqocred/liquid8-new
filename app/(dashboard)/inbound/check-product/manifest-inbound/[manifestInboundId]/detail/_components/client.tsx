@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useModal } from "@/hooks/use-modal";
 import { cn, formatRupiah } from "@/lib/utils";
 import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
 import {
@@ -39,15 +40,17 @@ import {
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
 
 export const Client = () => {
+  const { onOpen } = useModal();
   const [isFilter, setIsFilter] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [dataSearch, setDataSearch] = useState("");
   const searchValue = useDebounce(dataSearch);
+  const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [filter, setFilter] = useState(searchParams.get("f") ?? "");
@@ -92,7 +95,7 @@ export const Client = () => {
 
       const url = qs.stringifyUrl(
         {
-          url: "/inbound/check-product/manifest-inbound/detail",
+          url: `/inbound/check-product/manifest-inbound/${params.manifestInboundId}/detail`,
           query: updateQuery,
         },
         { skipNull: true }
@@ -371,7 +374,9 @@ export const Client = () => {
                   )}
                 </div>
                 <div className="flex gap-2 items-center">
-                  <Link href={"/inbound/check-product/manifest-inbound/check"}>
+                  <Link
+                    href={`/inbound/check-product/manifest-inbound/${params.manifestInboundId}/check`}
+                  >
                     <Button className="bg-sky-400/80 hover:bg-sky-400 text-black">
                       <ArrowRightCircle className="w-4 h-4 mr-1" />
                       Next
@@ -426,6 +431,10 @@ export const Client = () => {
                   <Button
                     className="items-center xl:w-full w-9 px-0 xl:px-4 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
                     variant={"outline"}
+                    onClick={() =>
+                      onOpen("delete-detail-manifest-inbound", "id")
+                    }
+                    type="button"
                   >
                     <Trash2 className="w-4 h-4 xl:mr-1" />
                     <div className="hidden xl:flex">Delete</div>
