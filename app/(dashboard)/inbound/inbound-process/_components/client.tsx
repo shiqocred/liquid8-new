@@ -96,6 +96,7 @@ export const Client = () => {
       "application/vnd.ms-excel": [".xls"],
     },
   });
+  
   return (
     <div className="flex flex-col items-center justify-center bg-gray-100 w-full relative px-4 gap-4 py-4">
       <div className="grid grid-cols-4 w-full bg-white rounded-md overflow-hidden shadow">

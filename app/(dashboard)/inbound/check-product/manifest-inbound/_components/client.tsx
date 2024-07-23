@@ -1,5 +1,7 @@
 "use client";
 
+import axios from "axios";
+import { useState, useEffect, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -38,7 +40,15 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
-import { useCallback, useEffect, useState } from "react";
+
+// Define a type for the document
+interface Document {
+  id: string;
+  base_document: string;
+  date_document: string;
+  total_column_in_document: number;
+  status_document: "pending" | "in-progress" | "done";
+}
 
 export const Client = () => {
   const [isFilter, setIsFilter] = useState(false);
@@ -47,6 +57,49 @@ export const Client = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [filter, setFilter] = useState(searchParams.get("f") ?? "");
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1); // Assuming you want to manage pagination
+  // const [authToken, setAuthToken] = useState<string | null>(null);
+
+  // // Get token from localStorage on component mount
+  // useEffect(() => {
+  //   const token = localStorage.getItem('authToken');
+  //   setAuthToken(token);
+  // }, []);
+
+  const authToken = "671|bz4dmlWoJSa9GaJiqHCmwn600Qs1XuF40VPHVnApab05ceff";
+
+  const fetchDocuments = useCallback(
+    async (page: number, search: string) => {
+      setLoading(true);
+      try {
+        const response = await axios.get(
+          `https://wms-server.digitalindustryagency.com/api/documents?page=${page}&q=${search}`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`, // Menambahkan header Authorization
+            },
+          }
+        );
+        console.log("DOCUMENT", response.data.data.resource.data);
+        setDocuments(response.data.data.resource.data);
+        // setDocuments(Array.isArray(response.data.documents) ? response.data.documents : []);
+      } catch (err: any) {
+        setError(err.message || "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [authToken]
+  );
+
+  useEffect(() => {
+    if (authToken) {
+      fetchDocuments(page, searchValue);
+    }
+  }, [searchValue, page, fetchDocuments, authToken]);
 
   const handleCurrentId = useCallback(
     (q: string, f: string) => {
@@ -87,6 +140,9 @@ export const Client = () => {
   useEffect(() => {
     handleCurrentId(searchValue, filter);
   }, [searchValue]);
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error}</p>;
 
   return (
     <div className="flex flex-col items-start bg-gray-100 w-full relative px-4 gap-4 py-4">
@@ -226,33 +282,38 @@ export const Client = () => {
               <p className="w-28 flex-none">Status</p>
               <p className="w-full text-center">Action</p>
             </div>
-            {Array.from({ length: 5 }, (_, i) => (
+            {documents.map((doc, i) => (
               <div
                 className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
-                key={i}
+                key={doc.id}
               >
                 <p className="w-10 text-center flex-none">{i + 1}</p>
                 <p className="w-44 flex-none overflow-hidden text-ellipsis">
-                  testersjkbdjkasgdiukashbdik.xlsx
+                  {doc.base_document}
                 </p>
                 <p className="w-48 flex-none overflow-hidden text-ellipsis">
-                  Senin, 8 Agustus 2024
+                  {new Date(doc.date_document).toLocaleDateString()}
                 </p>
                 <p className="w-28 flex-none overflow-hidden text-ellipsis">
-                  3454
+                  {doc.total_column_in_document}
                 </p>
                 <div className="w-28 flex-none">
                   <Badge
                     className={cn(
-                      "rounded w-20 px-0 justify-center text-black font-normal capitalize bg-gray-200 hover:bg-gray-200"
+                      "rounded w-20 px-0 justify-center text-black font-normal capitalize",
+                      doc.status_document === "pending" &&
+                        "bg-gray-200 hover:bg-gray-200",
+                      doc.status_document === "in-progress" &&
+                        "bg-yellow-400 hover:bg-yellow-400",
+                      doc.status_document === "done" && "bg-green-400 hover:bg-green-400"
                     )}
                   >
-                    Pending
+                    {doc.status_document.charAt(0).toUpperCase() + doc.status_document.slice(1)}
                   </Badge>
                 </div>
                 <div className="w-full flex gap-4 justify-center">
                   <Link
-                    href={"/inbound/check-product/manifest-inbound/check"}
+                    href={`/inbound/check-product/manifest-inbound/check/${doc.id}`}
                     className="xl:w-1/3 w-9"
                   >
                     <Button
@@ -264,7 +325,7 @@ export const Client = () => {
                     </Button>
                   </Link>
                   <Link
-                    href={"/inbound/check-product/manifest-inbound/detail"}
+                    href={`/inbound/check-product/manifest-inbound/detail/${doc.id}`}
                     className="xl:w-1/3 w-9"
                   >
                     <Button
@@ -287,12 +348,18 @@ export const Client = () => {
             ))}
           </div>
           <div className="flex gap-5 ml-auto items-center">
-            <p className="text-sm">Page 1 of 3</p>
+            <p className="text-sm">Page {page} of 3</p>
             <div className="flex items-center gap-2">
-              <Button className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black">
+              <Button
+                className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
+                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+              >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
-              <Button className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black">
+              <Button
+                className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
+                onClick={() => setPage((prev) => prev + 1)}
+              >
                 <ChevronRight className="w-5 h-5" />
               </Button>
             </div>
