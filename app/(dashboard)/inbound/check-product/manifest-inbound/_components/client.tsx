@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useModal } from "@/hooks/use-modal";
 import { cn } from "@/lib/utils";
 import {
   ChevronLeft,
@@ -51,6 +52,7 @@ interface Document {
 }
 
 export const Client = () => {
+  const { onOpen } = useModal();
   const [isFilter, setIsFilter] = useState(false);
   const [dataSearch, setDataSearch] = useState("");
   const searchValue = useDebounce(dataSearch);
@@ -313,7 +315,7 @@ export const Client = () => {
                 </div>
                 <div className="w-full flex gap-4 justify-center">
                   <Link
-                    href={`/inbound/check-product/manifest-inbound/check/${doc.id}`}
+                    href={"/inbound/check-product/manifest-inbound/1/check"}
                     className="xl:w-1/3 w-9"
                   >
                     <Button
@@ -325,7 +327,7 @@ export const Client = () => {
                     </Button>
                   </Link>
                   <Link
-                    href={`/inbound/check-product/manifest-inbound/detail/${doc.id}`}
+                    href={"/inbound/check-product/manifest-inbound/1/detail"}
                     className="xl:w-1/3 w-9"
                   >
                     <Button
@@ -339,6 +341,8 @@ export const Client = () => {
                   <Button
                     className="items-center xl:w-1/3 px-0 xl:px-4 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50 w-9"
                     variant={"outline"}
+                    type="button"
+                    onClick={() => onOpen("delete-manifest-inbound", "id")}
                   >
                     <Trash2 className="w-4 h-4 xl:mr-1" />
                     <p className="hidden xl:flex">Delete</p>
