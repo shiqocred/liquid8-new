@@ -91,7 +91,7 @@ export const Client = () => {
 
       const url = qs.stringifyUrl(
         {
-          url: `/inbound/check-product/manifest-inbound/${params.manifestInboundId}/check`,
+          url: `/inbound/check-product/manifest-inbound/${params.manifestInboundId}/${params.manifestInboundMonth}/${params.manifestInboundYear}/check`,
           query: updateQuery,
         },
         { skipNull: true }
@@ -140,7 +140,7 @@ export const Client = () => {
       <div className="flex text-sm text-gray-500 py-6 rounded-md shadow bg-white w-full px-5 gap-4 items-center relative">
         <div className="w-full text-xs flex items-center">
           <Link
-            href={`/inbound/check-product/manifest-inbound/${params.manifestInboundId}/detail`}
+            href={`/inbound/check-product/manifest-inbound/${params.manifestInboundId}/${params.manifestInboundMonth}/${params.manifestInboundYear}/detail`}
             className="group"
           >
             <button

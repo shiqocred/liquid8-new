@@ -28,6 +28,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { useModal } from "@/hooks/use-modal";
 import { cn, formatRupiah } from "@/lib/utils";
 import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
+import axios from "axios";
 import {
   ArrowLeft,
   ArrowRightCircle,
@@ -44,6 +45,17 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
 
+interface DetailManifest {
+  id: string;
+  code_document: string;
+  old_barcode_product: string;
+  old_name_product: string;
+  old_quantity_product: number;
+  old_price_product: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export const Client = () => {
   const { onOpen } = useModal();
   const [isFilter, setIsFilter] = useState(false);
@@ -56,11 +68,17 @@ export const Client = () => {
   const [filter, setFilter] = useState(searchParams.get("f") ?? "");
   const [orientation, setOrientation] = useState(searchParams.get("s") ?? "");
   const [copied, setCopied] = useState<number | null>(null);
+  const [dataResults, setDataResults] = useState<DetailManifest[]>([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const authToken = process.env.NEXT_PUBLIC_authToken;
+  const apiUrl = process.env.NEXT_PUBLIC_baseUrl;
 
   const handleCopy = (code: string, id: number) => {
     navigator.clipboard.writeText(code).then(() => {
       setCopied(id);
-      setTimeout(() => setCopied(null), 2000); // Reset the icon after 2 seconds
+      setTimeout(() => setCopied(null), 2000); 
     });
   };
 
@@ -95,7 +113,7 @@ export const Client = () => {
 
       const url = qs.stringifyUrl(
         {
-          url: `/inbound/check-product/manifest-inbound/${params.manifestInboundId}/detail`,
+          url: `/inbound/check-product/manifest-inbound/${params.manifestInboundId}/${params.manifestInboundMonth}/${params.manifestInboundYear}/detail`,
           query: updateQuery,
         },
         { skipNull: true }
@@ -113,6 +131,49 @@ export const Client = () => {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  const [documentData, setDocumentData] = useState({
+    base_document: "",
+    total_column_in_document: 0,
+    status_document: "",
+    code_document: "",
+  });
+
+  useEffect(() => {
+    const savedDocumentData = localStorage.getItem("documentData");
+    if (savedDocumentData) {
+      setDocumentData(JSON.parse(savedDocumentData));
+    }
+  }, []);
+
+  const fetchDetailDocuments = useCallback(
+    async (page: number, search: string) => {
+      setLoading(true);
+      const codeDocument = `${params.manifestInboundId}/${params.manifestInboundMonth}/${params.manifestInboundYear}`;
+      try {
+        const response = await axios.get(
+          `${apiUrl}/product_olds-search?search=${codeDocument}&page=${page}`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+        setDataResults(response.data.data.resource.data);
+      } catch (err: any) {
+        setError(err.message || "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [authToken]
+  );
+
+  useEffect(() => {
+    if (authToken) {
+      fetchDetailDocuments(page, searchValue);
+    }
+  }, [searchValue, page, fetchDetailDocuments, params, authToken]);
 
   if (!isMounted) {
     return "Loading...";
@@ -152,22 +213,22 @@ export const Client = () => {
           </Link>
           <div className="w-2/3">
             <p>Data Name</p>
-            <h3 className="text-black font-semibold text-xl">Tester.xlsx</h3>
+            <h3 className="text-black font-semibold text-xl">{documentData.base_document}</h3>
           </div>
         </div>
         <div className="flex w-full">
           <div className="flex flex-col items-end w-1/4 border-r border-gray-500 pr-5 mr-5">
             <p>Status</p>
-            <h3 className="text-gray-700 font-light text-xl">Pending</h3>
+            <h3 className="text-gray-700 font-light text-xl">{documentData.status_document}</h3>
           </div>
           <div className="flex flex-col items-end w-2/4 border-r border-gray-700 pr-5 mr-5">
             <p>Merged Data</p>
-            <h3 className="text-gray-700 font-light text-xl">0096/07/2024</h3>
+            <h3 className="text-gray-700 font-light text-xl">{documentData.code_document}</h3>
           </div>
           <div className="flex flex-col items-end w-1/4">
             <p>Total</p>
             <h3 className="text-gray-700 font-light text-xl">
-              {(3521).toLocaleString()}
+              {(documentData.total_column_in_document).toLocaleString()}
             </h3>
           </div>
         </div>
@@ -395,25 +456,27 @@ export const Client = () => {
               <p className="w-28 flex-none">Price</p>
               <p className="xl:w-32 w-20 flex-none text-center">Action</p>
             </div>
-            {Array.from({ length: 5 }, (_, i) => (
+            {dataResults.map((item, index) => (
               <div
                 className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
-                key={i}
+                key={item.id}
               >
-                <p className="w-10 text-center flex-none">{i + 1}</p>
+                <p className="w-10 text-center flex-none">{index + 1}</p>
                 <div className="w-52 flex-none flex items-center">
-                  <p>NLIDAP1655193210</p>
+                  <p>{item.old_barcode_product}</p>
                   <TooltipProviderPage
-                    value={<p>{copied === i ? "Copied" : "Copy Barcode"}</p>}
+                    value={
+                      <p>{copied === index ? "Copied" : "Copy Barcode"}</p>
+                    }
                   >
                     <button
                       onClick={(e) => {
                         e.preventDefault();
-                        handleCopy("NLIDAP1655193210", i);
+                        handleCopy(item.old_barcode_product, index);
                       }}
-                      disabled={copied === i}
+                      disabled={copied === index}
                     >
-                      {copied === i ? (
+                      {copied === index ? (
                         <Check className="w-3 h-3 ml-2" />
                       ) : (
                         <Copy className="w-3 h-3 ml-2" />
@@ -421,18 +484,19 @@ export const Client = () => {
                     </button>
                   </TooltipProviderPage>
                 </div>
-                <p className="w-full">
-                  Mainan Batang Blok Magnetik Set 130pcs Building Blocks
-                  Montessori Edukasi Anak
+                <p className="w-full">{item.old_name_product}</p>
+                <p className="w-24 text-center flex-none">
+                  {item.old_quantity_product}
                 </p>
-                <p className="w-24 text-center flex-none">1</p>
-                <p className="w-28 flex-none">{formatRupiah(100000)}</p>
+                <p className="w-28 flex-none">
+                  {formatRupiah(item.old_price_product)}
+                </p>
                 <div className="xl:w-32 w-20 flex-none flex justify-center">
                   <Button
                     className="items-center xl:w-full w-9 px-0 xl:px-4 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
                     variant={"outline"}
                     onClick={() =>
-                      onOpen("delete-detail-manifest-inbound", "id")
+                      onOpen("delete-detail-manifest-inbound", item.id)
                     }
                     type="button"
                   >
@@ -444,7 +508,9 @@ export const Client = () => {
             ))}
           </div>
           <div className="flex gap-5 ml-auto items-center">
-            <p className="text-sm">Page 1 of 3</p>
+            <p className="text-sm">
+              Page {page} of {page}
+            </p>
             <div className="flex items-center gap-2">
               <Button className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black">
                 <ChevronLeft className="w-5 h-5" />

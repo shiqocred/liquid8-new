@@ -45,10 +45,11 @@ import qs from "query-string";
 // Define a type for the document
 interface Document {
   id: string;
+  code_document: string;
   base_document: string;
   date_document: string;
   total_column_in_document: number;
-  status_document: "pending" | "in-progress" | "done";
+  status_document: "pending" | "in progress" | "done";
 }
 
 export const Client = () => {
@@ -62,32 +63,23 @@ export const Client = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1); // Assuming you want to manage pagination
-  // const [authToken, setAuthToken] = useState<string | null>(null);
-
-  // // Get token from localStorage on component mount
-  // useEffect(() => {
-  //   const token = localStorage.getItem('authToken');
-  //   setAuthToken(token);
-  // }, []);
-
-  const authToken = "671|bz4dmlWoJSa9GaJiqHCmwn600Qs1XuF40VPHVnApab05ceff";
+  const [page, setPage] = useState(1);
+  const authToken = process.env.NEXT_PUBLIC_authToken;
+  const apiUrl = process.env.NEXT_PUBLIC_baseUrl;
 
   const fetchDocuments = useCallback(
     async (page: number, search: string) => {
       setLoading(true);
       try {
         const response = await axios.get(
-          `https://wms-server.digitalindustryagency.com/api/documents?page=${page}&q=${search}`,
+          `${apiUrl}/documents?page=${page}&q=${search}`,
           {
             headers: {
-              Authorization: `Bearer ${authToken}`, // Menambahkan header Authorization
+              Authorization: `Bearer ${authToken}`,
             },
           }
         );
-        console.log("DOCUMENT", response.data.data.resource.data);
         setDocuments(response.data.data.resource.data);
-        // setDocuments(Array.isArray(response.data.documents) ? response.data.documents : []);
       } catch (err: any) {
         setError(err.message || "An error occurred");
       } finally {
@@ -305,17 +297,19 @@ export const Client = () => {
                       "rounded w-20 px-0 justify-center text-black font-normal capitalize",
                       doc.status_document === "pending" &&
                         "bg-gray-200 hover:bg-gray-200",
-                      doc.status_document === "in-progress" &&
+                      doc.status_document === "in progress" &&
                         "bg-yellow-400 hover:bg-yellow-400",
-                      doc.status_document === "done" && "bg-green-400 hover:bg-green-400"
+                      doc.status_document === "done" &&
+                        "bg-green-400 hover:bg-green-400"
                     )}
                   >
-                    {doc.status_document.charAt(0).toUpperCase() + doc.status_document.slice(1)}
+                    {doc.status_document.charAt(0).toUpperCase() +
+                      doc.status_document.slice(1)}
                   </Badge>
                 </div>
                 <div className="w-full flex gap-4 justify-center">
                   <Link
-                    href={"/inbound/check-product/manifest-inbound/1/check"}
+                    href={`/inbound/check-product/manifest-inbound/${doc.code_document}/check`}
                     className="xl:w-1/3 w-9"
                   >
                     <Button
@@ -327,8 +321,20 @@ export const Client = () => {
                     </Button>
                   </Link>
                   <Link
-                    href={"/inbound/check-product/manifest-inbound/1/detail"}
+                    href={`/inbound/check-product/manifest-inbound/${doc.code_document}/detail`}
                     className="xl:w-1/3 w-9"
+                    onClick={() => {
+                      const documentData = {
+                        base_document: doc.base_document,
+                        total_column_in_document: doc.total_column_in_document,
+                        status_document: doc.status_document,
+                        code_document: doc.code_document,
+                      };
+                      localStorage.setItem(
+                        "documentData",
+                        JSON.stringify(documentData)
+                      );
+                    }}
                   >
                     <Button
                       className="items-center w-full px-0 xl:px-4 border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
@@ -342,7 +348,7 @@ export const Client = () => {
                     className="items-center xl:w-1/3 px-0 xl:px-4 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50 w-9"
                     variant={"outline"}
                     type="button"
-                    onClick={() => onOpen("delete-manifest-inbound", "id")}
+                    onClick={() => onOpen("delete-manifest-inbound", doc.id)}
                   >
                     <Trash2 className="w-4 h-4 xl:mr-1" />
                     <p className="hidden xl:flex">Delete</p>
@@ -352,7 +358,9 @@ export const Client = () => {
             ))}
           </div>
           <div className="flex gap-5 ml-auto items-center">
-            <p className="text-sm">Page {page} of 3</p>
+            <p className="text-sm">
+              Page {page} of {page}
+            </p>
             <div className="flex items-center gap-2">
               <Button
                 className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
