@@ -26,6 +26,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useModal } from "@/hooks/use-modal";
+import { authToken, baseUrl } from "@/lib/baseUrl";
 import { cn, formatRupiah } from "@/lib/utils";
 import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
 import axios from "axios";
@@ -72,8 +73,6 @@ export const Client = () => {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const authToken = process.env.NEXT_PUBLIC_authToken;
-  const apiUrl = process.env.NEXT_PUBLIC_baseUrl;
 
   const handleCopy = (code: string, id: number) => {
     navigator.clipboard.writeText(code).then(() => {
@@ -152,7 +151,7 @@ export const Client = () => {
       const codeDocument = `${params.manifestInboundId}/${params.manifestInboundMonth}/${params.manifestInboundYear}`;
       try {
         const response = await axios.get(
-          `${apiUrl}/product_olds-search?search=${codeDocument}&page=${page}`,
+          `${baseUrl}/product_olds-search?search=${codeDocument}&page=${page}`,
           {
             headers: {
               Authorization: `Bearer ${authToken}`,
@@ -436,7 +435,7 @@ export const Client = () => {
                 </div>
                 <div className="flex gap-2 items-center">
                   <Link
-                    href={`/inbound/check-product/manifest-inbound/${params.manifestInboundId}/check`}
+                    href={`/inbound/check-product/manifest-inbound/${params.manifestInboundId}/${params.manifestInboundMonth}/${params.manifestInboundYear}/check`}
                   >
                     <Button className="bg-sky-400/80 hover:bg-sky-400 text-black">
                       <ArrowRightCircle className="w-4 h-4 mr-1" />

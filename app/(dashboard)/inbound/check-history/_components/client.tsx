@@ -24,8 +24,10 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/use-debounce";
-import { cn } from "@/lib/utils";
+import { authToken, baseUrl } from "@/lib/baseUrl";
+import { cn, formatDate } from "@/lib/utils";
 import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
+import axios from "axios";
 import {
   ChevronLeft,
   ChevronRight,
@@ -39,6 +41,29 @@ import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
 
+interface History {
+  id: number;
+  user_id: number;
+  code_document: string;
+  base_document: string;
+  total_data: number;
+  total_data_in: number;
+  total_data_lolos: number;
+  total_data_damaged: number;
+  total_data_abnormal: number;
+  total_discrepancy: number;
+  status_approve: "pending" | "in progress" | "done";
+  precentage_total_data: string;
+  percentage_in: string;
+  percentage_lolos: string;
+  percentage_damaged: string;
+  percentage_abnormal: string;
+  percentage_discrepancy: string;
+  created_at: string;
+  updated_at: string;
+  total_price: string;
+}
+
 export const Client = () => {
   const [isFilterCheck, setIsFilterCheck] = useState(false);
   const [isFilterApprove, setIsFilterApprove] = useState(false);
@@ -51,6 +76,38 @@ export const Client = () => {
   const [filterApprove, setFilterApprove] = useState(
     searchParams.get("f") ?? ""
   );
+  const [history, setHistory] = useState<History[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+
+  const fetchDocuments = useCallback(
+    async (page: number, search: string) => {
+      setLoading(true);
+      try {
+        const response = await axios.get(
+          `${baseUrl}/historys?page=${page}&q=${search}`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+        setHistory(response.data.data.resource.data);
+      } catch (err: any) {
+        setError(err.message || "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [authToken]
+  );
+
+  useEffect(() => {
+    if (authToken) {
+      fetchDocuments(page, searchValue);
+    }
+  }, [searchValue, page, fetchDocuments, authToken]);
 
   const handleCurrentId = useCallback(
     (q: string, fc: string, fa: string) => {
@@ -359,36 +416,41 @@ export const Client = () => {
               <p className="w-32 flex-none">Status Approved</p>
               <p className="w-full text-center">Action</p>
             </div>
-            {Array.from({ length: 5 }, (_, i) => (
+            {history.map((item, i) => (
               <div
                 className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
-                key={i}
+                key={item.id}
               >
                 <p className="w-10 text-center flex-none">{i + 1}</p>
-                <p className="xl:w-40 w-32 flex-none">0062/07/2024</p>
-                <p className="xl:w-44 w-36 flex-none">Rabu, 10-07-2024</p>
-                <p className="xl:w-24 w-20 flex-none">
-                  {(2600).toLocaleString()}
+                <p className="xl:w-40 w-32 flex-none">{item.code_document}</p>
+                <p className="xl:w-44 w-36 flex-none">
+                  {formatDate(item.created_at)}
                 </p>
-                <p className="xl:w-24 w-20 flex-none">
-                  {(2600).toLocaleString()}
-                </p>
+                <p className="xl:w-24 w-20 flex-none">{item.total_data}</p>
+                <p className="xl:w-24 w-20 flex-none">{item.total_data_in}</p>
                 <div className="w-28 flex-none">
                   <Badge
                     className={cn(
-                      "rounded w-20 px-0 justify-center text-black font-normal capitalize bg-gray-200 hover:bg-gray-200"
+                      "rounded w-20 px-0 justify-center text-black font-normal capitalize bg-green-400 hover:bg-green-400"
                     )}
                   >
-                    Pending
+                    Done
                   </Badge>
                 </div>
                 <div className="w-32 flex-none">
                   <Badge
                     className={cn(
-                      "rounded w-20 px-0 justify-center text-black font-normal capitalize bg-gray-200 hover:bg-gray-200"
+                      "rounded w-20 px-0 justify-center text-black font-normal capitalize",
+                      item.status_approve === "pending" &&
+                        "bg-gray-200 hover:bg-gray-200",
+                      item.status_approve === "in progress" &&
+                        "bg-yellow-400 hover:bg-yellow-400",
+                      item.status_approve === "done" &&
+                        "bg-green-400 hover:bg-green-400"
                     )}
                   >
-                    Pending
+                    {item.status_approve.charAt(0).toUpperCase() +
+                      item.status_approve.slice(1)}
                   </Badge>
                 </div>
                 <div className="w-full flex gap-4 justify-center">

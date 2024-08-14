@@ -44,6 +44,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import axios from "axios";
+import { authToken, baseUrl } from "@/lib/baseUrl";
+
+interface SettingCategory {
+  id: number;
+  name_category: string;
+  discount_category: number;
+  max_price_category: number;
+  created_at: string;
+  updated_at: string;
+}
 
 export const Client = () => {
   const [isFilter, setIsFilter] = useState(false);
@@ -53,6 +64,34 @@ export const Client = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [filter, setFilter] = useState(searchParams.get("f") ?? "");
+  const [settingCategory, setSettingCategory] = useState<SettingCategory[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchSettingCategory = useCallback(
+    async (search: string) => {
+      setLoading(true);
+      try {
+        const response = await axios.get(`${baseUrl}/categories?q=${search}`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+        setSettingCategory(response.data.data.resource);
+      } catch (err: any) {
+        setError(err.message || "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [authToken]
+  );
+
+  useEffect(() => {
+    if (authToken) {
+      fetchSettingCategory(searchValue);
+    }
+  }, [searchValue, fetchSettingCategory, authToken]);
 
   const handleCurrentId = useCallback(
     (q: string, f: string) => {
@@ -237,9 +276,9 @@ export const Client = () => {
             </div>
           </div>
           <div className="grid grid-cols-2 xl:grid-cols-3 w-full gap-4 p-4 border border-sky-400 rounded-md">
-            {Array.from({ length: 6 }, (_, i) => (
+            {settingCategory.map((item, i) => (
               <div
-                key={i}
+                key={item.id}
                 className="bg-sky-100 rounded-md w-full shadow col-span-1 px-6 py-3 flex justify-between gap-3 relative h-24 items-center group"
               >
                 <div className="w-full h-full bg-white/5 backdrop-blur-sm absolute flex opacity-0 group-hover:opacity-100 left-0 top-0 transition-all items-center justify-center gap-4">
@@ -253,13 +292,13 @@ export const Client = () => {
                   </Button>
                 </div>
                 <div className="flex flex-col justify-start h-full">
-                  <h5>TOYS HOBBIES (200-699)</h5>
+                  <h5>{item.name_category}</h5>
                   <div className="flex items-center gap-2 text-xs text-black/50">
-                    <p>Max. Price {formatRupiah(50000)}</p>
+                    <p>Max. Price {formatRupiah(item.max_price_category)}</p>
                   </div>
                 </div>
                 <div className="flex justify-end text-4xl font-semibold">
-                  50%
+                  {item.discount_category}%
                 </div>
               </div>
             ))}

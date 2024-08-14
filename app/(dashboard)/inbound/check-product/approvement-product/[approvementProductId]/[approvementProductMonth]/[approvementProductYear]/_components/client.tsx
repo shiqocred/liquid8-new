@@ -25,7 +25,9 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/use-debounce";
+import { authToken, baseUrl } from "@/lib/baseUrl";
 import { cn } from "@/lib/utils";
+import axios from "axios";
 import {
   ArrowLeft,
   ArrowUpDown,
@@ -40,6 +42,26 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
 
+interface DetailApprovementProduct {
+  id: string;
+  code_document: string;
+  old_barcode_product: string;
+  new_barcode_product: string;
+  new_name_product: string;
+  new_quantity_product: number;
+  new_price_product: string;
+  old_price_product: string;
+  new_date_in_product: string;
+  new_status_product: string;
+  new_quality: string;
+  new_category_product: string;
+  new_tag_product: string;
+  created_at: string;
+  updated_at: string;
+  new_discount: string;
+  display_price: string;
+}
+
 export const Client = () => {
   const [isFilter, setIsFilter] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -50,6 +72,12 @@ export const Client = () => {
   const [filter, setFilter] = useState(searchParams.get("f") ?? "");
   const [orientation, setOrientation] = useState(searchParams.get("s") ?? "");
   const params = useParams();
+  const [dataResults, setDataResults] = useState<DetailApprovementProduct[]>(
+    []
+  );
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleCurrentId = useCallback(
     (q: string, f: string, s: string) => {
@@ -82,7 +110,7 @@ export const Client = () => {
 
       const url = qs.stringifyUrl(
         {
-          url: `/inbound/check-product/approvement-product/${params.id}`,
+          url: `/inbound/check-product/approvement-product/${params.approvementProductId}/${params.approvementProductMonth}/${params.approvementProductYear}`,
           query: updateQuery,
         },
         { skipNull: true }
@@ -100,6 +128,51 @@ export const Client = () => {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  const [approvementDocumentData, setApprovementDocumentData] = useState({
+    base_document: "",
+    total_column_in_document: 0,
+    status_document: "",
+    code_document: "",
+  });
+
+  useEffect(() => {
+    const ApprovementDocumentData = localStorage.getItem(
+      "approvementDocumentData"
+    );
+    if (ApprovementDocumentData) {
+      setApprovementDocumentData(JSON.parse(ApprovementDocumentData));
+    }
+  }, []);
+
+  const fetchListDetailApprovementProduct = useCallback(
+    async (page: number, search: string) => {
+      setLoading(true);
+      const codeDocument = `${params.approvementProductId}/${params.approvementProductMonth}/${params.approvementProductYear}`;
+      try {
+        const response = await axios.get(
+          `${baseUrl}/product-approveByDoc/${codeDocument}`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+        setDataResults(response.data.data.resource);
+      } catch (err: any) {
+        setError(err.message || "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [authToken]
+  );
+
+  useEffect(() => {
+    if (authToken) {
+      fetchListDetailApprovementProduct(page, searchValue);
+    }
+  }, [searchValue, page, fetchListDetailApprovementProduct, params, authToken]);
 
   if (!isMounted) {
     return "Loading...";
@@ -139,24 +212,28 @@ export const Client = () => {
           </Link>
           <div className="w-2/3">
             <p>Data Name</p>
-            <h3 className="text-black font-semibold text-xl">Tester.xlsx</h3>
+            <h3 className="text-black font-semibold text-xl">
+              {approvementDocumentData.base_document}
+            </h3>
           </div>
         </div>
         <div className="flex w-full">
           <div className="flex flex-col items-end w-2/4 border-r border-gray-500 pr-5 mr-5 overflow-hidden text-ellipsis">
-            <p>Base Documents</p>
+            <p>Code Documents</p>
             <h3 className="text-gray-700 font-semibold text-xl">
-              JNT 09.07.2024.xlsx
+              {approvementDocumentData.code_document}
             </h3>
           </div>
           <div className="flex flex-col items-end w-1/4 border-r border-gray-700 pr-5 mr-5">
             <p>Status</p>
-            <h3 className="text-gray-700 font-semibold text-xl">Done</h3>
+            <h3 className="text-gray-700 font-semibold text-xl">
+              {approvementDocumentData.status_document}
+            </h3>
           </div>
           <div className="flex flex-col items-end w-1/4">
             <p>Approvement Data</p>
             <h3 className="text-gray-700 font-semibold text-xl">
-              {(2600).toLocaleString()}
+              {approvementDocumentData.total_column_in_document}
             </h3>
           </div>
         </div>
@@ -402,20 +479,26 @@ export const Client = () => {
               <p className="w-28 flex-none">Status</p>
               <p className="xl:w-48 w-28 flex-none text-center">Action</p>
             </div>
-            {Array.from({ length: 5 }, (_, i) => (
+            {dataResults.map((product, index) => (
               <div
                 className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
-                key={i}
+                key={product.id}
               >
-                <p className="w-10 text-center flex-none">{i + 1}</p>
+                <p className="w-10 text-center flex-none">{index + 1}</p>
                 <div className="w-36 flex-none flex items-center">
-                  <p>106000868w</p>
+                  <p>{product.old_barcode_product}</p>
                 </div>
-                <p className="w-36 flex-none">LTJRDROR</p>
-                <p className="w-full text-start">Lorem ipsum dolor sit amet.</p>
+                <p className="w-36 flex-none">{product.new_barcode_product}</p>
+                <p className="w-full text-start">{product.new_name_product}</p>
                 <div className="w-28 flex-none">
-                  <span className="px-3 py-0.5 bg-yellow-100 rounded">
-                    display
+                  <span
+                    className={`px-3 py-0.5 rounded ${
+                      product.new_status_product === "display"
+                        ? "bg-yellow-100"
+                        : "bg-red-100"
+                    }`}
+                  >
+                    {product.new_status_product}
                   </span>
                 </div>
                 <div className="xl:w-48 w-28 flex-none flex justify-center gap-4">
@@ -441,7 +524,7 @@ export const Client = () => {
               </div>
             ))}
           </div>
-          <div className="flex gap-5 ml-auto items-center">
+          {/* <div className="flex gap-5 ml-auto items-center">
             <p className="text-sm">Page 1 of 3</p>
             <div className="flex items-center gap-2">
               <Button className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black">
@@ -451,7 +534,7 @@ export const Client = () => {
                 <ChevronRight className="w-5 h-5" />
               </Button>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
