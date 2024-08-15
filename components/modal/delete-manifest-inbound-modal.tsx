@@ -4,6 +4,7 @@ import { useModal } from "@/hooks/use-modal";
 import { Button } from "../ui/button";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { authToken, baseUrl } from "@/lib/baseUrl";
 
 const DeleteManifestInboundModal = () => {
   const { isOpen, onClose, type, data } = useModal();
@@ -17,10 +18,8 @@ const DeleteManifestInboundModal = () => {
 
     try {
       const id = data;
-      const authToken = process.env.NEXT_PUBLIC_authToken;
-      const apiUrl = process.env.NEXT_PUBLIC_baseUrl;
 
-      await axios.delete(`${apiUrl}/documents/${id}`, {
+      await axios.delete(`${baseUrl}/documents/${id}`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },

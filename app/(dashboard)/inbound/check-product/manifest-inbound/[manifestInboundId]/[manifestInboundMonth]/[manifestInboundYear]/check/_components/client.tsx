@@ -56,7 +56,7 @@ export const Client = () => {
   const handleCopy = (code: string, id: number) => {
     navigator.clipboard.writeText(code).then(() => {
       setCopied(id);
-      setTimeout(() => setCopied(null), 2000); // Reset the icon after 2 seconds
+      setTimeout(() => setCopied(null), 2000); 
     });
   };
 
@@ -116,6 +116,20 @@ export const Client = () => {
     setIsMounted(true);
   }, []);
 
+  const [documentData, setDocumentData] = useState({
+    base_document: "",
+    total_column_in_document: 0,
+    status_document: "",
+    code_document: "",
+  });
+
+  useEffect(() => {
+    const savedDocumentData = localStorage.getItem("documentData");
+    if (savedDocumentData) {
+      setDocumentData(JSON.parse(savedDocumentData));
+    }
+  }, []);
+
   if (!isMounted) {
     return "Loading...";
   }
@@ -154,7 +168,7 @@ export const Client = () => {
           </Link>
           <div className="w-2/3">
             <p>Data Name</p>
-            <h3 className="text-black font-semibold text-xl">0096/07/2024</h3>
+            <h3 className="text-black font-semibold text-xl">{documentData.base_document}</h3>
           </div>
         </div>
         <Separator orientation="vertical" className="h-16 bg-gray-500" />

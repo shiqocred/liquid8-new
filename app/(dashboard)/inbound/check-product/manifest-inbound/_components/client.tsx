@@ -41,8 +41,8 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
+import { authToken, baseUrl } from "@/lib/baseUrl";
 
-// Define a type for the document
 interface Document {
   id: string;
   code_document: string;
@@ -64,15 +64,13 @@ export const Client = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const authToken = process.env.NEXT_PUBLIC_authToken;
-  const apiUrl = process.env.NEXT_PUBLIC_baseUrl;
 
   const fetchDocuments = useCallback(
     async (page: number, search: string) => {
       setLoading(true);
       try {
         const response = await axios.get(
-          `${apiUrl}/documents?page=${page}&q=${search}`,
+          `${baseUrl}/documents?page=${page}&q=${search}`,
           {
             headers: {
               Authorization: `Bearer ${authToken}`,
@@ -311,6 +309,18 @@ export const Client = () => {
                   <Link
                     href={`/inbound/check-product/manifest-inbound/${doc.code_document}/check`}
                     className="xl:w-1/3 w-9"
+                    onClick={() => {
+                      const documentData = {
+                        base_document: doc.base_document,
+                        total_column_in_document: doc.total_column_in_document,
+                        status_document: doc.status_document,
+                        code_document: doc.code_document,
+                      };
+                      localStorage.setItem(
+                        "documentData",
+                        JSON.stringify(documentData)
+                      );
+                    }}
                   >
                     <Button
                       className="items-center w-full px-0 xl:px-4 border-green-400 text-green-700 hover:text-green-700 hover:bg-green-50"

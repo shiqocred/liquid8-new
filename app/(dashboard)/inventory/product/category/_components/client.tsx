@@ -309,6 +309,7 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/use-debounce";
+import { authToken, baseUrl } from "@/lib/baseUrl";
 import { cn, formatRupiah } from "@/lib/utils";
 import axios from "axios";
 import {
@@ -348,15 +349,13 @@ export const Client = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const authToken = process.env.NEXT_PUBLIC_authToken;
-  const apiUrl = process.env.NEXT_PUBLIC_baseUrl;
 
   const fetchCategory = useCallback(
     async (page: number, search: string) => {
       setLoading(true);
       try {
         const response = await axios.get(
-          `${apiUrl}/product_byCategory?page=${page}&q=${search}`,
+          `${baseUrl}/product_byCategory?page=${page}&q=${search}`,
           {
             headers: {
               Authorization: `Bearer ${authToken}`, // Menambahkan header Authorization
