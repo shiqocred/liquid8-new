@@ -6,11 +6,14 @@ import { useModal } from "@/hooks/use-modal";
 import { Button } from "../ui/button";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { authToken, baseUrl } from "@/lib/baseUrl";
+import { baseUrl } from "@/lib/baseUrl";
+import { useCookies } from "next-client-cookies";
 
 const DeleteDetailManifestInboundModal = () => {
   const { isOpen, onClose, type, data } = useModal();
   const router = useRouter();
+  const cookies = useCookies();
+  const accessToken = cookies.get('accessToken');
 
   const isModalOpen = isOpen && type === "delete-detail-manifest-inbound";
 
@@ -23,7 +26,7 @@ const DeleteDetailManifestInboundModal = () => {
 
       await axios.delete(`${baseUrl}/product_olds/${id}`, {
         headers: {
-          Authorization: `Bearer ${authToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       });
       onClose();

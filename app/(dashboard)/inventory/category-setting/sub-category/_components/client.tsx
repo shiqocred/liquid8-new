@@ -45,7 +45,8 @@ import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import axios from "axios";
-import { authToken, baseUrl } from "@/lib/baseUrl";
+import { baseUrl } from "@/lib/baseUrl";
+import { useCookies } from "next-client-cookies";
 
 interface SettingCategory {
   id: number;
@@ -67,14 +68,15 @@ export const Client = () => {
   const [settingCategory, setSettingCategory] = useState<SettingCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const cookies = useCookies();
+  const accessToken = cookies.get('accessToken');
   const fetchSettingCategory = useCallback(
     async (search: string) => {
       setLoading(true);
       try {
         const response = await axios.get(`${baseUrl}/categories?q=${search}`, {
           headers: {
-            Authorization: `Bearer ${authToken}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         });
         setSettingCategory(response.data.data.resource);
@@ -84,14 +86,14 @@ export const Client = () => {
         setLoading(false);
       }
     },
-    [authToken]
+    [accessToken]
   );
 
   useEffect(() => {
-    if (authToken) {
+    if (accessToken) {
       fetchSettingCategory(searchValue);
     }
-  }, [searchValue, fetchSettingCategory, authToken]);
+  }, [searchValue, fetchSettingCategory, accessToken]);
 
   const handleCurrentId = useCallback(
     (q: string, f: string) => {

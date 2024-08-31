@@ -26,7 +26,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useModal } from "@/hooks/use-modal";
-import { authToken, baseUrl } from "@/lib/baseUrl";
+import { baseUrl } from "@/lib/baseUrl";
 import { cn, formatRupiah } from "@/lib/utils";
 import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
 import axios from "axios";
@@ -41,6 +41,7 @@ import {
   Trash2,
   XCircle,
 } from "lucide-react";
+import { useCookies } from "next-client-cookies";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
@@ -73,6 +74,8 @@ export const Client = () => {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const cookies = useCookies();
+  const accessToken = cookies.get('accessToken');
 
   const handleCopy = (code: string, id: number) => {
     navigator.clipboard.writeText(code).then(() => {
@@ -154,7 +157,7 @@ export const Client = () => {
           `${baseUrl}/product_olds-search?search=${codeDocument}&page=${page}`,
           {
             headers: {
-              Authorization: `Bearer ${authToken}`,
+              Authorization: `Bearer ${accessToken}`,
             },
           }
         );
@@ -165,14 +168,14 @@ export const Client = () => {
         setLoading(false);
       }
     },
-    [authToken]
+    [accessToken]
   );
 
   useEffect(() => {
-    if (authToken) {
+    if (accessToken) {
       fetchDetailDocuments(page, searchValue);
     }
-  }, [searchValue, page, fetchDetailDocuments, params, authToken]);
+  }, [searchValue, page, fetchDetailDocuments, params, accessToken]);
 
   if (!isMounted) {
     return "Loading...";

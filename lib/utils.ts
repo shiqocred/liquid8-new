@@ -16,7 +16,6 @@ export function formatRupiah(rupiah: number) {
   }
 }
 
-
 const baseUrlLocal = "https://wms-server.digitalindustryagency.com/api";
 const baseUrlProduction = "https://server.wms-liquid8.online/api";
 
