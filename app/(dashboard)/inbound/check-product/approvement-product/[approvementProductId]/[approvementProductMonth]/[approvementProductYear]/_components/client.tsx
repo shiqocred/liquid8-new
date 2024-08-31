@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/use-debounce";
-import { authToken, baseUrl } from "@/lib/baseUrl";
+import { baseUrl } from "@/lib/baseUrl";
 import { cn } from "@/lib/utils";
 import axios from "axios";
 import {
@@ -37,6 +37,7 @@ import {
   Trash2,
   XCircle,
 } from "lucide-react";
+import { useCookies } from "next-client-cookies";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
@@ -78,6 +79,8 @@ export const Client = () => {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const cookies = useCookies();
+  const accessToken = cookies.get('accessToken');
 
   const handleCurrentId = useCallback(
     (q: string, f: string, s: string) => {
@@ -154,7 +157,7 @@ export const Client = () => {
           `${baseUrl}/product-approveByDoc/${codeDocument}`,
           {
             headers: {
-              Authorization: `Bearer ${authToken}`,
+              Authorization: `Bearer ${accessToken}`,
             },
           }
         );
@@ -165,14 +168,14 @@ export const Client = () => {
         setLoading(false);
       }
     },
-    [authToken]
+    [accessToken]
   );
 
   useEffect(() => {
-    if (authToken) {
+    if (accessToken) {
       fetchListDetailApprovementProduct(page, searchValue);
     }
-  }, [searchValue, page, fetchListDetailApprovementProduct, params, authToken]);
+  }, [searchValue, page, fetchListDetailApprovementProduct, params, accessToken]);
 
   if (!isMounted) {
     return "Loading...";

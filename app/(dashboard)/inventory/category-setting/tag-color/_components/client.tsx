@@ -7,7 +7,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { formatRupiah } from "@/lib/utils";
+import { baseUrl, formatRupiah } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -44,6 +44,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { useCookies } from "next-client-cookies";
+import axios from "axios";
+
+interface SettingColor {
+  id: number;
+  hexa_code_color: string;
+  name_color: string;
+  min_price_color: number;
+  max_price_color: number;
+  fixed_price_color: number;
+  created_at: string;
+  updated_at: string;
+}
 
 export const Client = () => {
   const [isFilter, setIsFilter] = useState(false);
@@ -53,6 +66,39 @@ export const Client = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [filter, setFilter] = useState(searchParams.get("f") ?? "");
+  const [settingColor, setSettingColor] = useState<SettingColor[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const cookies = useCookies();
+  const accessToken = cookies.get("accessToken");
+  const fetchSettingColor = useCallback(
+    async (page: number, search: string) => {
+      setLoading(true);
+      try {
+        const response = await axios.get(
+          `${baseUrl}/color_tags?page=${page}&q=${search}`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        setSettingColor(response.data.data.resource);
+      } catch (err: any) {
+        setError(err.message || "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [accessToken]
+  );
+
+  useEffect(() => {
+    if (accessToken) {
+      fetchSettingColor(page, searchValue);
+    }
+  }, [searchValue, page, fetchSettingColor, accessToken]);
 
   const handleCurrentId = useCallback(
     (q: string, f: string) => {
@@ -237,9 +283,9 @@ export const Client = () => {
             </div>
           </div>
           <div className="grid grid-cols-2 xl:grid-cols-3 w-full gap-4 p-4 border border-sky-400 rounded-md">
-            {Array.from({ length: 6 }, (_, i) => (
+            {settingColor.map((item, i) => (
               <div
-                key={i}
+                key={item.id}
                 className="rounded-md w-full shadow col-span-1 px-6 py-3 flex justify-between gap-3 relative h-24 items-center group"
                 style={{ background: "#ede9fe" }}
               >
@@ -254,16 +300,17 @@ export const Client = () => {
                   </Button>
                 </div>
                 <div className="flex flex-col w-full justify-start h-full">
-                  <h5>Indigo</h5>
+                  <h5>{item.name_color}</h5>
                   <div className="flex w-full flex-col mt-1 pt-1 border-t border-gray-500 gap-1 text-xs text-black/50">
                     <div className="w-full flex items-center justify-between">
                       <p>Fixed Price:</p>
-                      <p>{formatRupiah(50000)}</p>
+                      <p>{formatRupiah(item.fixed_price_color)}</p>
                     </div>
                     <div className="w-full flex items-center justify-between">
                       <p>Range Price:</p>
                       <p>
-                        {formatRupiah(30000)} - {formatRupiah(50000)}
+                        {formatRupiah(item.min_price_color)} -{" "}
+                        {formatRupiah(item.max_price_color)}
                       </p>
                     </div>
                   </div>

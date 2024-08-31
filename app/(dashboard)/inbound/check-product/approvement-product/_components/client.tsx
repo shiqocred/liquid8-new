@@ -26,7 +26,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useModal } from "@/hooks/use-modal";
-import { authToken, baseUrl } from "@/lib/baseUrl";
+import { baseUrl } from "@/lib/baseUrl";
 import { cn } from "@/lib/utils";
 import axios from "axios";
 import {
@@ -39,6 +39,7 @@ import {
   Trash2Icon,
   XCircle,
 } from "lucide-react";
+import { useCookies } from "next-client-cookies";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
@@ -66,6 +67,8 @@ export const Client = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const cookies = useCookies();
+  const accessToken = cookies.get('accessToken');
 
   const listApprovedProduct = useCallback(
     async (page: number, search: string) => {
@@ -75,7 +78,7 @@ export const Client = () => {
           `${baseUrl}/documentInProgress?page=${page}&q=${search}`,
           {
             headers: {
-              Authorization: `Bearer ${authToken}`,
+              Authorization: `Bearer ${accessToken}`,
             },
           }
         );
@@ -86,14 +89,14 @@ export const Client = () => {
         setLoading(false);
       }
     },
-    [authToken]
+    [accessToken]
   );
 
   useEffect(() => {
-    if (authToken) {
+    if (accessToken) {
       listApprovedProduct(page, searchValue);
     }
-  }, [searchValue, page, listApprovedProduct, authToken]);
+  }, [searchValue, page, listApprovedProduct, accessToken]);
 
   const handleCurrentId = useCallback(
     (q: string, f: string) => {
