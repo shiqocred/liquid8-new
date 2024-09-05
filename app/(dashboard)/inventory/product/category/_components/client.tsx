@@ -294,6 +294,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { format } from "date-fns";
 import {
   Command,
   CommandGroup,
@@ -307,6 +308,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/use-debounce";
 import { baseUrl } from "@/lib/baseUrl";
@@ -351,7 +353,7 @@ export const Client = () => {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const cookies = useCookies();
-  const accessToken = cookies.get('accessToken');
+  const accessToken = cookies.get("accessToken");
 
   const fetchCategory = useCallback(
     async (page: number, search: string) => {
@@ -534,59 +536,61 @@ export const Client = () => {
               )}
             </div>
           </div>
-          <div className="w-full p-4 rounded-md border border-sky-400/80">
-            <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-2 font-semibold items-center hover:bg-sky-200/80">
-              <p className="w-10 text-center flex-none">No</p>
-              <p className="w-28 flex-none">Barcode</p>
-              <p className="w-full">Product Name</p>
-              <p className="w-32 flex-none">Category</p>
-              <p className="w-32 flex-none">Price</p>
-              <p className="w-36 flex-none">Date</p>
-              <p className="w-28 flex-none">Status</p>
-              <p className="xl:w-48 w-28 text-center flex-none">Action</p>
-            </div>
-            {category.map((item, index) => (
-              <div
-                className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
-                key={item.id}
-              >
-                <p className="w-10 text-center flex-none">{index + 1}</p>
-                <p className="w-28 flex-none overflow-hidden text-ellipsis">
-                  {item.new_barcode_product}
-                </p>
-                <p className="w-full whitespace-pre-wrap">
-                  {item.new_name_product}
-                </p>
-                <p className="w-32 flex-none whitespace-pre-wrap">
-                  {item.new_category_product}
-                </p>
-                <p className="w-32 flex-none whitespace-pre-wrap">
-                  {formatRupiah(parseFloat(item.new_price_product))}
-                </p>
-                <p className="w-36 flex-none whitespace-pre-wrap">
-                  {new Date(item.new_date_in_product).toLocaleDateString(
-                    "id-ID",
-                    {
-                      weekday: "long",
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    }
-                  )}
-                </p>
-                <div className="w-28 flex-none">
-                  <Badge
-                    className={cn(
-                      "rounded w-20 px-0 justify-center text-black font-normal capitalize",
-                      item.new_status_product === "display"
-                        ? "bg-green-400 hover:bg-green-400"
-                        : "bg-gray-200 hover:bg-gray-200"
-                    )}
-                  >
-                    {item.new_status_product.charAt(0).toUpperCase() +
-                      item.new_status_product.slice(1)}
-                  </Badge>
-                  {/* <Badge
+          <div className="w-full p-4 rounded-md border border-sky-400/80 overflow-hidden">
+            <ScrollArea>
+              <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
+                <p className="w-10 text-center flex-none">No</p>
+                <p className="w-28 flex-none">Barcode</p>
+                <p className="w-72">Product Name</p>
+                <p className="w-44 flex-none">Category</p>
+                <p className="w-44 flex-none">Price</p>
+                <p className="w-60 flex-none">Date</p>
+                <p className="w-28 flex-none">Status</p>
+                <p className="w-48 text-center flex-none">Action</p>
+              </div>
+              {category.map((item, index) => (
+                <div
+                  className="flex w-full px-5 py-5 text-sm gap-4 border-b border-sky-100 items-center hover:border-sky-200"
+                  key={item.id}
+                >
+                  <p className="w-10 text-center flex-none">{index + 1}</p>
+                  <p className="w-28 flex-none overflow-hidden text-ellipsis">
+                    {item.new_barcode_product}
+                  </p>
+                  <p className="w-72 whitespace-pre-wrap">
+                    {item.new_name_product}
+                  </p>
+                  <p className="w-44 flex-none whitespace-pre-wrap">
+                    {item.new_category_product}
+                  </p>
+                  <p className="w-44 flex-none whitespace-pre-wrap">
+                    {formatRupiah(parseFloat(item.new_price_product))}
+                  </p>
+                  <p className="w-60 flex-none whitespace-pre-wrap">
+                    {/* {new Date(item.new_date_in_product).toLocaleDateString(
+                      "id-ID",
+                      {
+                        weekday: "long",
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      }
+                    )} */}
+                    {format(item.new_date_in_product, "iiii, dd MMMM yyyy")}
+                  </p>
+                  <div className="w-28 flex-none">
+                    <Badge
+                      className={cn(
+                        "rounded w-20 px-0 justify-center text-black font-normal capitalize",
+                        item.new_status_product === "display"
+                          ? "bg-green-400 hover:bg-green-400"
+                          : "bg-gray-200 hover:bg-gray-200"
+                      )}
+                    >
+                      {item.new_status_product.charAt(0).toUpperCase() +
+                        item.new_status_product.slice(1)}
+                    </Badge>
+                    {/* <Badge
                     className={cn(
                       "rounded w-20 px-0 justify-center text-black font-normal capitalize",
                       item.new_status_product === "pending" && "bg-yellow-200 hover:bg-yellow-200",
@@ -596,29 +600,31 @@ export const Client = () => {
                   >
                     {item.new_status_product}
                   </Badge> */}
+                  </div>
+                  <div className="w-48 flex-none flex gap-4 justify-center">
+                    <Button
+                      className="items-center w-full border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
+                      variant={"outline"}
+                      type="button"
+                      onClick={() => alert("pop up")}
+                    >
+                      <ReceiptText className="w-4 h-4 mr-1" />
+                      <p>Detail</p>
+                    </Button>
+                    <Button
+                      className="items-center w-full border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
+                      variant={"outline"}
+                      type="button"
+                      onClick={() => alert("pop up")}
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      <div>Delete</div>
+                    </Button>
+                  </div>
                 </div>
-                <div className="xl:w-48 w-28 flex-none flex gap-4 justify-center">
-                  <Button
-                    className="items-center xl:w-full w-9 px-0 xl:px-4 border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
-                    variant={"outline"}
-                    type="button"
-                    onClick={() => alert("pop up")}
-                  >
-                    <ReceiptText className="w-4 h-4 xl:mr-1" />
-                    <p className="hidden xl:flex">Detail</p>
-                  </Button>
-                  <Button
-                    className="items-center xl:w-full w-9 px-0 xl:px-4 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
-                    variant={"outline"}
-                    type="button"
-                    onClick={() => alert("pop up")}
-                  >
-                    <Trash2 className="w-4 h-4 xl:mr-1" />
-                    <div className="hidden xl:flex">Delete</div>
-                  </Button>
-                </div>
-              </div>
-            ))}
+              ))}
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           </div>
           <div className="flex gap-5 ml-auto items-center">
             <p className="text-sm">Page {page} of 3</p>

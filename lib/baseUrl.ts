@@ -1,2 +1,9 @@
-export const baseUrl = 'https://wms-server.digitalindustryagency.com/api';
-export const authToken = "17|buHyqqyBdBDmYWKRxeVfXciNhnAxMTUPR4n78Zip8ccb2e82";
+// development
+const urlWeb = "https://wms-server.digitalindustryagency.com";
+
+// production
+//  const urlWeb = "https://wms-server.digitalindustryagency.com";
+
+export const baseUrl = `${urlWeb}/api`;
+
+// export const authToken = "17|buHyqqyBdBDmYWKRxeVfXciNhnAxMTUPR4n78Zip8ccb2e82";

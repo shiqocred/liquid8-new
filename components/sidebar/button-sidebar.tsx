@@ -82,13 +82,14 @@ export const ButtonSidebar = ({
           <button
             type="button"
             className={cn(
-              "flex items-center leading-none h-10 bg-transparent hover:bg-sky-600/70 dark:hover:bg-gray-700 px-3 transition-all text-sm font-medium rounded-md justify-between w-full",
-              pathname.includes(href) && "bg-sky-600/70 hover:bg-sky-600"
+              "flex items-center leading-none h-10 bg-transparent hover:bg-sky-400/70 dark:hover:bg-gray-700 px-3 transition-all text-sm font-medium rounded-md justify-between w-full",
+              pathname.includes(href) &&
+                "bg-sky-400/50 hover:bg-sky-400/80 border border-sky-400"
             )}
             onClick={() => setOpen?.(false)}
           >
-            <div className="flex gap-2 items-center w-full capitalize text-white">
-              <span className="w-5 h-5 text-sky-200">{icon}</span>
+            <div className="flex gap-2 items-center w-full capitalize text-sky-900">
+              <span className="w-5 h-5">{icon}</span>
               <span>{label}</span>
             </div>
           </button>
@@ -98,16 +99,16 @@ export const ButtonSidebar = ({
           <button
             type="button"
             className={cn(
-              "flex items-center leading-none h-10 bg-transparent hover:bg-sky-600/70 dark:hover:bg-gray-700 px-3 transition-all text-sm font-medium rounded-md justify-between w-full",
+              "flex items-center leading-none h-10 bg-transparent hover:bg-sky-400/70 dark:hover:bg-gray-700 px-3 transition-all text-sm font-medium rounded-md justify-between w-full",
               (openMenu === label || findActiveMenuTitle() === label) &&
-                "bg-sky-600/70 hover:bg-sky-600"
+                "bg-sky-400/50 hover:bg-sky-400/80 border border-sky-400"
             )}
             onClick={() =>
               label === openMenu ? setOpenMenu("") : setOpenMenu(label)
             }
           >
-            <div className="flex gap-2 items-center w-full capitalize text-white">
-              <span className="w-5 h-5 text-sky-200">{icon}</span>
+            <div className="flex gap-2 items-center w-full capitalize text-sky-900">
+              <span className="w-5 h-5">{icon}</span>
               <span>{label}</span>
             </div>
             <motion.span
@@ -116,7 +117,7 @@ export const ButtonSidebar = ({
               variants={buttonChevronVariant}
               transition={{ delay: 0, duration: 0.5 }}
             >
-              <ChevronRight className="h-4 w-4 text-white" />
+              <ChevronRight className="h-4 w-4 text-sky-900" />
             </motion.span>
           </button>
           {subMenu && subMenu?.length > 0 && (
@@ -132,15 +133,15 @@ export const ButtonSidebar = ({
                     <Link href={item.href} className="w-full" key={item.href}>
                       <button
                         className={cn(
-                          "flex items-center leading-none capitalize h-10 text-white bg-transparent hover:bg-sky-600/70 dark:hover:bg-gray-700 pl-6 pr-3 transition-all text-sm font-light rounded-md justify-between w-full",
+                          "flex items-center leading-none capitalize h-10 text-sky-900 bg-transparent hover:bg-sky-400/50 hover:border hover:border-sky-400 dark:hover:bg-gray-700 pl-6 pr-3 transition-all text-sm font-light rounded-md justify-start before:pr-1 w-full before:content-['-']",
                           (pathname === item.href ||
                             openSubMenu === item.title) &&
-                            "text-black"
+                            "*:underline text-sky-950"
                         )}
                         type="button"
                         onClick={() => setOpen?.(false)}
                       >
-                        - {item.title}
+                        <p>{item.title}</p>
                       </button>
                     </Link>
                   ))}
