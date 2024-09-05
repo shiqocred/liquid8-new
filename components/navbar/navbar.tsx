@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { Bell, Crown, LogOut, Menu, Wifi } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -18,10 +18,67 @@ import {
 } from "../ui/sheet";
 import { MenuSidebar } from "../sidebar/menu";
 import { usePathname } from "next/navigation";
+import { useCookies } from "next-client-cookies";
+import { Skeleton } from "../ui/skeleton";
 
 const Navbar = () => {
+  const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
+  const cookies = useCookies();
   const [open, setOpen] = useState(false);
+  const [profileData, setProfileData] = useState<any>();
+
+  console.log(profileData);
+
+  useEffect(() => {
+    if (cookies.get("profile")) {
+      const data = JSON.parse(cookies.get("profile") ?? "");
+      setProfileData(data);
+    }
+  }, [cookies.get("profile")]);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return (
+      <div className="w-full h-16 shadow-md flex justify-between items-center px-4 gap-4 py-2 flex-none bg-white border-b">
+        <div className="flex items-center gap-4">
+          <Skeleton className="w-10 h-10 rounded-md xl:hidden" />
+          <Link href={"/"}>
+            <button
+              type="button"
+              className="flex items-center leading-none h-10 transition-all rounded-md justify-start"
+            >
+              <h3 className="w-40 relative aspect-[260/87]">
+                <Image src={"/images/liquid8.png"} alt="" fill />
+              </h3>
+            </button>
+          </Link>
+        </div>
+        <div className="flex gap-4 h-full items-center">
+          <Skeleton className="w-28 h-6 rounded-full" />
+          <Separator orientation="vertical" />
+          <div className="flex items-center text-sm gap-3">
+            <Skeleton className="w-7 h-7 rounded-full" />
+            <div className="flex flex-col min-w-24 gap-1">
+              <Skeleton className="w-16 h-3 rounded-full" />
+              <Skeleton className="w-24 h-3 rounded-full" />
+            </div>
+          </div>
+          <Separator orientation="vertical" />
+          <div className="flex gap-2 items-center">
+            <Skeleton className="w-8 h-8 rounded-full" />
+            <Skeleton className="w-8 h-8 rounded-full" />
+          </div>
+          <Separator orientation="vertical" />
+          <Skeleton className="w-8 h-8 rounded-md" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-16 shadow-md flex justify-between items-center px-4 gap-4 py-2 flex-none bg-white border-b">
       <div className="flex items-center gap-4">
@@ -75,9 +132,11 @@ const Navbar = () => {
             />
           </div>
           <div className="flex flex-col min-w-24 gap-1">
-            <p className="capitalize font-semibold leading-none">michael</p>
+            <p className="capitalize font-semibold leading-none">
+              {profileData?.name}
+            </p>
             <p className="lowercase text-xs text-gray-500 font-light leading-none">
-              mike@liquid.id
+              {profileData?.email}
             </p>
           </div>
         </div>

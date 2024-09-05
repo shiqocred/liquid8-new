@@ -235,8 +235,8 @@ const MenuInbound = ({ pathname, setOpen }: MenuInboundProps) => {
       {sidebarMenu.map((item, i) => (
         <div key={item.id} className="flex flex-col gap-1 items-center w-full">
           {item.title !== undefined && (
-            <div className="h-10 flex justify-start items-center w-full px-6 bg-sky-600">
-              <h3 className="text-sm uppercase font-semibold text-white">
+            <div className="h-10 flex justify-start items-center w-full px-6 bg-sky-500/70">
+              <h3 className="text-sm uppercase font-semibold text-sky-900">
                 {item.title}
               </h3>
             </div>

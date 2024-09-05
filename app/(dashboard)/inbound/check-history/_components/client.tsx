@@ -82,7 +82,7 @@ export const Client = () => {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const cookies = useCookies();
-  const accessToken = cookies.get('accessToken');
+  const accessToken = cookies.get("accessToken");
 
   const fetchDocuments = useCallback(
     async (page: number, search: string) => {
@@ -457,33 +457,22 @@ export const Client = () => {
                   </Badge>
                 </div>
                 <div className="w-full flex gap-4 justify-center">
-                  <Link
-                    href={"/inbound/check-history/1"}
-                    className="xl:w-full w-9"
-                  >
-                    <TooltipProviderPage
-                      value={<p>Detail</p>}
-                      className="xl:hidden"
-                    >
+                  <Link href={"/inbound/check-history/1"} className="w-9">
+                    <TooltipProviderPage value={<p>Detail</p>}>
                       <Button
-                        className="items-center w-full px-0 xl:px-4 border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
+                        className="items-center w-9 px-0 flex-none h-9 border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
                         variant={"outline"}
                       >
-                        <ReceiptText className="w-4 h-4 xl:mr-1" />
-                        <p className="hidden xl:flex">Detail</p>
+                        <ReceiptText className="w-4 h-4" />
                       </Button>
                     </TooltipProviderPage>
                   </Link>
-                  <TooltipProviderPage
-                    value={<p>Delete</p>}
-                    className="xl:hidden"
-                  >
+                  <TooltipProviderPage value={<p>Delete</p>}>
                     <Button
-                      className="items-center xl:w-full w-9 px-0 xl:px-4 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
+                      className="items-center w-9 px-0 flex-none h-9 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
                       variant={"outline"}
                     >
-                      <Trash2 className="w-4 h-4 xl:mr-1" />
-                      <div className="hidden xl:flex">Delete</div>
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </TooltipProviderPage>
                 </div>
