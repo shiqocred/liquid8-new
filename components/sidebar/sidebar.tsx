@@ -8,7 +8,7 @@ export const Sidebar = () => {
   const pathname = usePathname();
 
   return (
-    <div className="bg-sky-300 w-80 h-full overflow-y-scroll shadow-md hidden xl:flex">
+    <div className="bg-white w-80 h-full overflow-y-scroll shadow-md hidden xl:flex">
       <MenuSidebar pathname={pathname} />
     </div>
   );

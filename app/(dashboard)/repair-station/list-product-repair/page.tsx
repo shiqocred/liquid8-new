@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import { Client } from "./_components/client";
 import Loading from "./loading";
 
-const ListProductPage = () => {
+const LPRPage = () => {
   return (
     <div>
       <Suspense fallback={<Loading />}>
@@ -12,4 +12,4 @@ const ListProductPage = () => {
   );
 };
 
-export default ListProductPage;
+export default LPRPage;

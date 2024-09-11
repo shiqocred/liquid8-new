@@ -82,9 +82,9 @@ export const ButtonSidebar = ({
           <button
             type="button"
             className={cn(
-              "flex items-center leading-none h-10 bg-transparent hover:bg-sky-400/70 dark:hover:bg-gray-700 px-3 transition-all text-sm font-medium rounded-md justify-between w-full",
+              "flex items-center leading-none h-10 bg-transparent hover:bg-sky-200/70 dark:hover:bg-gray-700 px-3 transition-all text-sm font-medium rounded-md justify-between w-full",
               pathname.includes(href) &&
-                "bg-sky-400/50 hover:bg-sky-400/80 border border-sky-400"
+                "bg-sky-200/50 hover:bg-sky-200/80 border border-sky-300"
             )}
             onClick={() => setOpen?.(false)}
           >
@@ -99,9 +99,9 @@ export const ButtonSidebar = ({
           <button
             type="button"
             className={cn(
-              "flex items-center leading-none h-10 bg-transparent hover:bg-sky-400/70 dark:hover:bg-gray-700 px-3 transition-all text-sm font-medium rounded-md justify-between w-full",
+              "flex items-center leading-none h-10 bg-transparent hover:bg-sky-200/70 dark:hover:bg-gray-700 px-3 transition-all text-sm font-medium rounded-md justify-between w-full",
               (openMenu === label || findActiveMenuTitle() === label) &&
-                "bg-sky-400/50 hover:bg-sky-400/80 border border-sky-400"
+                "bg-sky-200/50 hover:bg-sky-200/80 border border-sky-300"
             )}
             onClick={() =>
               label === openMenu ? setOpenMenu("") : setOpenMenu(label)
@@ -133,7 +133,7 @@ export const ButtonSidebar = ({
                     <Link href={item.href} className="w-full" key={item.href}>
                       <button
                         className={cn(
-                          "flex items-center leading-none capitalize h-10 text-sky-900 bg-transparent hover:bg-sky-400/50 hover:border hover:border-sky-400 dark:hover:bg-gray-700 pl-6 pr-3 transition-all text-sm font-light rounded-md justify-start before:pr-1 w-full before:content-['-']",
+                          "flex items-center leading-none capitalize h-10 text-sky-900 bg-transparent hover:bg-sky-200/50 hover:border hover:border-sky-300 dark:hover:bg-gray-700 pl-6 pr-3 transition-all text-sm font-light rounded-md justify-start before:pr-1 w-full before:content-['-']",
                           (pathname === item.href ||
                             openSubMenu === item.title) &&
                             "*:underline text-sky-950"
