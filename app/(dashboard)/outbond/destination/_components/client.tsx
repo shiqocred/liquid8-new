@@ -37,7 +37,6 @@ import {
   PlusCircle,
   ReceiptText,
   Trash2,
-  UserPlus2,
   XCircle,
 } from "lucide-react";
 import { useCookies } from "next-client-cookies";
@@ -119,7 +118,7 @@ export const Client = () => {
 
       const url = qs.stringifyUrl(
         {
-          url: "/outbond/buyer",
+          url: "/outbond/destination",
           query: updateQuery,
         },
         { skipNull: true }
@@ -154,11 +153,11 @@ export const Client = () => {
           <BreadcrumbSeparator />
           <BreadcrumbItem>Outbond</BreadcrumbItem>
           <BreadcrumbSeparator />
-          <BreadcrumbItem>Buyer</BreadcrumbItem>
+          <BreadcrumbItem>Destinations</BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
       <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 py-3 gap-10 flex-col">
-        <h2 className="text-xl font-bold">List Buyer</h2>
+        <h2 className="text-xl font-bold">List Destinations</h2>
         <div className="flex flex-col w-full gap-4">
           <div className="flex gap-2 items-center w-full justify-between">
             <Input
@@ -173,8 +172,8 @@ export const Client = () => {
                 onClick={() => alert("pop up")}
                 type="button"
               >
-                <UserPlus2 className="w-4 h-4 mr-2" />
-                Add Buyer
+                <PlusCircle className="w-4 h-4 mr-2" />
+                Add Destination
               </Button>
             </div>
           </div>
@@ -182,10 +181,9 @@ export const Client = () => {
             <ScrollArea>
               <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
                 <p className="w-10 text-center flex-none">No</p>
-                <p className="w-full min-w-72">Buyer Name</p>
+                <p className="w-72 flex-none">Warehouse Name</p>
                 <p className="w-36 flex-none">Phone Number</p>
-                <p className="w-24 flex-none">Transaction</p>
-                <p className="w-44 flex-none">Purchase</p>
+                <p className="w-full min-w-72">Warehouse Address</p>
                 <p className="w-52 text-center flex-none">Action</p>
               </div>
               {Array.from({ length: 5 }, (_, i) => (
@@ -194,25 +192,24 @@ export const Client = () => {
                   key={i}
                 >
                   <p className="w-10 text-center flex-none">{i + 1}</p>
-                  <p className="w-full min-w-72 whitespace-pre-wrap">
+                  <p className="w-72 flex-none whitespace-pre-wrap">
                     SIKAT GIGI PALET 2
                   </p>
                   <p className="w-36 flex-none whitespace-pre-wrap">
                     082228282288
                   </p>
-                  <p className="w-24 flex-none whitespace-pre-wrap">1</p>
-                  <p className="w-44 flex-none whitespace-pre-wrap">
+                  <p className="w-full min-w-72 whitespace-pre-wrap">
                     {formatRupiah(5500000000)}
                   </p>
                   <div className="w-52 flex-none flex gap-4 justify-center">
                     <Button
-                      className="items-center border-sky-700 text-sky-700 hover:text-sky-700 hover:bg-sky-100"
+                      className="items-center border-yellow-700 text-yellow-700 hover:text-yellow-700 hover:bg-yellow-100"
                       variant={"outline"}
                       type="button"
                       onClick={() => alert("pop up")}
                     >
                       <ReceiptText className="w-4 h-4 mr-1" />
-                      <p>Detail</p>
+                      <p>Edit</p>
                     </Button>
                     <Button
                       className="items-center border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"

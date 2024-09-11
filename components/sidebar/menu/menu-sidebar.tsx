@@ -10,6 +10,7 @@ import {
   FileCog,
   FolderClock,
   Home,
+  MapPinned,
   PackageSearch,
   RailSymbol,
   Recycle,
@@ -176,33 +177,21 @@ const sidebarMenu = [
     menu: [
       {
         title: "migrate",
-        href: undefined,
+        href: "/outbond/migrate",
         icon: <Truck className="w-5 h-5 stroke-[1.5]" />,
-        sub_menu: [
-          {
-            title: "migrate",
-            href: "/outbond/migrate",
-          },
-          {
-            title: "list migrate",
-            href: "/outbond/migrate/list",
-          },
-        ],
+        sub_menu: [],
+      },
+      {
+        title: "destination",
+        href: "/outbond/destination",
+        icon: <MapPinned className="w-5 h-5 stroke-[1.5]" />,
+        sub_menu: [],
       },
       {
         title: "sale",
-        href: undefined,
+        href: "/outbond/sale",
         icon: <ShoppingBasket className="w-5 h-5 stroke-[1.5]" />,
-        sub_menu: [
-          {
-            title: "cashier",
-            href: "/outbond/sale",
-          },
-          {
-            title: "list sale",
-            href: "/outbond/sale/list",
-          },
-        ],
+        sub_menu: [],
       },
       {
         title: "buyer",
@@ -235,7 +224,7 @@ const MenuInbound = ({ pathname, setOpen }: MenuInboundProps) => {
       {sidebarMenu.map((item, i) => (
         <div key={item.id} className="flex flex-col gap-1 items-center w-full">
           {item.title !== undefined && (
-            <div className="h-10 flex justify-start items-center w-full px-6 bg-sky-500/70">
+            <div className="h-10 flex justify-start items-center w-full px-6 bg-sky-300/70">
               <h3 className="text-sm uppercase font-semibold text-sky-900">
                 {item.title}
               </h3>

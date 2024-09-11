@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import { Client } from "./_components/client";
 import Loading from "./loading";
 
-const RepairPage = () => {
+const CreatePromoProductPage = () => {
   return (
     <div>
       <Suspense fallback={<Loading />}>
@@ -12,4 +12,4 @@ const RepairPage = () => {
   );
 };
 
-export default RepairPage;
+export default CreatePromoProductPage;

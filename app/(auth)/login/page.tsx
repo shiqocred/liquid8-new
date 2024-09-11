@@ -32,7 +32,9 @@ import { useState } from "react";
 import { baseUrl } from "@/lib/utils";
 
 const formSchema = z.object({
-  email: z.coerce.string().email({ message: "Email is required." }),
+  email_or_username: z.string().min(1, {
+    message: "Email or username is required.",
+  }),
   password: z.string().min(1, {
     message: "Password is required.",
   }),
@@ -47,7 +49,7 @@ const LoginPage = () => {
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
+      email_or_username: "",
       password: "",
     },
   });
@@ -66,7 +68,7 @@ const LoginPage = () => {
   };
   return (
     <div className="flex justify-center items-center h-full px-3 relative w-full">
-      <div className="absolute left-0 h-3/5">
+      <div className="absolute left-0 h-3/5 z-0">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="w-full h-full"
@@ -294,7 +296,7 @@ const LoginPage = () => {
           </g>
         </svg>
       </div>
-      <div className="absolute right-0 h-3/5">
+      <div className="absolute right-0 h-3/5 z-0">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="w-full h-full"
@@ -522,7 +524,7 @@ const LoginPage = () => {
           </g>
         </svg>
       </div>
-      <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-sm backdrop-blur-sm z-10 bg-white/70">
         <CardHeader>
           <CardTitle className="text-2xl">Login</CardTitle>
           <CardDescription>
@@ -534,7 +536,7 @@ const LoginPage = () => {
             <CardContent className="flex flex-col gap-4">
               <FormField
                 control={form.control}
-                name="email"
+                name="email_or_username"
                 render={({ field }) => (
                   <FormItem className="space-y-0">
                     <FormLabel>Email</FormLabel>
