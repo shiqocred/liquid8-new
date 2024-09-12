@@ -4,18 +4,25 @@ import React, { Dispatch, SetStateAction, useState } from "react";
 import { ButtonSidebar } from "../button-sidebar";
 import {
   BadgeDollarSign,
+  BarChartBig,
+  BarChartBigIcon,
   Blocks,
   Boxes,
+  CandlestickChart,
   Drill,
   FileCog,
   FolderClock,
   Home,
+  Layers3,
+  LineChart,
   MapPinned,
   PackageSearch,
   RailSymbol,
   Recycle,
   ShoppingBasket,
+  SquareLibrary,
   SwatchBook,
+  Target,
   Truck,
   User,
   Warehouse,
@@ -33,9 +40,21 @@ const sidebarMenu = [
     href: undefined,
     menu: [
       {
-        title: "Analystic",
-        href: "/dashboard",
-        icon: <Home className="w-5 h-5 stroke-[1.5]" />,
+        title: "Storage Report",
+        href: "/dashboard/storage-report",
+        icon: <LineChart className="w-5 h-5 stroke-[1.5]" />,
+        sub_menu: [],
+      },
+      {
+        title: "General Sale",
+        href: "/dashboard/general-sale",
+        icon: <BarChartBig className="w-5 h-5 stroke-[1.5]" />,
+        sub_menu: [],
+      },
+      {
+        title: "Analytic Sale",
+        href: "/dashboard/analytic-sale",
+        icon: <CandlestickChart className="w-5 h-5 stroke-[1.5]" />,
         sub_menu: [],
       },
     ],
@@ -52,6 +71,21 @@ const sidebarMenu = [
         sub_menu: [],
       },
       {
+        title: "Bulking Product",
+        href: undefined,
+        icon: <Target className="w-5 h-5 stroke-[1.5]" />,
+        sub_menu: [
+          {
+            title: "Bulking Category",
+            href: "/inbound/bulking-product/category",
+          },
+          {
+            title: "Bulking Color",
+            href: "/inbound/bulking-product/color",
+          },
+        ],
+      },
+      {
         title: "Check Product",
         href: undefined,
         icon: <PackageSearch className="w-5 h-5 stroke-[1.5]" />,
@@ -61,12 +95,20 @@ const sidebarMenu = [
             href: "/inbound/check-product/manifest-inbound",
           },
           {
-            title: "Approvement Product",
-            href: "/inbound/check-product/approvement-product",
+            title: "Product Approve",
+            href: "/inbound/check-product/product-approve",
+          },
+          {
+            title: "Approvement Document",
+            href: "/inbound/check-product/approvement-document",
           },
           {
             title: "Manual Inbound",
             href: "/inbound/check-product/manual-inbound",
+          },
+          {
+            title: "Scan Result",
+            href: "/inbound/check-product/scan-result",
           },
         ],
       },
@@ -80,6 +122,25 @@ const sidebarMenu = [
   },
   {
     id: 3,
+    title: "Stagging",
+    href: undefined,
+    menu: [
+      {
+        title: "Product Stagging",
+        href: "/stagging/product",
+        icon: <Layers3 className="w-5 h-5 stroke-[1.5]" />,
+        sub_menu: [],
+      },
+      {
+        title: "Approvement Stagging",
+        href: "/stagging/approvement",
+        icon: <SquareLibrary className="w-5 h-5 stroke-[1.5]" />,
+        sub_menu: [],
+      },
+    ],
+  },
+  {
+    id: 4,
     title: "inventory",
     href: undefined,
     menu: [
@@ -152,7 +213,7 @@ const sidebarMenu = [
     ],
   },
   {
-    id: 4,
+    id: 5,
     title: "Repair Station",
     href: undefined,
     menu: [
@@ -171,7 +232,7 @@ const sidebarMenu = [
     ],
   },
   {
-    id: 5,
+    id: 6,
     title: "outbond",
     href: undefined,
     menu: [
@@ -202,7 +263,7 @@ const sidebarMenu = [
     ],
   },
   {
-    id: 6,
+    id: 7,
     title: "Account",
     href: undefined,
     menu: [
@@ -222,7 +283,10 @@ const MenuInbound = ({ pathname, setOpen }: MenuInboundProps) => {
   return (
     <div className="flex flex-col h-full w-full gap-1">
       {sidebarMenu.map((item, i) => (
-        <div key={item.id} className="flex flex-col gap-1 items-center w-full">
+        <div
+          key={item.id}
+          className="flex flex-col gap-1 items-center w-full last:pb-20"
+        >
           {item.title !== undefined && (
             <div className="h-10 flex justify-start items-center w-full px-6 bg-sky-300/70">
               <h3 className="text-sm uppercase font-semibold text-sky-900">
