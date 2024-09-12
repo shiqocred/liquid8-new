@@ -576,7 +576,10 @@ export const Client = () => {
                         year: "numeric",
                       }
                     )} */}
-                    {format(item.new_date_in_product, "iiii, dd MMMM yyyy")}
+                    {format(
+                      new Date(item.new_date_in_product),
+                      "iiii, dd MMMM yyyy"
+                    )}
                   </p>
                   <div className="w-28 flex-none">
                     <Badge
