@@ -101,6 +101,10 @@ const sidebarMenu = [
             title: "Scan Result",
             href: "/inbound/check-product/scan-result",
           },
+          {
+            title: "Scan Result Approve",
+            href: "/inbound/check-product/scan-result-approve",
+          },
         ],
       },
       {
