@@ -4,7 +4,7 @@ import Loading from "./loading";
 
 const BulkingProductPage = () => {
   return (
-    <div className="w-full">
+    <div className="w-full h-full">
       <Suspense fallback={<Loading />}>
         <Client />
       </Suspense>
