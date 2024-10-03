@@ -42,6 +42,7 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
+import Loading from "../loading";
 
 interface DetailApprovementProduct {
   id: string;
@@ -80,7 +81,7 @@ export const Client = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const cookies = useCookies();
-  const accessToken = cookies.get('accessToken');
+  const accessToken = cookies.get("accessToken");
 
   const handleCurrentId = useCallback(
     (q: string, f: string, s: string) => {
@@ -113,7 +114,7 @@ export const Client = () => {
 
       const url = qs.stringifyUrl(
         {
-          url: `/inbound/check-product/approvement-product/${params.approvementProductId}/${params.approvementProductMonth}/${params.approvementProductYear}`,
+          url: `/inbound/check-product/approvement-document/${params.approvementProductId}/${params.approvementProductMonth}/${params.approvementProductYear}`,
           query: updateQuery,
         },
         { skipNull: true }
@@ -175,10 +176,16 @@ export const Client = () => {
     if (accessToken) {
       fetchListDetailApprovementProduct(page, searchValue);
     }
-  }, [searchValue, page, fetchListDetailApprovementProduct, params, accessToken]);
+  }, [
+    searchValue,
+    page,
+    fetchListDetailApprovementProduct,
+    params,
+    accessToken,
+  ]);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
 
   return (

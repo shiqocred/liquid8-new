@@ -46,6 +46,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
+import Loading from "../loading";
 
 interface Category {
   id: string;
@@ -140,7 +141,7 @@ export const Client = () => {
   }, []);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;

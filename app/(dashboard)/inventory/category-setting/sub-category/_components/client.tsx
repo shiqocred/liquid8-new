@@ -31,6 +31,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleFadingPlus,
+  Edit2,
   Edit3,
   FileDown,
   PlusCircle,
@@ -47,6 +48,8 @@ import { Badge } from "@/components/ui/badge";
 import axios from "axios";
 import { baseUrl } from "@/lib/baseUrl";
 import { useCookies } from "next-client-cookies";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import Loading from "../loading";
 
 interface SettingCategory {
   id: number;
@@ -133,7 +136,7 @@ export const Client = () => {
   }, []);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
   return (
     <div className="flex flex-col items-start bg-gray-100 w-full relative px-4 gap-4 py-4">
@@ -169,33 +172,54 @@ export const Client = () => {
               </Button>
             </div>
           </div>
-          <div className="grid grid-cols-2 xl:grid-cols-3 w-full gap-4 p-4 border border-sky-400 rounded-md">
-            {settingCategory.map((item, i) => (
-              <div
-                key={item.id}
-                className="rounded-md w-full shadow border col-span-1 px-6 py-3 flex justify-between gap-3 relative h-24 items-center group"
-              >
-                <div className="w-full h-full bg-white/5 backdrop-blur-sm absolute flex opacity-0 group-hover:opacity-100 left-0 top-0 transition-all items-center justify-center gap-4">
-                  <Button className="bg-yellow-400 hover:bg-yellow-400/80 text-black border border-black">
-                    <Edit3 className="w-4 h-4 mr-2 " />
-                    Edit
-                  </Button>
-                  <Button className="bg-red-500 hover:bg-red-500/80 text-black border border-black">
-                    <Trash2 className="w-4 h-4 mr-2 " />
-                    Delete
-                  </Button>
-                </div>
-                <div className="flex flex-col justify-start h-full">
-                  <h5>{item.name_category}</h5>
-                  <div className="flex items-center gap-2 text-xs text-black/50">
-                    <p>Max. Price {formatRupiah(item.max_price_category)}</p>
+          <div className="w-full p-4 rounded-md border border-sky-400/80 overflow-hidden">
+            <ScrollArea>
+              <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
+                <p className="w-10 text-center flex-none">No</p>
+                <p className="min-w-72 w-full">Category Name</p>
+                <p className="w-28 flex-none">Discount</p>
+                <p className="w-52 flex-none">Max. Price</p>
+                <p className="w-48 text-center flex-none">Action</p>
+              </div>
+              {settingCategory.map((item, index) => (
+                <div
+                  className="flex w-full px-5 py-5 text-sm gap-4 border-b border-sky-100 items-center hover:border-sky-200"
+                  key={item.id}
+                >
+                  <p className="w-10 text-center flex-none">{index + 1}</p>
+                  <p className="min-w-72 w-full text-ellipsis overflow-hidden whitespace-nowrap">
+                    {item.name_category}
+                  </p>
+                  <p className="w-28 flex-none whitespace-pre-wrap">
+                    {item.discount_category}%
+                  </p>
+                  <p className="w-52 flex-none whitespace-pre-wrap">
+                    {formatRupiah(item.max_price_category)}
+                  </p>
+                  <div className="w-48 flex-none flex gap-4 justify-center">
+                    <Button
+                      className="items-center w-full border-yellow-400 text-yellow-700 hover:text-yellow-700 hover:bg-yellow-50"
+                      variant={"outline"}
+                      type="button"
+                      onClick={() => alert("pop up")}
+                    >
+                      <Edit2 className="w-4 h-4 mr-1" />
+                      <p>Edit</p>
+                    </Button>
+                    <Button
+                      className="items-center w-full border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
+                      variant={"outline"}
+                      type="button"
+                      onClick={() => alert("pop up")}
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      <div>Delete</div>
+                    </Button>
                   </div>
                 </div>
-                <div className="flex justify-end text-4xl font-semibold">
-                  {item.discount_category}%
-                </div>
-              </div>
-            ))}
+              ))}
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           </div>
         </div>
       </div>

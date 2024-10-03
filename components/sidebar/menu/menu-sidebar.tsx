@@ -72,18 +72,9 @@ const sidebarMenu = [
       },
       {
         title: "Bulking Product",
-        href: undefined,
+        href: "/inbound/bulking-product",
         icon: <Target className="w-5 h-5 stroke-[1.5]" />,
-        sub_menu: [
-          {
-            title: "Bulking Category",
-            href: "/inbound/bulking-product/category",
-          },
-          {
-            title: "Bulking Color",
-            href: "/inbound/bulking-product/color",
-          },
-        ],
+        sub_menu: [],
       },
       {
         title: "Check Product",
@@ -109,6 +100,10 @@ const sidebarMenu = [
           {
             title: "Scan Result",
             href: "/inbound/check-product/scan-result",
+          },
+          {
+            title: "Scan Result Approve",
+            href: "/inbound/check-product/scan-result-approve",
           },
         ],
       },

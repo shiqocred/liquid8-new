@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -9,22 +8,8 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-  CommandShortcut,
-} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/use-debounce";
 import { baseUrl } from "@/lib/baseUrl";
 import { cn, formatRupiah } from "@/lib/utils";
@@ -32,20 +17,16 @@ import axios from "axios";
 import {
   ChevronLeft,
   ChevronRight,
-  CircleFadingPlus,
-  PackageOpen,
   PlusCircle,
-  ReceiptText,
   Recycle,
   ShoppingBag,
-  Trash2,
-  XCircle,
 } from "lucide-react";
 import { useCookies } from "next-client-cookies";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
+import Loading from "../loading";
 
 interface Category {
   id: string;
@@ -140,7 +121,7 @@ export const Client = () => {
   }, []);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;

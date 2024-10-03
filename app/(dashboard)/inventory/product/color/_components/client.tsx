@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { formatRupiah } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import Loading from "../loading";
 
 export const Client = () => {
   const [isMounted, setIsMounted] = useState(false);
@@ -18,7 +19,7 @@ export const Client = () => {
   }, []);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
   return (
     <div className="flex flex-col items-start bg-gray-100 w-full relative px-4 gap-4 py-4">

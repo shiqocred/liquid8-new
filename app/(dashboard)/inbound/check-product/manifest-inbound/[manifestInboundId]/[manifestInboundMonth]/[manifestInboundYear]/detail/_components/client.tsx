@@ -46,6 +46,7 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
+import Loading from "../loading";
 
 interface DetailManifest {
   id: string;
@@ -75,12 +76,12 @@ export const Client = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const cookies = useCookies();
-  const accessToken = cookies.get('accessToken');
+  const accessToken = cookies.get("accessToken");
 
   const handleCopy = (code: string, id: number) => {
     navigator.clipboard.writeText(code).then(() => {
       setCopied(id);
-      setTimeout(() => setCopied(null), 2000); 
+      setTimeout(() => setCopied(null), 2000);
     });
   };
 
@@ -178,7 +179,7 @@ export const Client = () => {
   }, [searchValue, page, fetchDetailDocuments, params, accessToken]);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
 
   return (
@@ -215,22 +216,28 @@ export const Client = () => {
           </Link>
           <div className="w-2/3">
             <p>Data Name</p>
-            <h3 className="text-black font-semibold text-xl">{documentData.base_document}</h3>
+            <h3 className="text-black font-semibold text-xl">
+              {documentData.base_document}
+            </h3>
           </div>
         </div>
         <div className="flex w-full">
           <div className="flex flex-col items-end w-1/4 border-r border-gray-500 pr-5 mr-5">
             <p>Status</p>
-            <h3 className="text-gray-700 font-light text-xl">{documentData.status_document}</h3>
+            <h3 className="text-gray-700 font-light text-xl">
+              {documentData.status_document}
+            </h3>
           </div>
           <div className="flex flex-col items-end w-2/4 border-r border-gray-700 pr-5 mr-5">
             <p>Merged Data</p>
-            <h3 className="text-gray-700 font-light text-xl">{documentData.code_document}</h3>
+            <h3 className="text-gray-700 font-light text-xl">
+              {documentData.code_document}
+            </h3>
           </div>
           <div className="flex flex-col items-end w-1/4">
             <p>Total</p>
             <h3 className="text-gray-700 font-light text-xl">
-              {(documentData.total_column_in_document).toLocaleString()}
+              {documentData.total_column_in_document.toLocaleString()}
             </h3>
           </div>
         </div>

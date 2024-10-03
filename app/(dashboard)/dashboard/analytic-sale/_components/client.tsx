@@ -81,6 +81,7 @@ import {
 } from "@/components/ui/dialog";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
+import Loading from "../loading";
 
 interface ChartData {
   product_category_sale: string;
@@ -482,7 +483,7 @@ export const Client = () => {
   }, []);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
 
   return (
@@ -498,9 +499,9 @@ export const Client = () => {
           <BreadcrumbItem>Analytic Sale</BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-      <Tabs className="w-full" defaultValue="monthly">
+      <Tabs className="w-full mt-5" defaultValue="monthly">
         <div className="relative w-full flex justify-center">
-          <TabsList className="absolute -top-4 px-2 h-auto py-1.5 border-2 border-white shadow bg-gray-200">
+          <TabsList className="absolute -top-6 p-1 h-auto border-2 border-white shadow bg-gray-200">
             <TabsTrigger
               className="px-5 py-2 data-[state=active]:text-black text-gray-700"
               value="monthly"
@@ -627,6 +628,28 @@ export const Client = () => {
                   ))}
                 </BarChart>
               </ResponsiveContainer>
+            </div>
+          </div>
+          <div className="w-full flex gap-4">
+            <div className="w-1/5 p-5 bg-white rounded-md overflow-hidden shadow ">
+              <p className="text-sm font-light">Total Category</p>
+              <p className="text-xl font-bold">
+                {(
+                  dataMonthly?.monthly_summary.total_category ?? "0"
+                ).toLocaleString()}
+              </p>
+            </div>
+            <div className="w-2/5 p-5 bg-white rounded-md overflow-hidden shadow ">
+              <p className="text-sm font-light">Display Price</p>
+              <p className="text-xl font-bold">
+                {formatRupiah(dataMonthly?.monthly_summary.display_price_sale)}
+              </p>
+            </div>
+            <div className="w-2/5 p-5 bg-white rounded-md overflow-hidden shadow ">
+              <p className="text-sm font-light">Sale Price</p>
+              <p className="text-xl font-bold">
+                {formatRupiah(dataMonthly?.monthly_summary.purchase)}
+              </p>
             </div>
           </div>
           <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 items-center flex-col">
@@ -983,6 +1006,32 @@ export const Client = () => {
                   ))}
                 </BarChart>
               </ResponsiveContainer>
+            </div>
+          </div>
+          <div className="w-full flex gap-4">
+            <div className="w-1/5 p-5 bg-white rounded-md overflow-hidden shadow ">
+              <p className="text-sm font-light">Total Category</p>
+              <p className="text-xl font-bold">
+                {(
+                  dataAnnualy?.annual_summary.total_all_category ?? "0"
+                ).toLocaleString()}
+              </p>
+            </div>
+            <div className="w-2/5 p-5 bg-white rounded-md overflow-hidden shadow ">
+              <p className="text-sm font-light">Display Price</p>
+              <p className="text-xl font-bold">
+                {formatRupiah(
+                  dataAnnualy?.annual_summary.total_display_price_sale
+                )}
+              </p>
+            </div>
+            <div className="w-2/5 p-5 bg-white rounded-md overflow-hidden shadow ">
+              <p className="text-sm font-light">Sale Price</p>
+              <p className="text-xl font-bold">
+                {formatRupiah(
+                  dataAnnualy?.annual_summary.total_product_price_sale
+                )}
+              </p>
             </div>
           </div>
           <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 items-center flex-col">

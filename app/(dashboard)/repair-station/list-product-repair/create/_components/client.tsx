@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import {
   Breadcrumb,
@@ -21,6 +22,7 @@ import {
 import Link from "next/link";
 import { formatRupiah } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import Loading from "../loading";
 
 const Client = () => {
   const [isMounted, setIsMounted] = useState(false);
@@ -31,7 +33,7 @@ const Client = () => {
   }, []);
 
   if (!isMounted) {
-    return "loading...";
+    return <Loading />;
   }
   return (
     <div className="flex flex-col items-start bg-gray-100 w-full relative px-4 gap-4 py-4">

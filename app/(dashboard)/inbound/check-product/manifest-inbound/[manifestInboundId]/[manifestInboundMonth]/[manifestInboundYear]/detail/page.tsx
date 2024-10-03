@@ -4,7 +4,7 @@ import Loading from "./loading";
 
 const DetailPage = () => {
   return (
-    <div>
+    <div className="w-full h-full">
       <Suspense fallback={<Loading />}>
         <Client />
       </Suspense>

@@ -7,6 +7,7 @@ import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
 import CreateClient from "./create-client";
 import DetailClient from "./detail-client";
+import Loading from "../loading";
 
 interface Category {
   id: string;
@@ -38,7 +39,7 @@ export const Client = () => {
   }, []);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;

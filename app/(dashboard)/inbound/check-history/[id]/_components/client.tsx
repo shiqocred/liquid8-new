@@ -45,6 +45,7 @@ import {
   ChartLegend,
   ChartLegendContent,
 } from "@/components/ui/chart";
+import Loading from "../loading";
 const chartData = [
   { dataType: "good", values: 275, fill: "var(--color-good)" },
   { dataType: "damaged", values: 200, fill: "var(--color-damaged)" },
@@ -128,7 +129,7 @@ export const Client = () => {
   }, []);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
 
   return (

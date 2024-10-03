@@ -4,7 +4,7 @@ import Client from "./_components/client";
 
 const CreateRepairPage = () => {
   return (
-    <div>
+    <div className="w-full h-full">
       <Suspense fallback={<Loading />}>
         <Client />
       </Suspense>

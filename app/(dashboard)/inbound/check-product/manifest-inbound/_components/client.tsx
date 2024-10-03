@@ -43,6 +43,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { baseUrl } from "@/lib/baseUrl";
 import { useCookies } from "next-client-cookies";
+import Loading from "../loading";
 
 interface Document {
   id: string;
@@ -54,6 +55,7 @@ interface Document {
 }
 
 export const Client = () => {
+  const [isMounted, setIsMounted] = useState(false);
   const { onOpen } = useModal();
   const [isFilter, setIsFilter] = useState(false);
   const [dataSearch, setDataSearch] = useState("");
@@ -66,7 +68,7 @@ export const Client = () => {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const cookies = useCookies();
-  const accessToken = cookies.get('accessToken');
+  const accessToken = cookies.get("accessToken");
 
   const fetchDocuments = useCallback(
     async (page: number, search: string) => {
@@ -136,6 +138,14 @@ export const Client = () => {
     handleCurrentId(searchValue, filter);
   }, [searchValue]);
 
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return <Loading />;
+  }
+
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;
 
@@ -147,126 +157,121 @@ export const Client = () => {
             <BreadcrumbLink href="/">Home</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
+          <BreadcrumbItem>Inbound</BreadcrumbItem>
+          <BreadcrumbSeparator />
           <BreadcrumbItem>Manifest Inbound</BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
       <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 py-3 gap-10 flex-col">
         <h2 className="text-xl font-bold">List of Document Data</h2>
         <div className="flex flex-col w-full gap-4">
-          <div className="flex w-full justify-between">
-            <div className="flex gap-2 items-center w-full">
-              <Input
-                className="w-2/5 border-sky-400/80 focus-visible:ring-sky-400"
-                value={dataSearch}
-                onChange={(e) => setDataSearch(e.target.value)}
-                placeholder="Search..."
-              />
-              <div className="flex items-center gap-3">
-                <Popover open={isFilter} onOpenChange={setIsFilter}>
-                  <PopoverTrigger asChild>
-                    <Button className="border-sky-400/80 border text-black bg-transparent border-dashed hover:bg-transparent flex px-3 hover:border-sky-400">
-                      <CircleFadingPlus className="h-4 w-4 mr-2" />
-                      Status
-                      {filter && (
-                        <Separator
-                          orientation="vertical"
-                          className="mx-2 bg-gray-500 w-[1.5px]"
-                        />
-                      )}
-                      {filter && (
-                        <Badge
-                          className={cn(
-                            "rounded w-20 px-0 justify-center text-black font-normal capitalize",
-                            filter === "pending" &&
-                              "bg-gray-200 hover:bg-gray-200",
-                            filter === "in-progress" &&
-                              "bg-yellow-400 hover:bg-yellow-400",
-                            filter === "done" &&
-                              "bg-green-400 hover:bg-green-400"
-                          )}
+          <div className="flex gap-2 items-center w-full">
+            <Input
+              className="w-2/5 border-sky-400/80 focus-visible:ring-sky-400"
+              value={dataSearch}
+              onChange={(e) => setDataSearch(e.target.value)}
+              placeholder="Search..."
+            />
+            <div className="flex items-center gap-3">
+              <Popover open={isFilter} onOpenChange={setIsFilter}>
+                <PopoverTrigger asChild>
+                  <Button className="border-sky-400/80 border text-black bg-transparent border-dashed hover:bg-transparent flex px-3 hover:border-sky-400">
+                    <CircleFadingPlus className="h-4 w-4 mr-2" />
+                    Status
+                    {filter && (
+                      <Separator
+                        orientation="vertical"
+                        className="mx-2 bg-gray-500 w-[1.5px]"
+                      />
+                    )}
+                    {filter && (
+                      <Badge
+                        className={cn(
+                          "rounded w-20 px-0 justify-center text-black font-normal capitalize",
+                          filter === "pending" &&
+                            "bg-gray-200 hover:bg-gray-200",
+                          filter === "in-progress" &&
+                            "bg-yellow-400 hover:bg-yellow-400",
+                          filter === "done" && "bg-green-400 hover:bg-green-400"
+                        )}
+                      >
+                        {filter === "pending" && "Pending"}
+                        {filter === "in-progress" && "In Progress"}
+                        {filter === "done" && "Done"}
+                      </Badge>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 w-52" align="start">
+                  <Command>
+                    <CommandGroup>
+                      <CommandList>
+                        <CommandItem
+                          onSelect={() => {
+                            handleCurrentId(dataSearch, "pending");
+                            setIsFilter(false);
+                          }}
                         >
-                          {filter === "pending" && "Pending"}
-                          {filter === "in-progress" && "In Progress"}
-                          {filter === "done" && "Done"}
-                        </Badge>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="p-0 w-52" align="start">
-                    <Command>
-                      <CommandGroup>
-                        <CommandList>
-                          <CommandItem
-                            onSelect={() => {
+                          <Checkbox
+                            className="w-4 h-4 mr-2"
+                            checked={filter === "pending"}
+                            onCheckedChange={() => {
                               handleCurrentId(dataSearch, "pending");
                               setIsFilter(false);
                             }}
-                          >
-                            <Checkbox
-                              className="w-4 h-4 mr-2"
-                              checked={filter === "pending"}
-                              onCheckedChange={() => {
-                                handleCurrentId(dataSearch, "pending");
-                                setIsFilter(false);
-                              }}
-                            />
-                            Pending
-                          </CommandItem>
-                          <CommandItem
-                            onSelect={() => {
+                          />
+                          Pending
+                        </CommandItem>
+                        <CommandItem
+                          onSelect={() => {
+                            handleCurrentId(dataSearch, "in-progress");
+                            setIsFilter(false);
+                          }}
+                        >
+                          <Checkbox
+                            className="w-4 h-4 mr-2"
+                            checked={filter === "in-progress"}
+                            onCheckedChange={() => {
                               handleCurrentId(dataSearch, "in-progress");
                               setIsFilter(false);
                             }}
-                          >
-                            <Checkbox
-                              className="w-4 h-4 mr-2"
-                              checked={filter === "in-progress"}
-                              onCheckedChange={() => {
-                                handleCurrentId(dataSearch, "in-progress");
-                                setIsFilter(false);
-                              }}
-                            />
-                            In Progress
-                          </CommandItem>
-                          <CommandItem
-                            onSelect={() => {
+                          />
+                          In Progress
+                        </CommandItem>
+                        <CommandItem
+                          onSelect={() => {
+                            handleCurrentId(dataSearch, "done");
+                            setIsFilter(false);
+                          }}
+                        >
+                          <Checkbox
+                            className="w-4 h-4 mr-2"
+                            checked={filter === "done"}
+                            onCheckedChange={() => {
                               handleCurrentId(dataSearch, "done");
                               setIsFilter(false);
                             }}
-                          >
-                            <Checkbox
-                              className="w-4 h-4 mr-2"
-                              checked={filter === "done"}
-                              onCheckedChange={() => {
-                                handleCurrentId(dataSearch, "done");
-                                setIsFilter(false);
-                              }}
-                            />
-                            Done
-                          </CommandItem>
-                        </CommandList>
-                      </CommandGroup>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                {filter && (
-                  <Button
-                    variant={"ghost"}
-                    className="flex px-3"
-                    onClick={() => {
-                      handleCurrentId(dataSearch, "");
-                    }}
-                  >
-                    Reset
-                    <XCircle className="h-4 w-4 ml-2" />
-                  </Button>
-                )}
-              </div>
+                          />
+                          Done
+                        </CommandItem>
+                      </CommandList>
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {filter && (
+                <Button
+                  variant={"ghost"}
+                  className="flex px-3"
+                  onClick={() => {
+                    handleCurrentId(dataSearch, "");
+                  }}
+                >
+                  Reset
+                  <XCircle className="h-4 w-4 ml-2" />
+                </Button>
+              )}
             </div>
-            <Button className="bg-sky-400/60 hover:bg-sky-400 text-black">
-              <PlusCircle className="w-4 h-4 mr-2" />
-              Add Documents
-            </Button>
           </div>
           <div className="w-full p-4 rounded-md border border-sky-400/80">
             <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-2 font-semibold items-center hover:bg-sky-200/80">

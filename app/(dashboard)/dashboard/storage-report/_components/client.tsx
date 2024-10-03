@@ -60,6 +60,7 @@ import axios from "axios";
 import { baseUrl } from "@/lib/baseUrl";
 import { useCookies } from "next-client-cookies";
 import { cn, formatRupiah } from "@/lib/utils";
+import Loading from "../loading";
 
 interface ChartData {
   category_product: string;
@@ -191,7 +192,7 @@ export const Client = () => {
   }, []);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
 
   return (

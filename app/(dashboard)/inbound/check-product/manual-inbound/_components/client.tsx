@@ -32,6 +32,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
+import Loading from "../loading";
 
 const FormSchema = z.object({
   type: z.enum(["all", "mentions", "none"], {
@@ -114,7 +115,7 @@ export const Client = () => {
   }, []);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
 
   return (

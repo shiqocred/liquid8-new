@@ -78,6 +78,7 @@ import {
 } from "@/components/ui/dialog";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
+import Loading from "../loading";
 
 interface ChartData {
   date: string;
@@ -250,7 +251,7 @@ export const Client = () => {
   }, []);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
 
   return (
@@ -453,7 +454,7 @@ export const Client = () => {
               </button>
             </div>
           </div>
-          <div className="h-[500px] w-full relative">
+          <div className="h-[300px] w-full relative">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={chartData}
