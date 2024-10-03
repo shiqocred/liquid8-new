@@ -81,6 +81,7 @@ import {
 } from "@/components/ui/dialog";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
+import Loading from "../loading";
 
 interface ChartData {
   product_category_sale: string;
@@ -482,7 +483,7 @@ export const Client = () => {
   }, []);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
 
   return (

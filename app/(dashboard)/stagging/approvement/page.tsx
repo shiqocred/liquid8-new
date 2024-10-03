@@ -2,9 +2,9 @@ import React, { Suspense } from "react";
 import { Client } from "./_components/client";
 import Loading from "./loading";
 
-const SettingPage = () => {
+const StaggingProductPage = () => {
   return (
-    <div>
+    <div className="w-full h-full">
       <Suspense fallback={<Loading />}>
         <Client />
       </Suspense>
@@ -12,4 +12,4 @@ const SettingPage = () => {
   );
 };
 
-export default SettingPage;
+export default StaggingProductPage;

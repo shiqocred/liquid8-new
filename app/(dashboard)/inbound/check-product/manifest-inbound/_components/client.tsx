@@ -43,6 +43,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { baseUrl } from "@/lib/baseUrl";
 import { useCookies } from "next-client-cookies";
+import Loading from "../loading";
 
 interface Document {
   id: string;
@@ -54,6 +55,7 @@ interface Document {
 }
 
 export const Client = () => {
+  const [isMounted, setIsMounted] = useState(false);
   const { onOpen } = useModal();
   const [isFilter, setIsFilter] = useState(false);
   const [dataSearch, setDataSearch] = useState("");
@@ -135,6 +137,14 @@ export const Client = () => {
   useEffect(() => {
     handleCurrentId(searchValue, filter);
   }, [searchValue]);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return <Loading />;
+  }
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;

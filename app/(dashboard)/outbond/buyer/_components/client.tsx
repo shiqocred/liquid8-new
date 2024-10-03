@@ -1,6 +1,22 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ReceiptText,
+  Trash2,
+  UserPlus2,
+} from "lucide-react";
+import axios from "axios";
+import qs from "query-string";
+import { useCookies } from "next-client-cookies";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+
+import Loading from "../loading";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -8,43 +24,10 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-  CommandShortcut,
-} from "@/components/ui/command";
-import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { useDebounce } from "@/hooks/use-debounce";
+
 import { baseUrl } from "@/lib/baseUrl";
+import { useDebounce } from "@/hooks/use-debounce";
 import { cn, formatRupiah } from "@/lib/utils";
-import axios from "axios";
-import {
-  ChevronLeft,
-  ChevronRight,
-  CircleFadingPlus,
-  PackageOpen,
-  PlusCircle,
-  ReceiptText,
-  Trash2,
-  UserPlus2,
-  XCircle,
-} from "lucide-react";
-import { useCookies } from "next-client-cookies";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import qs from "query-string";
-import { useCallback, useEffect, useState } from "react";
 
 interface Category {
   id: string;
@@ -139,7 +122,7 @@ export const Client = () => {
   }, []);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;

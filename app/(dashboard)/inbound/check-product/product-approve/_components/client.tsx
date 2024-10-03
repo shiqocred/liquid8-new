@@ -45,6 +45,7 @@ import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
+import Loading from "../loading";
 
 interface History {
   id: number;
@@ -129,7 +130,7 @@ export const Client = () => {
   }, []);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
 
   return (

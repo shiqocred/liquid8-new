@@ -34,6 +34,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import BarcodePrinted from "@/components/barcode";
 import { formatRupiah } from "@/lib/utils";
+import Loading from "../loading";
 
 const FormSchema = z.object({
   type: z.enum(["all", "mentions", "none"], {
@@ -56,7 +57,7 @@ export const Client = () => {
   const handleCopy = (code: string, id: number) => {
     navigator.clipboard.writeText(code).then(() => {
       setCopied(id);
-      setTimeout(() => setCopied(null), 2000); 
+      setTimeout(() => setCopied(null), 2000);
     });
   };
 
@@ -131,7 +132,7 @@ export const Client = () => {
   }, []);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
 
   return (
@@ -168,7 +169,9 @@ export const Client = () => {
           </Link>
           <div className="w-2/3">
             <p>Data Name</p>
-            <h3 className="text-black font-semibold text-xl">{documentData.base_document}</h3>
+            <h3 className="text-black font-semibold text-xl">
+              {documentData.base_document}
+            </h3>
           </div>
         </div>
         <Separator orientation="vertical" className="h-16 bg-gray-500" />

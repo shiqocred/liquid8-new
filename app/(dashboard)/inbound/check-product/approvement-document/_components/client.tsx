@@ -15,7 +15,6 @@ import {
   CommandGroup,
   CommandItem,
   CommandList,
-  CommandShortcut,
 } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import {
@@ -44,6 +43,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
+import Loading from "../loading";
 
 interface ApprocedProduct {
   id: string;
@@ -143,7 +143,7 @@ export const Client = () => {
   }, []);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
 
   return (

@@ -49,6 +49,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import Loading from "../loading";
 
 interface UploadedFileProps {
   file: File;
@@ -57,6 +58,7 @@ interface UploadedFileProps {
 }
 
 export const Client = () => {
+  const [isMounted, setIsMounted] = useState(false);
   const [selectedFile, setSelectedFile] = useState<UploadedFileProps | null>(
     null
   );
@@ -100,6 +102,14 @@ export const Client = () => {
   useEffect(() => {
     setIsDialogOpen(true);
   }, []);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return <Loading />;
+  }
 
   return (
     <div className="flex flex-col justify-center bg-gray-100 w-full relative px-4 gap-4 py-4">

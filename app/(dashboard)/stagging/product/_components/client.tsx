@@ -35,6 +35,7 @@ import {
 import { useDebounce } from "@/hooks/use-debounce";
 import { baseUrl } from "@/lib/baseUrl";
 import { cn, formatRupiah } from "@/lib/utils";
+import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
 import axios from "axios";
 import { format } from "date-fns";
 import {
@@ -42,6 +43,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleFadingPlus,
+  FileDown,
   PackageOpen,
   PlusCircle,
   ReceiptText,
@@ -54,6 +56,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
+import Loading from "../loading";
 
 interface Category {
   id: string;
@@ -120,7 +123,7 @@ export const Client = () => {
   }, []);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;
@@ -142,13 +145,24 @@ export const Client = () => {
         <h2 className="text-xl font-bold">List Product Stagging</h2>
         <div className="flex flex-col w-full gap-4">
           <div className="flex gap-2 items-center w-full justify-between">
-            <Input
-              className="w-2/5 border-sky-400/80 focus-visible:ring-sky-400"
-              value={dataSearch}
-              onChange={(e) => setDataSearch(e.target.value)}
-              placeholder="Search..."
-            />
-            <div className="flex gap-4">
+            <div className="flex items-center gap-3 w-2/5">
+              <Input
+                className="w-full border-sky-400/80 focus-visible:ring-sky-400"
+                value={dataSearch}
+                onChange={(e) => setDataSearch(e.target.value)}
+                placeholder="Search..."
+              />
+              <div className="h-9 px-4 flex-none flex items-center text-sm rounded-md justify-center border gap-1 border-sky-500 bg-sky-100">
+                Total:
+                <span className="font-semibold">50 Products</span>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <TooltipProviderPage value={"Export Data"}>
+                <Button className="bg-sky-100 hover:bg-sky-200 border border-sky-500 text-black p-0 w-9">
+                  <FileDown className="w-4 h-4" />
+                </Button>
+              </TooltipProviderPage>
               <Sheet>
                 <SheetTrigger asChild>
                   <Button className="bg-sky-400 hover:bg-sky-400/80 text-black">
@@ -163,7 +177,7 @@ export const Client = () => {
                   <div className="w-full flex flex-col gap-5 mt-5 text-sm">
                     <div className="flex gap-4 items-center w-full">
                       <div className="h-9 px-4 flex items-center rounded-md justify-center border gap-1 border-sky-500 bg-sky-100">
-                        Total Filtered:{" "}
+                        Total Filtered:
                         <span className="font-semibold">50 Products</span>
                       </div>
                       <Button className="bg-sky-400/80 hover:bg-sky-400 text-black">
@@ -175,13 +189,14 @@ export const Client = () => {
                       <ScrollArea>
                         <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
                           <p className="w-10 text-center flex-none">No</p>
-                          <p className="w-40 flex-none">Document Migrate</p>
-                          <p className="w-60 flex-none">Date</p>
-                          <p className="w-20 flex-none">Qty</p>
-                          <p className="w-full min-w-72">Destination</p>
-                          <p className="w-32 text-center flex-none">Action</p>
+                          <p className="w-32 flex-none">Barcode</p>
+                          <p className="w-full min-w-44 max-w-[400px]">
+                            Product Name
+                          </p>
+                          <p className="w-14 text-center flex-none">Action</p>
                         </div>
-                        <ScrollArea className="h-[65vh]">
+
+                        <ScrollArea className="h-[64vh]">
                           {Array.from({ length: 50 }, (_, i) => (
                             <div
                               className="flex w-full px-5 py-3 text-sm gap-4 border-b border-sky-100 items-center hover:border-sky-200"
@@ -190,28 +205,35 @@ export const Client = () => {
                               <p className="w-10 text-center flex-none">
                                 {i + 1}
                               </p>
-                              <p className="w-40 flex-none overflow-hidden text-ellipsis">
-                                LQMGT0002
-                              </p>
-                              <p className="w-60 flex-none whitespace-pre-wrap">
-                                {format(new Date(), "iiii, dd MMMM yyyy")}
-                              </p>
-                              <div className="w-20 flex-none">1</div>
-                              <p className="w-full min-w-72 whitespace-pre-wrap">
-                                DISKONTER OUTLET
-                              </p>
-                              <div className="w-32 flex-none flex gap-4 justify-center">
-                                <Link href={`/outbond/migrate/${i + 1}`}>
-                                  <Button
-                                    className="items-center border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
-                                    variant={"outline"}
-                                    type="button"
-                                    onClick={() => alert("pop up")}
-                                  >
-                                    <ReceiptText className="w-4 h-4 mr-1" />
-                                    <p>Detail</p>
-                                  </Button>
-                                </Link>
+                              <p className="w-32 flex-none">1NAS245294</p>
+                              <TooltipProviderPage
+                                value={
+                                  <p className="w-44">
+                                    Lorem ipsum dolor sit amet consectetur
+                                    adipisicing elit. Perferendis dolores eos
+                                    quibusdam aspernatur est! Suscipit,
+                                    voluptates? Natus vitae exercitationem
+                                    perferendis.
+                                  </p>
+                                }
+                              >
+                                <p className="w-full min-w-44 max-w-[400px] whitespace-nowrap text-ellipsis overflow-hidden">
+                                  Lorem ipsum dolor sit amet consectetur
+                                  adipisicing elit. Perferendis dolores eos
+                                  quibusdam aspernatur est! Suscipit,
+                                  voluptates? Natus vitae exercitationem
+                                  perferendis.
+                                </p>
+                              </TooltipProviderPage>
+                              <div className="w-14 flex-none flex gap-4 justify-center">
+                                <Button
+                                  className="items-center border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50 p-0 w-9"
+                                  variant={"outline"}
+                                  type="button"
+                                  onClick={() => alert("pop up")}
+                                >
+                                  <XCircle className="w-4 h-4" />
+                                </Button>
                               </div>
                             </div>
                           ))}
@@ -247,10 +269,10 @@ export const Client = () => {
             <ScrollArea>
               <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
                 <p className="w-10 text-center flex-none">No</p>
-                <p className="w-40 flex-none">Document Migrate</p>
-                <p className="w-60 flex-none">Date</p>
-                <p className="w-20 flex-none">Qty</p>
-                <p className="w-full min-w-72">Destination</p>
+                <p className="w-32 flex-none">Barcode</p>
+                <p className="w-full min-w-72">Product Name</p>
+                <p className="w-52 flex-none">Category</p>
+                <p className="w-32 flex-none">Price</p>
                 <p className="w-32 text-center flex-none">Action</p>
               </div>
               {Array.from({ length: 5 }, (_, i) => (
@@ -259,16 +281,24 @@ export const Client = () => {
                   key={i}
                 >
                   <p className="w-10 text-center flex-none">{i + 1}</p>
-                  <p className="w-40 flex-none overflow-hidden text-ellipsis">
-                    LQMGT0002
-                  </p>
-                  <p className="w-60 flex-none whitespace-pre-wrap">
-                    {format(new Date(), "iiii, dd MMMM yyyy")}
-                  </p>
-                  <div className="w-20 flex-none">1</div>
-                  <p className="w-full min-w-72 whitespace-pre-wrap">
-                    DISKONTER OUTLET
-                  </p>
+                  <p className="w-32 flex-none">1NAS245294</p>
+                  <TooltipProviderPage
+                    value={
+                      <p className="w-72">
+                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                        Est obcaecati nisi maxime eveniet nemo delectus rem
+                        cumque velit omnis natus.
+                      </p>
+                    }
+                  >
+                    <p className="w-full min-w-72 max-w-[500px] whitespace-nowrap text-ellipsis overflow-hidden">
+                      Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                      Est obcaecati nisi maxime eveniet nemo delectus rem cumque
+                      velit omnis natus.
+                    </p>
+                  </TooltipProviderPage>
+                  <p className="w-52 flex-none">BABY PRODUCT</p>
+                  <p className="w-32 flex-none">{formatRupiah(150000)}</p>
                   <div className="w-32 flex-none flex gap-4 justify-center">
                     <Link href={`/outbond/migrate/${i + 1}`}>
                       <Button
@@ -277,8 +307,8 @@ export const Client = () => {
                         type="button"
                         onClick={() => alert("pop up")}
                       >
-                        <ReceiptText className="w-4 h-4 mr-1" />
-                        <p>Detail</p>
+                        <PlusCircle className="w-4 h-4 mr-1" />
+                        <p>Add</p>
                       </Button>
                     </Link>
                   </div>

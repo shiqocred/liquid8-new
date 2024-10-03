@@ -31,6 +31,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleFadingPlus,
+  Edit2,
   Edit3,
   FileDown,
   PlusCircle,
@@ -46,6 +47,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useCookies } from "next-client-cookies";
 import axios from "axios";
+import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
+import Loading from "../loading";
 
 interface SettingColor {
   id: number;
@@ -138,7 +141,7 @@ export const Client = () => {
   }, []);
 
   if (!isMounted) {
-    return "Loading...";
+    return <Loading />;
   }
   return (
     <div className="flex flex-col items-start bg-gray-100 w-full relative px-4 gap-4 py-4">
@@ -180,25 +183,27 @@ export const Client = () => {
                 key={item.id}
                 className="rounded-md w-full shadow col-span-1 px-6 py-3 flex justify-between gap-3 relative h-24 items-center group border"
               >
-                <div className="w-full h-full bg-white/5 backdrop-blur-sm absolute flex opacity-0 group-hover:opacity-100 left-0 top-0 transition-all items-center justify-center gap-4">
-                  <Button className="bg-yellow-400 hover:bg-yellow-400/80 text-black border border-black">
-                    <Edit3 className="w-4 h-4 mr-2 " />
-                    Edit
-                  </Button>
-                  <Button className="bg-red-500 hover:bg-red-500/80 text-black border border-black">
-                    <Trash2 className="w-4 h-4 mr-2 " />
-                    Delete
-                  </Button>
-                </div>
                 <div className="flex flex-col w-full justify-start h-full">
                   <div className="flex justify-between items-center">
-                    <h5>{item.name_color}</h5>
                     <div className="flex items-center gap-2">
                       <div
                         style={{ background: item.hexa_code_color }}
                         className="w-4 h-4 rounded-full border border-gray-500"
                       />
-                      <p className="text-xs">{item.hexa_code_color}</p>
+                      <h5 className="font-semibold">{item.name_color}</h5>
+                      <p className="text-xs">({item.hexa_code_color})</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <TooltipProviderPage value="Edit">
+                        <button className="w-5 h-5 flex items-center justify-center shadow rounded-full bg-yellow-200/80 hover:bg-yellow-200  text-yellow-700">
+                          <Edit3 className="w-3 h-3" />
+                        </button>
+                      </TooltipProviderPage>
+                      <TooltipProviderPage value="Delete">
+                        <button className="w-5 h-5 flex items-center justify-center shadow rounded-full bg-red-200/80 hover:bg-red-200  text-red-700">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </TooltipProviderPage>
                     </div>
                   </div>
                   <div className="flex w-full flex-col mt-1 pt-1 border-t border-gray-500 gap-1 text-xs text-black/50">
