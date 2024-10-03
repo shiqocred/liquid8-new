@@ -3,5 +3,5 @@
 import { Toaster } from "@/components/ui/sonner";
 
 export const ToastProvider = () => {
-  return <Toaster />;
+  return <Toaster position="top-right" expand />;
 };

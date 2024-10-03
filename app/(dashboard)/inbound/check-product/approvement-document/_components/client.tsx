@@ -68,7 +68,7 @@ export const Client = () => {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const cookies = useCookies();
-  const accessToken = cookies.get('accessToken');
+  const accessToken = cookies.get("accessToken");
 
   const listApprovedProduct = useCallback(
     async (page: number, search: string) => {
@@ -123,7 +123,7 @@ export const Client = () => {
 
       const url = qs.stringifyUrl(
         {
-          url: "/inbound/check-product/approvement-product",
+          url: "/inbound/check-product/approvement-document",
           query: updateQuery,
         },
         { skipNull: true }
@@ -325,17 +325,18 @@ export const Client = () => {
                       href={`/inbound/check-product/approvement-product/${product.code_document}`}
                       className="xl:w-full w-9"
                       onClick={() => {
-                      const approvementDocumentData = {
-                        base_document: product.base_document,
-                        total_column_in_document: product.total_column_in_document,
-                        status_document: product.status_document,
-                        code_document: product.code_document,
-                      };
-                      localStorage.setItem(
-                        "approvementDocumentData",
-                        JSON.stringify(approvementDocumentData)
-                      );
-                    }}
+                        const approvementDocumentData = {
+                          base_document: product.base_document,
+                          total_column_in_document:
+                            product.total_column_in_document,
+                          status_document: product.status_document,
+                          code_document: product.code_document,
+                        };
+                        localStorage.setItem(
+                          "approvementDocumentData",
+                          JSON.stringify(approvementDocumentData)
+                        );
+                      }}
                     >
                       <Button
                         className="items-center w-full px-0 xl:px-4 border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
@@ -349,7 +350,9 @@ export const Client = () => {
                       className="items-center xl:w-full px-0 xl:px-4 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50 w-9"
                       variant={"outline"}
                       type="button"
-                      onClick={() => onOpen("delete-manifest-inbound", product.id)}
+                      onClick={() =>
+                        onOpen("delete-manifest-inbound", product.id)
+                      }
                     >
                       <Trash2 className="w-4 h-4 xl:mr-1" />
                       <p className="hidden xl:flex">Delete</p>

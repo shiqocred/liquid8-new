@@ -1,7 +1,5 @@
 "use client";
 
-import axios from "axios";
-import { useState, useEffect, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -24,77 +22,67 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useModal } from "@/hooks/use-modal";
-import { cn } from "@/lib/utils";
+import { baseUrl } from "@/lib/baseUrl";
+import { cn, formatDate } from "@/lib/utils";
+import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
+import axios from "axios";
 import {
   ChevronLeft,
   ChevronRight,
   CircleFadingPlus,
-  PlusCircle,
   ReceiptText,
-  ShieldCheck,
   Trash2,
   XCircle,
 } from "lucide-react";
+import { useCookies } from "next-client-cookies";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
-import { baseUrl } from "@/lib/baseUrl";
-import { useCookies } from "next-client-cookies";
+import { useCallback, useEffect, useState } from "react";
+import { useDropzone } from "react-dropzone";
+import { toast } from "sonner";
 
-interface Document {
-  id: string;
+interface History {
+  id: number;
+  user_id: number;
   code_document: string;
   base_document: string;
-  date_document: string;
-  total_column_in_document: number;
-  status_document: "pending" | "in progress" | "done";
+  total_data: number;
+  total_data_in: number;
+  total_data_lolos: number;
+  total_data_damaged: number;
+  total_data_abnormal: number;
+  total_discrepancy: number;
+  status_approve: "pending" | "in progress" | "done";
+  precentage_total_data: string;
+  percentage_in: string;
+  percentage_lolos: string;
+  percentage_damaged: string;
+  percentage_abnormal: string;
+  percentage_discrepancy: string;
+  created_at: string;
+  updated_at: string;
+  total_price: string;
 }
 
 export const Client = () => {
-  const { onOpen } = useModal();
   const [isFilter, setIsFilter] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const [dataSearch, setDataSearch] = useState("");
   const searchValue = useDebounce(dataSearch);
   const searchParams = useSearchParams();
   const router = useRouter();
   const [filter, setFilter] = useState(searchParams.get("f") ?? "");
-  const [documents, setDocuments] = useState<Document[]>([]);
+  const [history, setHistory] = useState<History[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
-
-  const fetchDocuments = useCallback(
-    async (page: number, search: string) => {
-      setLoading(true);
-      try {
-        const response = await axios.get(
-          `${baseUrl}/documents?page=${page}&q=${search}`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        );
-        setDocuments(response.data.data.resource.data);
-      } catch (err: any) {
-        setError(err.message || "An error occurred");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accessToken]
-  );
-
-  useEffect(() => {
-    if (accessToken) {
-      fetchDocuments(page, searchValue);
-    }
-  }, [searchValue, page, fetchDocuments, accessToken]);
 
   const handleCurrentId = useCallback(
     (q: string, f: string) => {
@@ -121,7 +109,7 @@ export const Client = () => {
 
       const url = qs.stringifyUrl(
         {
-          url: "/inbound/check-product/manifest-inbound",
+          url: "/inbound/check-product/product-approve",
           query: updateQuery,
         },
         { skipNull: true }
@@ -136,8 +124,13 @@ export const Client = () => {
     handleCurrentId(searchValue, filter);
   }, [searchValue]);
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error: {error}</p>;
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return "Loading...";
+  }
 
   return (
     <div className="flex flex-col items-start bg-gray-100 w-full relative px-4 gap-4 py-4">
@@ -149,11 +142,11 @@ export const Client = () => {
           <BreadcrumbSeparator />
           <BreadcrumbItem>Inbound</BreadcrumbItem>
           <BreadcrumbSeparator />
-          <BreadcrumbItem>Manifest Inbound</BreadcrumbItem>
+          <BreadcrumbItem>Product Approve</BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
       <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 py-3 gap-10 flex-col">
-        <h2 className="text-xl font-bold">List of Document Data</h2>
+        <h2 className="text-xl font-bold">List Approved Document</h2>
         <div className="flex flex-col w-full gap-4">
           <div className="flex gap-2 items-center w-full">
             <Input
@@ -264,122 +257,70 @@ export const Client = () => {
             </div>
           </div>
           <div className="w-full p-4 rounded-md border border-sky-400/80">
-            <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-2 font-semibold items-center hover:bg-sky-200/80">
-              <p className="w-10 text-center flex-none">No</p>
-              <p className="w-44 flex-none">Data Name</p>
-              <p className="w-48 flex-none">Date</p>
-              <p className="w-28 flex-none">Total</p>
-              <p className="w-28 flex-none">Status</p>
-              <p className="w-full text-center">Action</p>
-            </div>
-            {documents.map((doc, i) => (
-              <div
-                className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
-                key={doc.id}
-              >
-                <p className="w-10 text-center flex-none">{i + 1}</p>
-                <p className="w-44 flex-none overflow-hidden text-ellipsis">
-                  {doc.base_document}
-                </p>
-                <p className="w-48 flex-none overflow-hidden text-ellipsis">
-                  {new Date(doc.date_document).toLocaleDateString()}
-                </p>
-                <p className="w-28 flex-none overflow-hidden text-ellipsis">
-                  {doc.total_column_in_document}
-                </p>
-                <div className="w-28 flex-none">
-                  <Badge
-                    className={cn(
-                      "rounded w-20 px-0 justify-center text-black font-normal capitalize",
-                      doc.status_document === "pending" &&
-                        "bg-gray-200 hover:bg-gray-200",
-                      doc.status_document === "in progress" &&
-                        "bg-yellow-400 hover:bg-yellow-400",
-                      doc.status_document === "done" &&
-                        "bg-green-400 hover:bg-green-400"
-                    )}
-                  >
-                    {doc.status_document.charAt(0).toUpperCase() +
-                      doc.status_document.slice(1)}
-                  </Badge>
-                </div>
-                <div className="w-full flex gap-4 justify-center">
-                  <Link
-                    href={`/inbound/check-product/manifest-inbound/${doc.code_document}/check`}
-                    className="xl:w-1/3 w-9"
-                    onClick={() => {
-                      const documentData = {
-                        base_document: doc.base_document,
-                        total_column_in_document: doc.total_column_in_document,
-                        status_document: doc.status_document,
-                        code_document: doc.code_document,
-                      };
-                      localStorage.setItem(
-                        "documentData",
-                        JSON.stringify(documentData)
-                      );
-                    }}
-                  >
-                    <Button
-                      className="items-center w-full px-0 xl:px-4 border-green-400 text-green-700 hover:text-green-700 hover:bg-green-50"
-                      variant={"outline"}
-                    >
-                      <ShieldCheck className="w-4 h-4 xl:mr-1" />
-                      <p className="hidden xl:flex">Check</p>
-                    </Button>
-                  </Link>
-                  <Link
-                    href={`/inbound/check-product/manifest-inbound/${doc.code_document}/detail`}
-                    className="xl:w-1/3 w-9"
-                    onClick={() => {
-                      const documentData = {
-                        base_document: doc.base_document,
-                        total_column_in_document: doc.total_column_in_document,
-                        status_document: doc.status_document,
-                        code_document: doc.code_document,
-                      };
-                      localStorage.setItem(
-                        "documentData",
-                        JSON.stringify(documentData)
-                      );
-                    }}
-                  >
-                    <Button
-                      className="items-center w-full px-0 xl:px-4 border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
-                      variant={"outline"}
-                    >
-                      <ReceiptText className="w-4 h-4 xl:mr-1" />
-                      <p className="hidden xl:flex">Detail</p>
-                    </Button>
-                  </Link>
-                  <Button
-                    className="items-center xl:w-1/3 px-0 xl:px-4 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50 w-9"
-                    variant={"outline"}
-                    type="button"
-                    onClick={() => onOpen("delete-manifest-inbound", doc.id)}
-                  >
-                    <Trash2 className="w-4 h-4 xl:mr-1" />
-                    <p className="hidden xl:flex">Delete</p>
-                  </Button>
-                </div>
+            <ScrollArea>
+              <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
+                <p className="w-10 text-center flex-none">No</p>
+                <p className="w-36 flex-none">Document Code</p>
+                <p className="w-full min-w-72">Base Document</p>
+                <p className="w-24 flex-none">Total</p>
+                <p className="w-28 flex-none">Status</p>
+                <p className="w-24 flex-none text-center">Action</p>
               </div>
-            ))}
+              {Array.from({ length: 5 }, (_, i) => (
+                <div
+                  className="flex w-full px-5 py-5 text-sm gap-4 border-b border-sky-100 items-center hover:border-sky-200"
+                  key={i}
+                >
+                  <p className="w-10 text-center flex-none">{i + 1}</p>
+                  <p className="w-36 flex-none">0341/09/2024</p>
+                  <p className="w-full min-w-72">LAMPU MITSUYAMA</p>
+                  <p className="w-24 flex-none">2</p>
+                  <div className="w-28 flex-none">
+                    <Badge
+                      className={cn(
+                        "rounded w-24 px-0 justify-center text-black font-normal capitalize bg-green-400 hover:bg-green-400"
+                      )}
+                    >
+                      In Progress
+                    </Badge>
+                  </div>
+                  <div className="w-24 flex gap-4 justify-center">
+                    <Link
+                      href={
+                        "/inbound/check-product/product-approve/0341/09/2024/detail"
+                      }
+                      className="w-9"
+                    >
+                      <TooltipProviderPage value={<p>Detail</p>}>
+                        <Button
+                          className="items-center w-9 px-0 flex-none h-9 border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
+                          variant={"outline"}
+                        >
+                          <ReceiptText className="w-4 h-4" />
+                        </Button>
+                      </TooltipProviderPage>
+                    </Link>
+                    <TooltipProviderPage value={<p>Delete</p>}>
+                      <Button
+                        className="items-center w-9 px-0 flex-none h-9 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
+                        variant={"outline"}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TooltipProviderPage>
+                  </div>
+                </div>
+              ))}
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           </div>
           <div className="flex gap-5 ml-auto items-center">
-            <p className="text-sm">
-              Page {page} of {page}
-            </p>
+            <p className="text-sm">Page 1 of 3</p>
             <div className="flex items-center gap-2">
-              <Button
-                className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
-                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-              >
+              <Button className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black">
                 <ChevronLeft className="w-5 h-5" />
               </Button>
-              <Button
-                className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
-                onClick={() => setPage((prev) => prev + 1)}
-              >
+              <Button className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black">
                 <ChevronRight className="w-5 h-5" />
               </Button>
             </div>

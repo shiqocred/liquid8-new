@@ -453,7 +453,7 @@ export const Client = () => {
               </button>
             </div>
           </div>
-          <div className="h-[500px] w-full relative">
+          <div className="h-[300px] w-full relative">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={chartData}
