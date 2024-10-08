@@ -117,7 +117,7 @@ export const Client = () => {
 
       const url = qs.stringifyUrl(
         {
-          url: `/inbound/check-product/product-approve/${params.productApproveId}/${params.productApproveMonth}/${params.productApproveYear}/detail`,
+          url: `/inbound/check-product/product-approve/${params.productApproveId}`,
           query: updateQuery,
         },
         { skipNull: true }
