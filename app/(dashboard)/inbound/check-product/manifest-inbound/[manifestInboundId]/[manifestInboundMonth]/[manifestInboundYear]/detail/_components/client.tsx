@@ -32,12 +32,16 @@ import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
 import axios from "axios";
 import {
   ArrowLeft,
+  ArrowLeftRight,
   ArrowRightCircle,
   ArrowUpDown,
   Check,
   ChevronLeft,
   ChevronRight,
   Copy,
+  Grid2x2X,
+  Loader,
+  RefreshCw,
   Trash2,
   XCircle,
 } from "lucide-react";
@@ -47,6 +51,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
 import Loading from "../loading";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface DetailManifest {
   id: string;
@@ -72,11 +77,23 @@ export const Client = () => {
   const [orientation, setOrientation] = useState(searchParams.get("s") ?? "");
   const [copied, setCopied] = useState<number | null>(null);
   const [dataResults, setDataResults] = useState<DetailManifest[]>([]);
-  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
+  const [metaData, setMetaData] = useState({
+    document_name: "",
+    status: "",
+    total_columns: "",
+    code_document: "",
+    custom_barcode: "",
+  });
+  const [page, setPage] = useState({
+    current: parseFloat(searchParams.get("page") ?? "1") ?? 1, //page saat ini
+    last: 1, //page terakhir
+    from: 1, //data dimulai dari (untuk memulai penomoran tabel)
+    total: 1, //total data
+  });
 
   const handleCopy = (code: string, id: number) => {
     navigator.clipboard.writeText(code).then(() => {
@@ -131,52 +148,44 @@ export const Client = () => {
     handleCurrentId(searchValue, filter, orientation);
   }, [searchValue]);
 
+  const fetchDetailDocuments = async () => {
+    setLoading(true);
+    const codeDocument = `${params.manifestInboundId}/${params.manifestInboundMonth}/${params.manifestInboundYear}`;
+    try {
+      const response = await axios.get(
+        `${baseUrl}/product_olds-search?search=${codeDocument}&page=${page.current}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      setDataResults(response.data.data.resource.data.data);
+      setMetaData(response.data.data.resource);
+      setPage({
+        current: response.data.data.resource.current_page ?? 1,
+        last: response.data.data.resource.last_page ?? 1,
+        from: response.data.data.resource.from ?? 0,
+        total: response.data.data.resource.total ?? 0,
+      });
+    } catch (err: any) {
+      setError(err.message || "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (cookies.get("detailManifestInbound")) {
+      fetchDetailDocuments();
+      return cookies.remove("detailManifestInbound");
+    }
+  }, [cookies.get("detailManifestInbound")]);
+
   useEffect(() => {
     setIsMounted(true);
+    fetchDetailDocuments();
   }, []);
-
-  const [documentData, setDocumentData] = useState({
-    base_document: "",
-    total_column_in_document: 0,
-    status_document: "",
-    code_document: "",
-  });
-
-  useEffect(() => {
-    const savedDocumentData = localStorage.getItem("documentData");
-    if (savedDocumentData) {
-      setDocumentData(JSON.parse(savedDocumentData));
-    }
-  }, []);
-
-  const fetchDetailDocuments = useCallback(
-    async (page: number, search: string) => {
-      setLoading(true);
-      const codeDocument = `${params.manifestInboundId}/${params.manifestInboundMonth}/${params.manifestInboundYear}`;
-      try {
-        const response = await axios.get(
-          `${baseUrl}/product_olds-search?search=${codeDocument}&page=${page}`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        );
-        setDataResults(response.data.data.resource.data);
-      } catch (err: any) {
-        setError(err.message || "An error occurred");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accessToken]
-  );
-
-  useEffect(() => {
-    if (accessToken) {
-      fetchDetailDocuments(page, searchValue);
-    }
-  }, [searchValue, page, fetchDetailDocuments, params, accessToken]);
 
   if (!isMounted) {
     return <Loading />;
@@ -216,28 +225,47 @@ export const Client = () => {
           </Link>
           <div className="w-2/3">
             <p>Data Name</p>
-            <h3 className="text-black font-semibold text-xl">
-              {documentData.base_document}
-            </h3>
+            <TooltipProviderPage value={metaData.document_name}>
+              <h3 className="text-black font-semibold text-xl line-clamp-1">
+                {metaData.document_name}
+              </h3>
+            </TooltipProviderPage>
           </div>
         </div>
         <div className="flex w-full">
-          <div className="flex flex-col items-end w-1/4 border-r border-gray-500 pr-5 mr-5">
-            <p>Status</p>
-            <h3 className="text-gray-700 font-light text-xl">
-              {documentData.status_document}
+          <div className="flex flex-col items-end w-1/5 border-r border-gray-500 pr-5 mr-5">
+            <p className="text-sm font-medium">Status</p>
+            <h3 className="text-gray-700 font-light capitalize">
+              {metaData.status}
             </h3>
           </div>
-          <div className="flex flex-col items-end w-2/4 border-r border-gray-700 pr-5 mr-5">
-            <p>Merged Data</p>
-            <h3 className="text-gray-700 font-light text-xl">
-              {documentData.code_document}
+          <div className="flex flex-col items-end w-2/5 border-r border-gray-700 pr-5 mr-5">
+            <p className="text-sm font-medium">Merged Data</p>
+            <h3 className="text-gray-700 font-light capitalize">
+              {metaData.code_document}
             </h3>
           </div>
-          <div className="flex flex-col items-end w-1/4">
-            <p>Total</p>
-            <h3 className="text-gray-700 font-light text-xl">
-              {documentData.total_column_in_document.toLocaleString()}
+          <div className="flex flex-col items-end w-1/5 border-r border-gray-700 pr-5 mr-5">
+            <p className="text-sm font-medium">Total</p>
+            <h3 className="text-gray-700 font-light capitalize">
+              {metaData.total_columns.toLocaleString()}
+            </h3>
+          </div>
+          <div className="flex flex-col items-end w-1/5">
+            <button
+              onClick={() =>
+                onOpen("custom-barcode", {
+                  code_document: metaData.code_document,
+                  custom_barcode: metaData.custom_barcode,
+                })
+              }
+              className="text-sm font-medium flex items-center hover:bg-sky-100 rounded-md px-3"
+            >
+              Barcode
+              <ArrowLeftRight className="w-3 h-3 ml-1" />
+            </button>
+            <h3 className="text-gray-700 font-light capitalize pr-3">
+              {metaData.custom_barcode ?? "-"}
             </h3>
           </div>
         </div>
@@ -253,6 +281,20 @@ export const Client = () => {
                 onChange={(e) => setDataSearch(e.target.value)}
                 placeholder="Search..."
               />
+              <TooltipProviderPage value={"Reload Data"}>
+                <Button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    cookies.set("detailManifestInbound", "update");
+                  }}
+                  className="items-center w-9 px-0 flex-none h-9 border-sky-400 text-black hover:bg-sky-50"
+                  variant={"outline"}
+                >
+                  <RefreshCw
+                    className={cn("w-4 h-4", loading ? "animate-spin" : "")}
+                  />
+                </Button>
+              </TooltipProviderPage>
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-3">
                   <Popover open={isFilter} onOpenChange={setIsFilter}>
@@ -457,76 +499,113 @@ export const Client = () => {
             </div>
           </div>
           <div className="w-full p-4 rounded-md border border-sky-400/80">
-            <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-2 font-semibold items-center hover:bg-sky-200/80">
-              <p className="w-10 text-center flex-none">No</p>
-              <p className="w-52 flex-none">Resi Number</p>
-              <p className="w-full">Product Name</p>
-              <p className="w-24 text-center flex-none">QTY</p>
-              <p className="w-28 flex-none">Price</p>
-              <p className="xl:w-32 w-20 flex-none text-center">Action</p>
-            </div>
-            {dataResults.map((item, index) => (
-              <div
-                className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
-                key={item.id}
-              >
-                <p className="w-10 text-center flex-none">{index + 1}</p>
-                <div className="w-52 flex-none flex items-center">
-                  <p>{item.old_barcode_product}</p>
-                  <TooltipProviderPage
-                    value={
-                      <p>{copied === index ? "Copied" : "Copy Barcode"}</p>
-                    }
-                  >
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleCopy(item.old_barcode_product, index);
-                      }}
-                      disabled={copied === index}
-                    >
-                      {copied === index ? (
-                        <Check className="w-3 h-3 ml-2" />
-                      ) : (
-                        <Copy className="w-3 h-3 ml-2" />
-                      )}
-                    </button>
-                  </TooltipProviderPage>
-                </div>
-                <p className="w-full">{item.old_name_product}</p>
-                <p className="w-24 text-center flex-none">
-                  {item.old_quantity_product}
-                </p>
-                <p className="w-28 flex-none">
-                  {formatRupiah(item.old_price_product)}
-                </p>
-                <div className="xl:w-32 w-20 flex-none flex justify-center">
-                  <Button
-                    className="items-center xl:w-full w-9 px-0 xl:px-4 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
-                    variant={"outline"}
-                    onClick={() =>
-                      onOpen("delete-detail-manifest-inbound", item.id)
-                    }
-                    type="button"
-                  >
-                    <Trash2 className="w-4 h-4 xl:mr-1" />
-                    <div className="hidden xl:flex">Delete</div>
-                  </Button>
-                </div>
+            {loading ? (
+              <div className="h-[200px] flex items-center justify-center">
+                <Loader className="w-5 h-5 animate-spin" />
               </div>
-            ))}
+            ) : (
+              <ScrollArea>
+                <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-2 font-semibold items-center hover:bg-sky-200/80">
+                  <p className="w-10 text-center flex-none">No</p>
+                  <p className="w-52 flex-none">Resi Number</p>
+                  <p className="w-full">Product Name</p>
+                  <p className="w-24 text-center flex-none">QTY</p>
+                  <p className="w-28 flex-none">Price</p>
+                  <p className="xl:w-32 w-20 flex-none text-center">Action</p>
+                </div>
+                {dataResults.length > 0 ? (
+                  dataResults.map((item, index) => (
+                    <div
+                      className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
+                      key={item.id}
+                    >
+                      <p className="w-10 text-center flex-none">{index + 1}</p>
+                      <div className="w-52 flex-none flex items-center">
+                        <p>{item.old_barcode_product}</p>
+                        <TooltipProviderPage
+                          value={
+                            <p>
+                              {copied === index ? "Copied" : "Copy Barcode"}
+                            </p>
+                          }
+                        >
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleCopy(item.old_barcode_product, index);
+                            }}
+                            disabled={copied === index}
+                          >
+                            {copied === index ? (
+                              <Check className="w-3 h-3 ml-2" />
+                            ) : (
+                              <Copy className="w-3 h-3 ml-2" />
+                            )}
+                          </button>
+                        </TooltipProviderPage>
+                      </div>
+                      <p className="w-full">{item.old_name_product}</p>
+                      <p className="w-24 text-center flex-none">
+                        {item.old_quantity_product}
+                      </p>
+                      <p className="w-28 flex-none">
+                        {formatRupiah(item.old_price_product)}
+                      </p>
+                      <div className="xl:w-32 w-20 flex-none flex justify-center">
+                        <Button
+                          className="items-center xl:w-full w-9 px-0 xl:px-4 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
+                          variant={"outline"}
+                          onClick={() =>
+                            onOpen("delete-detail-manifest-inbound", item.id)
+                          }
+                          type="button"
+                        >
+                          <Trash2 className="w-4 h-4 xl:mr-1" />
+                          <div className="hidden xl:flex">Delete</div>
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="h-[200px] flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2 text-gray-500">
+                      <Grid2x2X className="w-8 h-8" />
+                      <p className="text-sm font-semibold">No Data Viewed.</p>
+                    </div>
+                  </div>
+                )}
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            )}
           </div>
-          <div className="flex gap-5 ml-auto items-center">
-            <p className="text-sm">
-              Page {page} of {page}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black">
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-              <Button className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black">
-                <ChevronRight className="w-5 h-5" />
-              </Button>
+          <div className="flex items-center justify-between">
+            <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
+              Total: {page.total}
+            </Badge>
+            <div className="flex gap-5 items-center">
+              <p className="text-sm">
+                Page {page.current} of {page.last}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
+                  onClick={() =>
+                    setPage((prev) => ({ ...prev, current: prev.current - 1 }))
+                  }
+                  disabled={page.current === 1}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <Button
+                  className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
+                  onClick={() =>
+                    setPage((prev) => ({ ...prev, current: prev.current - 1 }))
+                  }
+                  disabled={page.current === page.last}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>

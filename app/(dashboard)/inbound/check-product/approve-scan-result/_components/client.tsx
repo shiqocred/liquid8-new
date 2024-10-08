@@ -74,7 +74,7 @@ export const Client = () => {
 
       const url = qs.stringifyUrl(
         {
-          url: `/inbound/check-product/scan-result-approve`,
+          url: `/inbound/check-product/approve-scan-result`,
           query: updateQuery,
         },
         { skipNull: true }
@@ -106,6 +106,8 @@ export const Client = () => {
           <BreadcrumbItem>
             <BreadcrumbLink href="/">Home</BreadcrumbLink>
           </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>Inbound</BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>Scan Result</BreadcrumbItem>
           <BreadcrumbSeparator />

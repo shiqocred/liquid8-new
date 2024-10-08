@@ -33,7 +33,11 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleFadingPlus,
+  Combine,
+  Loader,
   ReceiptText,
+  RefreshCcw,
+  RefreshCw,
   Trash2,
   XCircle,
 } from "lucide-react";
@@ -47,29 +51,6 @@ import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import Loading from "../loading";
 
-interface History {
-  id: number;
-  user_id: number;
-  code_document: string;
-  base_document: string;
-  total_data: number;
-  total_data_in: number;
-  total_data_lolos: number;
-  total_data_damaged: number;
-  total_data_abnormal: number;
-  total_discrepancy: number;
-  status_approve: "pending" | "in progress" | "done";
-  precentage_total_data: string;
-  percentage_in: string;
-  percentage_lolos: string;
-  percentage_damaged: string;
-  percentage_abnormal: string;
-  percentage_discrepancy: string;
-  created_at: string;
-  updated_at: string;
-  total_price: string;
-}
-
 export const Client = () => {
   const [isFilter, setIsFilter] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -78,12 +59,44 @@ export const Client = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [filter, setFilter] = useState(searchParams.get("f") ?? "");
-  const [history, setHistory] = useState<History[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string[]>([]);
-  const [page, setPage] = useState(1);
+  const [data, setData] = useState<any[]>([]);
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
+  const [page, setPage] = useState({
+    current: parseFloat(searchParams.get("page") ?? "1") ?? 1, //page saat ini
+    last: 1, //page terakhir
+    from: 1, //data dimulai dari (untuk memulai penomoran tabel)
+    total: 1, //total data
+  });
+
+  const fetchDocuments = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `${baseUrl}/documentInProgress?page=${page}&q=${searchValue}`,
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      console.log(response);
+      setData(response.data.data.resource.data);
+      setPage({
+        current: response.data.data.resource.current_page,
+        last: response.data.data.resource.last_page,
+        from: response.data.data.resource.from,
+        total: response.data.data.resource.total,
+      });
+    } catch (err: any) {
+      setError(err.message || "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCurrentId = useCallback(
     (q: string, f: string) => {
@@ -126,7 +139,15 @@ export const Client = () => {
   }, [searchValue]);
 
   useEffect(() => {
+    if (cookies.get("productApprove")) {
+      fetchDocuments();
+      return cookies.remove("productApprove");
+    }
+  }, [cookies.get("productApprove")]);
+
+  useEffect(() => {
     setIsMounted(true);
+    fetchDocuments();
   }, []);
 
   if (!isMounted) {
@@ -156,6 +177,20 @@ export const Client = () => {
               onChange={(e) => setDataSearch(e.target.value)}
               placeholder="Search..."
             />
+            <TooltipProviderPage value={"Reload Data"}>
+              <Button
+                onClick={(e) => {
+                  e.preventDefault();
+                  cookies.set("productApprove", "update");
+                }}
+                className="items-center w-9 px-0 flex-none h-9 border-sky-400 text-black hover:bg-sky-50"
+                variant={"outline"}
+              >
+                <RefreshCw
+                  className={cn("w-4 h-4", loading ? "animate-spin" : "")}
+                />
+              </Button>
+            </TooltipProviderPage>
             <div className="flex items-center gap-3">
               <Popover open={isFilter} onOpenChange={setIsFilter}>
                 <PopoverTrigger asChild>
@@ -258,72 +293,115 @@ export const Client = () => {
             </div>
           </div>
           <div className="w-full p-4 rounded-md border border-sky-400/80">
-            <ScrollArea>
-              <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
-                <p className="w-10 text-center flex-none">No</p>
-                <p className="w-36 flex-none">Document Code</p>
-                <p className="w-full min-w-72">Base Document</p>
-                <p className="w-24 flex-none">Total</p>
-                <p className="w-28 flex-none">Status</p>
-                <p className="w-24 flex-none text-center">Action</p>
+            {loading ? (
+              <div className="h-[200px] flex items-center justify-center">
+                <Loader className="w-5 h-5 animate-spin" />
               </div>
-              {Array.from({ length: 5 }, (_, i) => (
-                <div
-                  className="flex w-full px-5 py-5 text-sm gap-4 border-b border-sky-100 items-center hover:border-sky-200"
-                  key={i}
-                >
-                  <p className="w-10 text-center flex-none">{i + 1}</p>
-                  <p className="w-36 flex-none">0341/09/2024</p>
-                  <p className="w-full min-w-72">LAMPU MITSUYAMA</p>
-                  <p className="w-24 flex-none">2</p>
-                  <div className="w-28 flex-none">
-                    <Badge
-                      className={cn(
-                        "rounded w-24 px-0 justify-center text-black font-normal capitalize bg-green-400 hover:bg-green-400"
-                      )}
-                    >
-                      In Progress
-                    </Badge>
-                  </div>
-                  <div className="w-24 flex gap-4 justify-center">
-                    <Link
-                      href={
-                        "/inbound/check-product/product-approve/0341/09/2024/detail"
-                      }
-                      className="w-9"
-                    >
-                      <TooltipProviderPage value={<p>Detail</p>}>
+            ) : (
+              <ScrollArea>
+                <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
+                  <p className="w-10 text-center flex-none">No</p>
+                  <p className="w-36 flex-none">Document Code</p>
+                  <p className="w-full min-w-72 max-w-[500px]">Base Document</p>
+                  <p className="w-24 flex-none">Total</p>
+                  <p className="w-28 flex-none">Status</p>
+                  <p className="w-36 flex-none text-center">Action</p>
+                </div>
+                {data.map((item, i) => (
+                  <div
+                    className="flex w-full px-5 py-5 text-sm gap-4 border-b border-sky-100 items-center hover:border-sky-200"
+                    key={item.id}
+                  >
+                    <p className="w-10 text-center flex-none">
+                      {page.from + i}
+                    </p>
+                    <p className="w-36 flex-none">{item.code_document}</p>
+                    <p className="w-full min-w-72 max-w-[500px] whitespace-nowrap overflow-hidden text-ellipsis">
+                      {item.base_document}
+                    </p>
+                    <p className="w-24 flex-none">
+                      {item.total_column_in_document.toLocaleString()}
+                    </p>
+                    <div className="w-28 flex-none">
+                      <Badge
+                        className={cn(
+                          "rounded w-20 px-0 justify-center text-black font-normal capitalize",
+                          item.status_document === "pending" &&
+                            "bg-gray-200 hover:bg-gray-200",
+                          item.status_document === "in progress" &&
+                            "bg-yellow-400 hover:bg-yellow-400",
+                          item.status_document === "done" &&
+                            "bg-green-400 hover:bg-green-400"
+                        )}
+                      >
+                        {item.status_document}
+                      </Badge>
+                    </div>
+                    <div className="w-36 flex gap-4 justify-center">
+                      <TooltipProviderPage value={<p>To Partial Stagging</p>}>
                         <Button
-                          className="items-center w-9 px-0 flex-none h-9 border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
+                          className="items-center w-9 px-0 flex-none h-9 border-green-400 text-green-700 hover:text-green-700 hover:bg-green-50"
                           variant={"outline"}
                         >
-                          <ReceiptText className="w-4 h-4" />
+                          <Combine className="w-4 h-4" />
                         </Button>
                       </TooltipProviderPage>
-                    </Link>
-                    <TooltipProviderPage value={<p>Delete</p>}>
-                      <Button
-                        className="items-center w-9 px-0 flex-none h-9 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
-                        variant={"outline"}
+                      <Link
+                        href={`/inbound/check-product/product-approve/${item.id}`}
+                        className="w-9"
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TooltipProviderPage>
+                        <TooltipProviderPage value={<p>Detail</p>}>
+                          <Button
+                            className="items-center w-9 px-0 flex-none h-9 border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
+                            variant={"outline"}
+                          >
+                            <ReceiptText className="w-4 h-4" />
+                          </Button>
+                        </TooltipProviderPage>
+                      </Link>
+                      <TooltipProviderPage value={<p>Delete</p>}>
+                        <Button
+                          className="items-center w-9 px-0 flex-none h-9 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
+                          variant={"outline"}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TooltipProviderPage>
+                    </div>
                   </div>
-                </div>
-              ))}
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
+                ))}
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            )}
           </div>
-          <div className="flex gap-5 ml-auto items-center">
-            <p className="text-sm">Page 1 of 3</p>
-            <div className="flex items-center gap-2">
-              <Button className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black">
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-              <Button className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black">
-                <ChevronRight className="w-5 h-5" />
-              </Button>
+          <div className="flex items-center justify-between">
+            <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
+              Total: {page.total}
+            </Badge>
+            <div className="flex gap-5 items-center">
+              <p className="text-sm">
+                Page {page.current} of {page.last}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
+                  onClick={() =>
+                    setPage((prev) => ({ ...prev, current: prev.current - 1 }))
+                  }
+                  disabled={page.current === 1}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <Button
+                  className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
+                  onClick={() =>
+                    setPage((prev) => ({ ...prev, current: prev.current - 1 }))
+                  }
+                  disabled={page.current === page.last}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>

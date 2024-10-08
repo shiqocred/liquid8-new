@@ -9,62 +9,257 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDebounce } from "@/hooks/use-debounce";
-import { ArrowLeft, Search, Send, ShieldCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Grid2x2X,
+  Loader,
+  Search,
+  Send,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
-import { useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import BarcodePrinted from "@/components/barcode";
-import { formatRupiah } from "@/lib/utils";
+import { baseUrl, cn, formatRupiah } from "@/lib/utils";
 import Loading from "../loading";
-
-const FormSchema = z.object({
-  type: z.enum(["all", "mentions", "none"], {
-    required_error: "You need to select a notification type.",
-  }),
-});
+import axios from "axios";
+import { useCookies } from "next-client-cookies";
+import NotFound from "@/app/not-found";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { useModal } from "@/hooks/use-modal";
 
 export const Client = () => {
-  const [isFilter, setIsFilter] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-  const [dataSearch, setDataSearch] = useState("");
-  const searchValue = useDebounce(dataSearch);
+  // core
   const params = useParams();
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const [filter, setFilter] = useState(searchParams.get("f") ?? "");
-  const [orientation, setOrientation] = useState(searchParams.get("s") ?? "");
-  const [copied, setCopied] = useState<number | null>(null);
+  const searchParams = useSearchParams();
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  const { onOpen } = useModal();
 
-  const handleCopy = (code: string, id: number) => {
-    navigator.clipboard.writeText(code).then(() => {
-      setCopied(id);
-      setTimeout(() => setCopied(null), 2000);
-    });
+  // state boolean
+  const [is404, setIs404] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // cookies
+  const cookies = useCookies();
+  const accessToken = cookies.get("accessToken");
+
+  // search
+  const [dataSearch, setDataSearch] = useState(searchParams.get("q") ?? "");
+  const searchValue = useDebounce(dataSearch);
+
+  // data
+  const [baseDocument, setBaseDocument] = useState("");
+  const [description, setDescription] = useState({
+    abnormal: "",
+    damaged: "",
+  });
+  const [selected, setSelected] = useState({
+    name: "",
+    discount: 0,
+  });
+  const [tagColor, setTagColor] = useState({
+    id: "0",
+    hexa_code_color: "",
+    name_color: "",
+    fixed_price_color: "0",
+  });
+  const [data, setData] = useState({
+    id: "0",
+    old_barcode_product: "",
+    old_name_product: "",
+    old_quantity_product: "0",
+    old_price_product: "0",
+    created_at: "",
+  });
+  const [categories, setCategories] = useState([
+    {
+      id: "0",
+      name_category: "",
+      discount_category: "0",
+      max_price_category: "0",
+    },
+  ]);
+
+  // handle GET
+  const handleGetBarcode = async () => {
+    setLoading(true);
+    const codeDocument = `${params.manifestInboundId}/${params.manifestInboundMonth}/${params.manifestInboundYear}`;
+    try {
+      const response = await axios.get(
+        `${baseUrl}/search_barcode_product?code_document=${codeDocument}&old_barcode_product=${searchValue}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      if (response.data.data.status) {
+        toast.success("Barcode successully found.");
+        setData(response.data.data.resource.product);
+        setDescription({
+          abnormal: "",
+          damaged: "",
+        });
+        if (response.data.data.resource.color_tags) {
+          setTagColor(response.data.data.resource.color_tags[0]);
+          setSelected({
+            name: "",
+            discount: 0,
+          });
+        } else {
+          setTagColor({
+            id: "0",
+            hexa_code_color: "",
+            name_color: "",
+            fixed_price_color: "0",
+          });
+        }
+      } else {
+        toast.error("Barcode failed to find.");
+      }
+    } catch (err: any) {
+      toast.error("Something when wrong");
+      console.log("ERROR_GET_BARCODE:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleGetDocuments = async () => {
+    const codeDocument = `${params.manifestInboundId}/${params.manifestInboundMonth}/${params.manifestInboundYear}`;
+    try {
+      const response = await axios.get(
+        `${baseUrl}/documents?q=${codeDocument}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      if (response.data.data.resource.data.length > 0) {
+        setBaseDocument(response.data.data.resource.data[0].base_document);
+      } else {
+        setIs404(true);
+      }
+    } catch (err: any) {
+      console.log("ERROR_GET_DOCUMENTS:", err);
+    }
+  };
+  const handleGetCategories = async () => {
+    try {
+      const response = await axios.get(`${baseUrl}/categories`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      setCategories(response.data.data.resource);
+    } catch (err: any) {
+      console.log("ERROR_GET_CATEGORIES:", err);
+    }
   };
 
+  // handle submit
+  const handleSubmit = async (
+    e: FormEvent,
+    type: "lolos" | "abnormal" | "damaged"
+  ) => {
+    e.preventDefault();
+    const codeDocument = `${params.manifestInboundId}/${params.manifestInboundMonth}/${params.manifestInboundYear}`;
+    const body = {
+      code_document: codeDocument,
+      old_barcode_product: data.old_barcode_product,
+      new_barcode_product: "",
+      new_name_product: data.old_name_product,
+      old_name_product: data.old_name_product,
+      new_quantity_product: data.old_quantity_product,
+      new_price_product:
+        parseFloat(data.old_price_product) < 100000
+          ? tagColor.fixed_price_color
+          : parseFloat(data.old_price_product) -
+            (parseFloat(data.old_price_product) / 100) * selected.discount,
+      old_price_product: data.old_price_product,
+      new_date_in_product: format(new Date(data.created_at), "yyyy-MM-dd"),
+      new_status_product: "display",
+      condition: type,
+      new_category_product: type === "lolos" ? selected.name : "",
+      new_tag_product: tagColor?.name_color ?? "",
+      deskripsi:
+        type === "abnormal"
+          ? description.abnormal
+          : type === "damaged"
+          ? description.damaged
+          : "",
+    };
+    try {
+      const response = await axios.post(`${baseUrl}/product-approves`, body, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      const dataResponse = response.data.data;
+      if (dataResponse.needConfirmation) {
+        toast.success(dataResponse.message);
+        setTagColor({
+          id: "0",
+          hexa_code_color: "",
+          name_color: "",
+          fixed_price_color: "0",
+        });
+        setData({
+          id: "0",
+          old_barcode_product: "",
+          old_name_product: "",
+          old_quantity_product: "0",
+          old_price_product: "0",
+          created_at: "",
+        });
+        setDescription({
+          abnormal: "",
+          damaged: "",
+        });
+        setSelected({
+          name: "",
+          discount: 0,
+        });
+        setDataSearch("");
+        if (searchRef.current) {
+          searchRef.current.focus();
+        }
+        if (dataResponse.resource.new_category_product) {
+          onOpen("manifest-inbound-barcode-printered", {
+            barcode: dataResponse.resource.new_barcode_product,
+            newPrice: dataResponse.resource.new_price_product,
+            oldPrice: dataResponse.resource.old_price_product,
+            category: dataResponse.resource.new_category_product,
+          });
+        }
+      } else {
+        toast.error(dataResponse.message);
+        onOpen("double-barcode-manifet-inbound", body);
+      }
+    } catch (err: any) {
+      toast.success("Product gagal terkirim");
+      console.log("ERROR_STORE_NEW_PRODUCT:", err);
+    }
+  };
+
+  // handle SearchParams
   const handleCurrentId = useCallback(
-    (q: string, f: string, s: string) => {
-      setFilter(f);
-      setOrientation(s);
+    (q: string) => {
       let currentQuery = {};
 
       if (searchParams) {
@@ -74,20 +269,10 @@ export const Client = () => {
       const updateQuery: any = {
         ...currentQuery,
         q: q,
-        f: f,
-        s: s,
       };
 
       if (!q || q === "") {
         delete updateQuery.q;
-      }
-      if (!f || f === "") {
-        delete updateQuery.f;
-        setFilter("");
-      }
-      if (!s || s === "") {
-        delete updateQuery.s;
-        setOrientation("");
       }
 
       const url = qs.stringifyUrl(
@@ -98,41 +283,84 @@ export const Client = () => {
         { skipNull: true }
       );
 
-      router.push(url);
+      router.push(url, { scroll: false });
     },
     [searchParams, router]
   );
 
-  const form = useForm<z.infer<typeof FormSchema>>({
-    resolver: zodResolver(FormSchema),
-  });
-
-  function onSubmit(data: z.infer<typeof FormSchema>) {}
-
+  // useEffect
   useEffect(() => {
-    handleCurrentId(searchValue, filter, orientation);
+    handleCurrentId(searchValue);
+    if (searchValue.length > 0) {
+      handleGetBarcode();
+    } else {
+      setTagColor({
+        id: "0",
+        hexa_code_color: "",
+        name_color: "",
+        fixed_price_color: "0",
+      });
+      setData({
+        id: "0",
+        old_barcode_product: "",
+        old_name_product: "",
+        old_quantity_product: "0",
+        old_price_product: "0",
+        created_at: "",
+      });
+    }
   }, [searchValue]);
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const [documentData, setDocumentData] = useState({
-    base_document: "",
-    total_column_in_document: 0,
-    status_document: "",
-    code_document: "",
-  });
+    if (cookies.get("updatedBarcode")) {
+      setTagColor({
+        id: "0",
+        hexa_code_color: "",
+        name_color: "",
+        fixed_price_color: "0",
+      });
+      setData({
+        id: "0",
+        old_barcode_product: "",
+        old_name_product: "",
+        old_quantity_product: "0",
+        old_price_product: "0",
+        created_at: "",
+      });
+      setDescription({
+        abnormal: "",
+        damaged: "",
+      });
+      setSelected({
+        name: "",
+        discount: 0,
+      });
+      setDataSearch("");
+      if (searchRef.current) {
+        searchRef.current.focus();
+      }
+      return cookies.remove("updatedBarcode");
+    }
+  }, [cookies.get("updatedBarcode")]);
 
   useEffect(() => {
-    const savedDocumentData = localStorage.getItem("documentData");
-    if (savedDocumentData) {
-      setDocumentData(JSON.parse(savedDocumentData));
-    }
+    setIsMounted(true);
+    handleGetDocuments();
+    handleGetCategories();
   }, []);
 
   if (!isMounted) {
     return <Loading />;
+  }
+
+  if (is404) {
+    return (
+      <div className="flex flex-col items-start h-full bg-gray-100 w-full relative p-4 gap-4">
+        <div className="w-full h-full overflow-hidden rounded-md shadow-md flex items-center justify-center relative">
+          <NotFound isDashboard />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -142,6 +370,10 @@ export const Client = () => {
           <BreadcrumbItem>
             <BreadcrumbLink href="/">Home</BreadcrumbLink>
           </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>Inbound</BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>Check Product</BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink href="/inbound/check-product/manifest-inbound/">
@@ -169,355 +401,357 @@ export const Client = () => {
           </Link>
           <div className="w-2/3">
             <p>Data Name</p>
-            <h3 className="text-black font-semibold text-xl">
-              {documentData.base_document}
-            </h3>
+            <h3 className="text-black font-semibold text-xl">{baseDocument}</h3>
           </div>
         </div>
         <Separator orientation="vertical" className="h-16 bg-gray-500" />
-        <div className="w-full flex-col flex gap-1">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleGetBarcode();
+          }}
+          className="w-full flex-col flex gap-1"
+        >
           <Label className="text-xs">Search Barcode Product</Label>
-          <div className="flex">
-            <Input
-              className="w-full border-sky-400/80 focus-visible:ring-sky-400 rounded-r-none"
-              value={dataSearch}
-              onChange={(e) => setDataSearch(e.target.value)}
-              placeholder="Search..."
-            />
-            <Button className="rounded-l-none flex-none p-0 w-9 bg-sky-400/80 hover:bg-sky-400 text-black">
+          <div className="flex w-full">
+            <div className="relative w-full flex items-center">
+              <Input
+                className="w-full border-sky-400/80 focus-visible:ring-sky-400 rounded-r-none text-black"
+                value={dataSearch}
+                onChange={(e) => setDataSearch(e.target.value)}
+                placeholder="Search..."
+                ref={searchRef}
+                autoFocus
+              />
+              {dataSearch.length > 0 && (
+                <button
+                  className="absolute right-3"
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setDataSearch("");
+                    if (searchRef.current) {
+                      searchRef.current.focus();
+                    }
+                  }}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <Button
+              type="submit"
+              className="rounded-l-none flex-none p-0 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
+            >
               <Search className="w-4 h-4" />
             </Button>
           </div>
-        </div>
+        </form>
       </div>
-      <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 items-center">
-        <div className="w-full flex gap-2">
-          <p>Keterangan:</p>
-          <p>&gt; 100K</p>
+      {loading ? (
+        <div className="flex w-full bg-white rounded-md shadow items-center justify-center h-[300px]">
+          <Loader className="w-8 h-8 animate-spin" />
         </div>
-        <div className="w-full flex justify-end">
-          <Button className="bg-sky-400/80 hover:bg-sky-400 text-black">
-            <ShieldCheck className="w-4 h-4 mr-2" />
-            Done Check All
-          </Button>
+      ) : data.id === "0" ? (
+        <div className="flex w-full bg-white rounded-md shadow items-center justify-center h-[300px]">
+          <div className="flex flex-col items-center gap-2 text-gray-500">
+            <Grid2x2X className="w-8 h-8" />
+            <p className="text-sm font-semibold">No Data Viewed.</p>
+          </div>
         </div>
-      </div>
-      <div className="flex w-full gap-4">
-        <div className="w-full">
-          <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 flex-col">
-            <h2 className="text-xl font-bold">Old Data</h2>
-            <div className="flex w-full items-center gap-4 flex-col">
-              <div className="w-full flex gap-4">
-                <div className="flex flex-col w-full gap-1">
-                  <Label>Barcode</Label>
-                  <Input className="w-full border-sky-400/80 focus-visible:ring-sky-400" />
-                </div>
-                <div className="flex flex-col w-full gap-1">
-                  <Label>Name</Label>
-                  <Input className="w-full border-sky-400/80 focus-visible:ring-sky-400" />
-                </div>
-              </div>
-              <div className="flex w-full gap-4">
-                <div className="flex flex-col w-full gap-1">
-                  <Label>Price</Label>
-                  <Input className="w-full border-sky-400/80 focus-visible:ring-sky-400" />
-                </div>
-                <div className="flex flex-col w-full gap-1">
-                  <Label>Qty</Label>
-                  <Input className="w-full border-sky-400/80 focus-visible:ring-sky-400" />
+      ) : (
+        <div className="w-full flex flex-col gap-4">
+          <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 items-center">
+            <div className="w-full flex gap-2 items-center">
+              <p>Keterangan:</p>
+              <Badge className="bg-sky-100 hover:bg-sky-100 border border-sky-500 text-black py-1 gap-1 rounded-full shadow-none">
+                {parseFloat(data.old_price_product) > 100000 ? (
+                  <ChevronRight className="w-4 h-4" />
+                ) : (
+                  <ChevronLeft className="w-4 h-4" />
+                )}
+                <p>100K</p>
+              </Badge>
+            </div>
+            <div className="w-full flex justify-end">
+              <Button className="bg-sky-400/80 hover:bg-sky-400 text-black">
+                <ShieldCheck className="w-4 h-4 mr-2" />
+                Done Check All
+              </Button>
+            </div>
+          </div>
+          <div className="flex w-full gap-4">
+            <div className="w-full">
+              <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 flex-col">
+                <h2 className="text-xl font-bold">Old Data</h2>
+                <div className="flex w-full items-center gap-4 flex-col">
+                  <div className="w-full flex gap-4">
+                    <div className="flex flex-col w-full gap-1">
+                      <Label>Barcode</Label>
+                      <Input
+                        value={data.old_barcode_product}
+                        disabled
+                        className="w-full border-sky-400/80 focus-visible:ring-sky-400 disabled:opacity-100 disabled:cursor-default"
+                      />
+                    </div>
+                    <div className="flex flex-col w-full gap-1">
+                      <Label>Name</Label>
+                      <Input
+                        value={data.old_name_product}
+                        disabled
+                        className="w-full border-sky-400/80 focus-visible:ring-sky-400 disabled:opacity-100 disabled:cursor-default"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex w-full gap-4">
+                    <div className="flex flex-col w-full gap-1">
+                      <Label>Price</Label>
+                      <Input
+                        value={formatRupiah(parseFloat(data.old_price_product))}
+                        disabled
+                        className="w-full border-sky-400/80 focus-visible:ring-sky-400 disabled:opacity-100 disabled:cursor-default"
+                      />
+                    </div>
+                    <div className="flex flex-col w-full gap-1">
+                      <Label>Qty</Label>
+                      <Input
+                        value={parseFloat(
+                          data.old_quantity_product
+                        ).toLocaleString()}
+                        disabled
+                        className="w-full border-sky-400/80 focus-visible:ring-sky-400 disabled:opacity-100 disabled:cursor-default"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-        <div className="w-full">
-          <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 flex-col">
-            <h2 className="text-xl font-bold">New Data</h2>
-            <div className="flex w-full items-center gap-4 flex-col">
-              <div className="flex flex-col w-full gap-1">
-                <Label>Name</Label>
-                <Input className="w-full border-sky-400/80 focus-visible:ring-sky-400" />
-              </div>
-              <div className="w-full flex gap-4">
-                <div className="flex flex-col w-full gap-1">
-                  <Label>Price</Label>
-                  <Input className="w-full border-sky-400/80 focus-visible:ring-sky-400" />
-                </div>
-                <div className="flex flex-col w-full gap-1">
-                  <Label>Qty</Label>
-                  <Input className="w-full border-sky-400/80 focus-visible:ring-sky-400" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 items-center">
-        <Tabs defaultValue="good" className="w-full">
-          <div className="w-full flex justify-center">
-            <TabsList className="bg-sky-100">
-              <TabsTrigger className="w-32" value="good">
-                Good
-              </TabsTrigger>
-              <TabsTrigger className="w-32" value="damaged">
-                Damaged
-              </TabsTrigger>
-              <TabsTrigger className="w-32" value="abnormal">
-                Abnormal
-              </TabsTrigger>
-            </TabsList>
-          </div>
-          <TabsContent value="good">
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="w-full space-y-6 mt-6"
-              >
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3 w-full">
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex w-full gap-4"
-                        >
-                          <div className="flex flex-col gap-6 w-full">
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="all" />
-                              </FormControl>
-                              <FormLabel className="flex flex-col gap-1">
-                                <p className="font-bold">All new messages</p>
-                                <p className="text-xs font-light">50%</p>
-                              </FormLabel>
-                            </FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="mentions" />
-                              </FormControl>
-                              <FormLabel className="flex flex-col gap-1">
-                                <p className="font-bold">All new messages</p>
-                                <p className="text-xs font-light">50%</p>
-                              </FormLabel>
-                            </FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="none" />
-                              </FormControl>
-                              <FormLabel className="flex flex-col gap-1">
-                                <p className="font-bold">All new messages</p>
-                                <p className="text-xs font-light">50%</p>
-                              </FormLabel>
-                            </FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="none" />
-                              </FormControl>
-                              <FormLabel className="flex flex-col gap-1">
-                                <p className="font-bold">All new messages</p>
-                                <p className="text-xs font-light">50%</p>
-                              </FormLabel>
-                            </FormItem>
-                          </div>
-                          <div className="flex flex-col gap-6 w-full">
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="all" />
-                              </FormControl>
-                              <FormLabel className="flex flex-col gap-1">
-                                <p className="font-bold">All new messages</p>
-                                <p className="text-xs font-light">50%</p>
-                              </FormLabel>
-                            </FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="mentions" />
-                              </FormControl>
-                              <FormLabel className="flex flex-col gap-1">
-                                <p className="font-bold">All new messages</p>
-                                <p className="text-xs font-light">50%</p>
-                              </FormLabel>
-                            </FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="none" />
-                              </FormControl>
-                              <FormLabel className="flex flex-col gap-1">
-                                <p className="font-bold">All new messages</p>
-                                <p className="text-xs font-light">50%</p>
-                              </FormLabel>
-                            </FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="none" />
-                              </FormControl>
-                              <FormLabel className="flex flex-col gap-1">
-                                <p className="font-bold">All new messages</p>
-                                <p className="text-xs font-light">50%</p>
-                              </FormLabel>
-                            </FormItem>
-                          </div>
-                          <div className="flex flex-col gap-6 w-full">
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="all" />
-                              </FormControl>
-                              <FormLabel className="flex flex-col gap-1">
-                                <p className="font-bold">All new messages</p>
-                                <p className="text-xs font-light">50%</p>
-                              </FormLabel>
-                            </FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="mentions" />
-                              </FormControl>
-                              <FormLabel className="flex flex-col gap-1">
-                                <p className="font-bold">All new messages</p>
-                                <p className="text-xs font-light">50%</p>
-                              </FormLabel>
-                            </FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="none" />
-                              </FormControl>
-                              <FormLabel className="flex flex-col gap-1">
-                                <p className="font-bold">All new messages</p>
-                                <p className="text-xs font-light">50%</p>
-                              </FormLabel>
-                            </FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="none" />
-                              </FormControl>
-                              <FormLabel className="flex flex-col gap-1">
-                                <p className="font-bold">All new messages</p>
-                                <p className="text-xs font-light">50%</p>
-                              </FormLabel>
-                            </FormItem>
-                          </div>
-                          <div className="flex flex-col gap-6 w-full">
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="all" />
-                              </FormControl>
-                              <FormLabel className="flex flex-col gap-1">
-                                <p className="font-bold">All new messages</p>
-                                <p className="text-xs font-light">50%</p>
-                              </FormLabel>
-                            </FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="mentions" />
-                              </FormControl>
-                              <FormLabel className="flex flex-col gap-1">
-                                <p className="font-bold">All new messages</p>
-                                <p className="text-xs font-light">50%</p>
-                              </FormLabel>
-                            </FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="none" />
-                              </FormControl>
-                              <FormLabel className="flex flex-col gap-1">
-                                <p className="font-bold">All new messages</p>
-                                <p className="text-xs font-light">50%</p>
-                              </FormLabel>
-                            </FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value="none" />
-                              </FormControl>
-                              <FormLabel className="flex flex-col gap-1">
-                                <p className="font-bold">All new messages</p>
-                                <p className="text-xs font-light">50%</p>
-                              </FormLabel>
-                            </FormItem>
-                          </div>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="submit"
-                  className="w-full bg-sky-400/80 hover:bg-sky-400 text-black"
-                >
-                  <Send className="w-4 h-4 mr-2" />
-                  Submit
-                </Button>
-              </form>
-            </Form>
-          </TabsContent>
-          <TabsContent value="damaged">
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="w-full space-y-6 mt-6"
-              >
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description:</FormLabel>
-                      <Textarea
-                        rows={6}
-                        className="border-sky-400/80 focus-visible:ring-sky-400"
+            {parseFloat(data?.old_price_product) > 100000 ? (
+              <div className="w-full">
+                <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 flex-col">
+                  <h2 className="text-xl font-bold">New Data</h2>
+                  <div className="flex w-full items-center gap-4 flex-col">
+                    <div className="flex flex-col w-full gap-1">
+                      <Label>Name</Label>
+                      <Input
+                        value={data.old_name_product}
+                        disabled
+                        className="w-full border-sky-400/80 focus-visible:ring-sky-400 disabled:opacity-100 disabled:cursor-default"
                       />
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="submit"
-                  className="w-full bg-sky-400/80 hover:bg-sky-400 text-black"
+                    </div>
+                    <div className="w-full flex gap-4">
+                      <div className="flex flex-col w-full gap-1">
+                        <Label>Price</Label>
+                        <Input
+                          value={formatRupiah(
+                            parseFloat(data.old_price_product) -
+                              (parseFloat(data.old_price_product) / 100) *
+                                selected.discount
+                          )}
+                          disabled
+                          className="w-full border-sky-400/80 focus-visible:ring-sky-400 disabled:opacity-100 disabled:cursor-default"
+                        />
+                      </div>
+                      <div className="flex flex-col w-full gap-1">
+                        <Label>Qty</Label>
+                        <Input
+                          value={parseFloat(
+                            data.old_quantity_product
+                          ).toLocaleString()}
+                          disabled
+                          className="w-full border-sky-400/80 focus-visible:ring-sky-400 disabled:opacity-100 disabled:cursor-default"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="w-full">
+                <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 flex-col">
+                  <h2 className="text-xl font-bold">New Data</h2>
+                  <div className="flex w-full items-center gap-4 flex-col">
+                    <div className="flex flex-col w-full gap-1">
+                      <Label>Tag Color</Label>
+                      <div className="flex w-full gap-2 items-center border rounded-md border-sky-500 px-5 h-9 cursor-default">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ background: tagColor?.hexa_code_color }}
+                        />
+                        <p className="text-sm">{tagColor.name_color}</p>
+                      </div>
+                    </div>
+                    <div className="w-full flex gap-4">
+                      <div className="flex flex-col w-full gap-1">
+                        <Label>Price</Label>
+                        <Input
+                          value={formatRupiah(
+                            parseFloat(tagColor.fixed_price_color)
+                          )}
+                          disabled
+                          className="w-full border-sky-400/80 focus-visible:ring-sky-400 disabled:opacity-100 disabled:cursor-default"
+                        />
+                      </div>
+                      <div className="flex flex-col w-full gap-1">
+                        <Label>Qty</Label>
+                        <Input
+                          value={parseFloat(
+                            data.old_quantity_product
+                          ).toLocaleString()}
+                          disabled
+                          className="w-full border-sky-400/80 focus-visible:ring-sky-400 disabled:opacity-100 disabled:cursor-default"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 items-center">
+            <Tabs defaultValue="good" className="w-full">
+              <div className="w-full flex justify-center">
+                <TabsList className="bg-sky-100">
+                  <TabsTrigger className="w-32" value="good">
+                    Good
+                  </TabsTrigger>
+                  <TabsTrigger className="w-32" value="damaged">
+                    Damaged
+                  </TabsTrigger>
+                  <TabsTrigger className="w-32" value="abnormal">
+                    Abnormal
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+              <TabsContent value="good">
+                <form
+                  onSubmit={(e) => handleSubmit(e, "lolos")}
+                  className="w-full space-y-6 mt-6"
                 >
-                  <Send className="w-4 h-4 mr-2" />
-                  Submit
-                </Button>
-              </form>
-            </Form>
-          </TabsContent>
-          <TabsContent value="abnormal">
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="w-full space-y-6 mt-6"
-              >
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description:</FormLabel>
-                      <Textarea
-                        rows={6}
-                        className="border-sky-400/80 focus-visible:ring-sky-400"
-                      />
-                    </FormItem>
+                  {parseFloat(data.old_price_product) > 100000 && (
+                    <div className="w-full flex flex-col gap-3">
+                      <RadioGroup
+                        onValueChange={(e) => {
+                          const selectedCategory = categories.find(
+                            (item) => item.name_category === e
+                          );
+                          setSelected({
+                            name: selectedCategory?.name_category ?? "",
+                            discount: parseFloat(
+                              selectedCategory?.discount_category ?? "0"
+                            ),
+                          });
+                        }}
+                        className="grid grid-cols-4 w-full gap-6"
+                      >
+                        {categories.map((item) => (
+                          <div
+                            key={item.id}
+                            className={cn(
+                              "flex items-center gap-4 w-full border px-4 py-2.5 rounded-md",
+                              selected.name === item.name_category
+                                ? "border-gray-500 bg-sky-100"
+                                : "border-gray-300"
+                            )}
+                          >
+                            <RadioGroupItem
+                              value={item.name_category}
+                              id={item.id}
+                              className="flex-none"
+                            />
+                            <Label
+                              htmlFor={item.id}
+                              className="flex flex-col gap-1.5 w-full"
+                            >
+                              <p
+                                className={cn(
+                                  "font-bold border-b pb-1.5",
+                                  selected.name === item.name_category
+                                    ? "border-gray-500"
+                                    : "border-gray-300"
+                                )}
+                              >
+                                {item.name_category}
+                              </p>
+                              <p className="text-xs font-light flex items-center gap-1">
+                                <span>{item.discount_category}%</span>
+                                <span>-</span>
+                                <span>
+                                  Max.{" "}
+                                  {formatRupiah(
+                                    parseFloat(item.max_price_category)
+                                  )}
+                                </span>
+                              </p>
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    </div>
                   )}
-                />
-                <Button
-                  type="submit"
-                  className="w-full bg-sky-400/80 hover:bg-sky-400 text-black"
+                  <Button
+                    type="submit"
+                    className="w-full bg-sky-400/80 hover:bg-sky-400 text-black"
+                    disabled={
+                      !selected.name &&
+                      parseFloat(data.old_price_product) > 100000
+                    }
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    Submit
+                  </Button>
+                </form>
+              </TabsContent>
+              <TabsContent value="damaged">
+                <form
+                  onSubmit={(e) => handleSubmit(e, "damaged")}
+                  className="w-full space-y-6 mt-6"
                 >
-                  <Send className="w-4 h-4 mr-2" />
-                  Submit
-                </Button>
-              </form>
-            </Form>
-          </TabsContent>
-        </Tabs>
-        {/* <BarcodePrinted
+                  <Label>Description:</Label>
+                  <Textarea
+                    rows={6}
+                    className="border-sky-400/80 focus-visible:ring-sky-400"
+                    value={description.damaged}
+                  />
+                  <Button
+                    type="submit"
+                    className="w-full bg-sky-400/80 hover:bg-sky-400 text-black"
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    Submit
+                  </Button>
+                </form>
+              </TabsContent>
+              <TabsContent value="abnormal">
+                <form
+                  onSubmit={(e) => handleSubmit(e, "abnormal")}
+                  className="w-full space-y-6 mt-6"
+                >
+                  <Label>Description:</Label>
+                  <Textarea
+                    rows={6}
+                    className="border-sky-400/80 focus-visible:ring-sky-400"
+                    value={description.abnormal}
+                  />
+                  <Button
+                    type="submit"
+                    className="w-full bg-sky-400/80 hover:bg-sky-400 text-black"
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    Submit
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+            {/* <BarcodePrinted
           barcode="LQC12345"
           category="TOYS HOBBIES (200-699)"
           newPrice={formatRupiah(20000) ?? ""}
           oldPrice={formatRupiah(10000) ?? ""}
         /> */}
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
