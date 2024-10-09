@@ -373,19 +373,6 @@ export const Client = () => {
                         <Link
                           href={`/inbound/check-product/manifest-inbound/${doc.code_document}/check`}
                           className="w-9"
-                          onClick={() => {
-                            const documentData = {
-                              base_document: doc.base_document,
-                              total_column_in_document:
-                                doc.total_column_in_document,
-                              status_document: doc.status_document,
-                              code_document: doc.code_document,
-                            };
-                            localStorage.setItem(
-                              "documentData",
-                              JSON.stringify(documentData)
-                            );
-                          }}
                         >
                           <Button
                             className="items-center w-full px-0  border-green-400 text-green-700 hover:text-green-700 hover:bg-green-50"
@@ -399,19 +386,6 @@ export const Client = () => {
                         <Link
                           href={`/inbound/check-product/manifest-inbound/${doc.code_document}/detail`}
                           className="w-9"
-                          onClick={() => {
-                            const documentData = {
-                              base_document: doc.base_document,
-                              total_column_in_document:
-                                doc.total_column_in_document,
-                              status_document: doc.status_document,
-                              code_document: doc.code_document,
-                            };
-                            localStorage.setItem(
-                              "documentData",
-                              JSON.stringify(documentData)
-                            );
-                          }}
                         >
                           <Button
                             className="items-center w-full px-0  border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"

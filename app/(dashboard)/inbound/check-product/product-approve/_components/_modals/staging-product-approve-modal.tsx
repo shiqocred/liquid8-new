@@ -10,19 +10,20 @@ import { useCookies } from "next-client-cookies";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-export const DeleteProductApproveModal = () => {
+export const StaggingProductApproveModal = () => {
   const { isOpen, onClose, type, data } = useModal();
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
   const router = useRouter();
 
-  const isModalOpen = isOpen && type === "delete-document-product-approve";
+  const isModalOpen = isOpen && type === "staging-document-product-approve";
 
-  const onDelete = async (e: FormEvent) => {
+  const onStage = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      await axios.delete(
-        `${baseUrl}/delete_all_by_codeDocument?code_document=${data}`,
+      await axios.post(
+        `${baseUrl}/partial-staging/${data}`,
+        {},
         {
           headers: {
             Accept: "application/json",
@@ -32,7 +33,7 @@ export const DeleteProductApproveModal = () => {
       );
       cookies.set("productApprove", "updated");
       router.refresh();
-      toast.success("Document successfully deleted");
+      toast.success("Document successfully send to staging");
       onClose();
     } catch (error) {
       toast.error("Something went wrong");
@@ -42,12 +43,12 @@ export const DeleteProductApproveModal = () => {
 
   return (
     <Modal
-      title="Delete Document Product Approve"
-      description="Are you Sure? This action cannot be undone."
+      title="To Partial Staging Document Product Approve"
+      description=""
       isOpen={isModalOpen}
       onClose={onClose}
     >
-      <form onSubmit={onDelete} className="w-full flex flex-col gap-4">
+      <form onSubmit={onStage} className="w-full flex flex-col gap-4">
         <div className="flex w-full gap-2">
           <Button
             className="w-full bg-transparent hover:bg-transparent text-black border-black/50 border hover:border-black"
@@ -57,10 +58,10 @@ export const DeleteProductApproveModal = () => {
             Cancel
           </Button>
           <Button
-            className="bg-red-400 hover:bg-red-400/80 text-black w-full"
+            className="bg-green-500 hover:bg-green-500/80 text-black w-full"
             type="submit"
           >
-            Delete
+            To Partial Staging
           </Button>
         </div>
       </form>

@@ -1,5 +1,6 @@
 import { CheckProductManifestType } from "@/app/(dashboard)/inbound/check-product/manifest-inbound/[manifestInboundId]/[manifestInboundMonth]/[manifestInboundYear]/check/_components/_modals/type-modal";
 import { DetailManifestType } from "@/app/(dashboard)/inbound/check-product/manifest-inbound/[manifestInboundId]/[manifestInboundMonth]/[manifestInboundYear]/detail/_components/_modals/type-modal";
+import { ProductApproveType } from "@/app/(dashboard)/inbound/check-product/product-approve/_components/_modals/type-modal";
 import { StoreApi, UseBoundStore, create } from "zustand";
 
 export type ModalType =
@@ -7,7 +8,8 @@ export type ModalType =
   | "delete-detail-manifest-inbound"
   | "approve-documents"
   | DetailManifestType
-  | CheckProductManifestType;
+  | CheckProductManifestType
+  | ProductApproveType;
 
 interface UseModalProps {
   type: ModalType | null;

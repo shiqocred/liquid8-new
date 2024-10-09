@@ -8,31 +8,27 @@ import axios from "axios";
 import { baseUrl } from "@/lib/utils";
 import { useCookies } from "next-client-cookies";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 
-export const DeleteProductApproveModal = () => {
+export const DeleteProductDetailProductApproveModal = () => {
   const { isOpen, onClose, type, data } = useModal();
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
-  const router = useRouter();
 
-  const isModalOpen = isOpen && type === "delete-document-product-approve";
+  const isModalOpen = isOpen && type === "delete-detail-product-approve";
 
   const onDelete = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      await axios.delete(
-        `${baseUrl}/delete_all_by_codeDocument?code_document=${data}`,
-        {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
+      const res = await axios.delete(`${baseUrl}/product-approves/${data}`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      cookies.set("detailProductApprove", "updated");
+      toast.success(
+        "Data successfully deleted and returned to the product scan list"
       );
-      cookies.set("productApprove", "updated");
-      router.refresh();
-      toast.success("Document successfully deleted");
       onClose();
     } catch (error) {
       toast.error("Something went wrong");
@@ -42,10 +38,11 @@ export const DeleteProductApproveModal = () => {
 
   return (
     <Modal
-      title="Delete Document Product Approve"
+      title="Delete Product Approve"
       description="Are you Sure? This action cannot be undone."
       isOpen={isModalOpen}
       onClose={onClose}
+      className="max-w-sm"
     >
       <form onSubmit={onDelete} className="w-full flex flex-col gap-4">
         <div className="flex w-full gap-2">
