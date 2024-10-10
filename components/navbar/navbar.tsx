@@ -28,8 +28,6 @@ const Navbar = () => {
   const [open, setOpen] = useState(false);
   const [profileData, setProfileData] = useState<any>();
 
-  console.log(profileData);
-
   useEffect(() => {
     if (cookies.get("profile")) {
       const data = JSON.parse(cookies.get("profile") ?? "");
@@ -89,11 +87,11 @@ const Navbar = () => {
             </Button>
           </SheetTrigger>
           <SheetContent
-            className="bg-sky-400 overflow-y-scroll w-80 p-0"
+            className="bg-white overflow-y-scroll w-80 p-0"
             side={"left"}
           >
             <SheetHeader className="px-5 py-3">
-              <SheetTitle className="text-lg font-bold text-white flex items-center">
+              <SheetTitle className="text-lg font-bold text-black flex items-center">
                 <Menu className="w-5 h-5 mr-2" />
                 Navigation
               </SheetTitle>

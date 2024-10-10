@@ -52,6 +52,7 @@ import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
 import Loading from "../loading";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import NotFound from "@/app/not-found";
 
 interface DetailManifest {
   id: string;
@@ -66,6 +67,7 @@ interface DetailManifest {
 
 export const Client = () => {
   const { onOpen } = useModal();
+  const [is404, setIs404] = useState(false);
   const [isFilter, setIsFilter] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [dataSearch, setDataSearch] = useState("");
@@ -169,6 +171,10 @@ export const Client = () => {
         total: response.data.data.resource.total ?? 0,
       });
     } catch (err: any) {
+      if (err.response.status === 404) {
+        setIs404(true);
+      }
+      console.log(err);
       setError(err.message || "An error occurred");
     } finally {
       setLoading(false);
@@ -189,6 +195,16 @@ export const Client = () => {
 
   if (!isMounted) {
     return <Loading />;
+  }
+
+  if (is404) {
+    return (
+      <div className="flex flex-col items-start h-full bg-gray-100 w-full relative p-4 gap-4">
+        <div className="w-full h-full overflow-hidden rounded-md shadow-md flex items-center justify-center relative">
+          <NotFound isDashboard />
+        </div>
+      </div>
+    );
   }
 
   return (

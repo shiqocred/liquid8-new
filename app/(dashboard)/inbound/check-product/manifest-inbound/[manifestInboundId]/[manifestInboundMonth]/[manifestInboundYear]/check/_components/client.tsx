@@ -628,7 +628,7 @@ export const Client = () => {
                   onSubmit={(e) => handleSubmit(e, "lolos")}
                   className="w-full space-y-6 mt-6"
                 >
-                  {parseFloat(data.old_price_product) > 100000 && (
+                  {parseFloat(data.old_price_product) >= 100000 && (
                     <div className="w-full flex flex-col gap-3">
                       <RadioGroup
                         onValueChange={(e) => {
@@ -712,10 +712,17 @@ export const Client = () => {
                     rows={6}
                     className="border-sky-400/80 focus-visible:ring-sky-400"
                     value={description.damaged}
+                    onChange={(e) =>
+                      setDescription((prev) => ({
+                        ...prev,
+                        damaged: e.target.value,
+                      }))
+                    }
                   />
                   <Button
                     type="submit"
                     className="w-full bg-sky-400/80 hover:bg-sky-400 text-black"
+                    disabled={!description.damaged}
                   >
                     <Send className="w-4 h-4 mr-2" />
                     Submit
@@ -732,10 +739,17 @@ export const Client = () => {
                     rows={6}
                     className="border-sky-400/80 focus-visible:ring-sky-400"
                     value={description.abnormal}
+                    onChange={(e) =>
+                      setDescription((prev) => ({
+                        ...prev,
+                        abnormal: e.target.value,
+                      }))
+                    }
                   />
                   <Button
                     type="submit"
                     className="w-full bg-sky-400/80 hover:bg-sky-400 text-black"
+                    disabled={!description.abnormal}
                   >
                     <Send className="w-4 h-4 mr-2" />
                     Submit
