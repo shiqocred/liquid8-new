@@ -19,6 +19,8 @@ import { format } from "date-fns";
 import {
   ChevronLeft,
   ChevronRight,
+  Grid2x2X,
+  Loader,
   ReceiptText,
   ShieldCheck,
   Trash2,
@@ -28,6 +30,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
 import Loading from "../loading";
+import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
+import { useModal } from "@/hooks/use-modal";
+import { toast } from "sonner";
 
 interface Category {
   id: string;
@@ -48,12 +53,61 @@ export const Client = () => {
   const searchValue = useDebounce(dataSearch);
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { onOpen } = useModal();
   const [category, setCategory] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
+
+  const [data, setData] = useState<any[]>([]);
+  const [page, setPage] = useState({
+    current: parseFloat(searchParams.get("page") ?? "1") ?? 1, //page saat ini
+    last: 1, //page terakhir
+    from: 1, //data dimulai dari (untuk memulai penomoran tabel)
+    total: 1, //total data
+  });
+
+  // handle GET Data
+  const handleGetData = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `${baseUrl}/staging_approves?page=${page.current}&q=${searchValue}`,
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      setData(response.data.data.resource.data);
+      setPage({
+        current: response.data.data.resource.current_page,
+        last: response.data.data.resource.last_page,
+        from: response.data.data.resource.from,
+        total: response.data.data.resource.total,
+      });
+    } catch (err: any) {
+      console.log("ERROR_GET_DOCUMENT:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleGetDetailProduct = async (id: any) => {
+    try {
+      const response = await axios.get(`${baseUrl}/staging_approves/${id}`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      onOpen("detail-product-approve-scan-result", response.data.data.resource);
+    } catch (err: any) {
+      toast.error("Something went wrong.");
+      setError(err.message || "An error occurred");
+    }
+  };
 
   const handleCurrentId = useCallback(
     (q: string) => {
@@ -80,23 +134,32 @@ export const Client = () => {
         { skipNull: true }
       );
 
-      router.push(url);
+      router.push(url, { scroll: false });
     },
     [searchParams, router]
   );
 
   useEffect(() => {
+    if (cookies.get("approveScanResult")) {
+      handleGetData();
+      return cookies.remove("approveScanResult");
+    }
+  }, [cookies.get("approveScanResult")]);
+
+  useEffect(() => {
     handleCurrentId(searchValue);
+    handleGetData();
   }, [searchValue]);
 
   useEffect(() => {
     setIsMounted(true);
+    handleGetData();
   }, []);
 
   if (!isMounted) {
     return <Loading />;
   }
-  if (loading) return <p>Loading...</p>;
+
   if (error) return <p>Error: {error}</p>;
 
   return (
@@ -127,99 +190,144 @@ export const Client = () => {
               />
               <div className="h-9 px-4 flex-none flex items-center text-sm rounded-md justify-center border gap-1 border-sky-500 bg-sky-100">
                 Total:
-                <span className="font-semibold">50 Products</span>
+                <span className="font-semibold">{page.total} Products</span>
               </div>
             </div>
             <div className="flex gap-3">
-              <Button className="bg-sky-400/80 hover:bg-sky-400 text-black">
+              <Button
+                type="button"
+                onClick={() =>
+                  onOpen("done-check-all-approve-scan-result-modal")
+                }
+                className="bg-sky-400/80 hover:bg-sky-400 text-black"
+              >
                 <ShieldCheck className="w-4 h-4 mr-2" />
                 Done Check All
               </Button>
             </div>
           </div>
           <div className="w-full p-4 rounded-md border border-sky-400/80 overflow-hidden">
-            <ScrollArea>
-              <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
-                <p className="w-10 text-center flex-none">No</p>
-                <p className="w-28 flex-none">Barcode</p>
-                <p className="min-w-72 w-full max-w-[500px]">Product Name</p>
-                <p className="w-44 flex-none">Category</p>
-                <p className="w-44 flex-none">Price</p>
-                <p className="w-60 flex-none">Date</p>
-                <p className="w-28 flex-none">Status</p>
-                <p className="w-48 text-center flex-none">Action</p>
+            {loading ? (
+              <div className="h-[200px] flex items-center justify-center">
+                <Loader className="w-5 h-5 animate-spin" />
               </div>
-              {Array.from({ length: 10 }, (_, i) => (
-                <div
-                  className="flex w-full px-5 py-5 text-sm gap-4 border-b border-sky-100 items-center hover:border-sky-200"
-                  key={i}
-                >
-                  <p className="w-10 text-center flex-none">{i + 1}</p>
-                  <p className="w-28 flex-none overflow-hidden text-ellipsis">
-                    175L24145
-                  </p>
-                  <p className="min-w-72 w-full max-w-[500px] text-ellipsis overflow-hidden whitespace-nowrap">
-                    OLEVS Jam Tangan Pria Anti Air Original 100% Keren Led
-                    Terbaru Stainless Steel Causal Luxury Quartz Kronograf
-                  </p>
-                  <p className="w-44 flex-none whitespace-pre-wrap">
-                    BABY PRODUCT
-                  </p>
-                  <p className="w-44 flex-none whitespace-pre-wrap">
-                    {formatRupiah(100000)}
-                  </p>
-                  <p className="w-60 flex-none whitespace-pre-wrap">
-                    {format(new Date(1 - 10 - 2024), "iiii, dd MMMM yyyy")}
-                  </p>
-                  <div className="w-28 flex-none">
-                    <Badge
-                      className={cn(
-                        "rounded w-20 px-0 justify-center text-black font-normal capitalize bg-green-400 hover:bg-green-400"
-                      )}
-                    >
-                      Display
-                    </Badge>
-                  </div>
-                  <div className="w-48 flex-none flex gap-4 justify-center">
-                    <Button
-                      className="items-center w-full border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
-                      variant={"outline"}
-                      type="button"
-                      onClick={() => alert("pop up")}
-                    >
-                      <ReceiptText className="w-4 h-4 mr-1" />
-                      <p>Detail</p>
-                    </Button>
-                    <Button
-                      className="items-center w-full border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
-                      variant={"outline"}
-                      type="button"
-                      onClick={() => alert("pop up")}
-                    >
-                      <Trash2 className="w-4 h-4 mr-1" />
-                      <div>Delete</div>
-                    </Button>
-                  </div>
+            ) : (
+              <ScrollArea>
+                <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
+                  <p className="w-10 text-center flex-none">No</p>
+                  <p className="w-32 flex-none">Barcode</p>
+                  <p className="min-w-44 w-full max-w-[400px]">Product Name</p>
+                  <p className="w-44 flex-none">Category</p>
+                  <p className="w-36 flex-none">Price</p>
+                  <p className="w-48 flex-none">Date</p>
+                  <p className="w-24 flex-none">Status</p>
+                  <p className="w-24 text-center flex-none">Action</p>
                 </div>
-              ))}
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
+                {data.length > 0 ? (
+                  data.map((item, index) => (
+                    <div
+                      className="flex w-full px-5 py-5 text-sm gap-4 border-b border-sky-100 items-center hover:border-sky-200"
+                      key={item.id}
+                    >
+                      <p className="w-10 text-center flex-none">
+                        {page.from + index}
+                      </p>
+                      <p className="w-32 flex-none overflow-hidden text-ellipsis">
+                        {item?.new_barcode_product}
+                      </p>
+                      <TooltipProviderPage value={item?.new_name_product}>
+                        <p className="min-w-44 w-full max-w-[400px] text-ellipsis overflow-hidden whitespace-nowrap">
+                          {item?.new_name_product}
+                        </p>
+                      </TooltipProviderPage>
+                      <p className="w-44 flex-none text-ellipsis overflow-hidden whitespace-nowrap">
+                        {item?.new_category_product}
+                      </p>
+                      <p className="w-36 flex-none text-ellipsis overflow-hidden whitespace-nowrap">
+                        {formatRupiah(item?.new_price_product ?? 0)}
+                      </p>
+                      <p className="w-48 flex-none text-ellipsis overflow-hidden whitespace-nowrap">
+                        {format(
+                          new Date("10-09-2024" ?? new Date().toString()),
+                          "iiii, dd-MMM-yyyy"
+                        )}
+                      </p>
+                      <div className="w-24 flex-none">
+                        <Badge
+                          className={cn(
+                            "rounded w-20 px-0 justify-center text-black font-normal capitalize bg-green-400 hover:bg-green-400",
+                            (item?.new_status_product ?? "").toLowerCase() !==
+                              "display" && "bg-yellow-400 hover:bg-yellow-400"
+                          )}
+                        >
+                          {item?.new_status_product}
+                        </Badge>
+                      </div>
+                      <div className="w-24 flex-none flex gap-4 justify-center">
+                        <Button
+                          className="items-center w-9 px-0 border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
+                          variant={"outline"}
+                          type="button"
+                          onClick={() => handleGetDetailProduct(item.id)}
+                        >
+                          <ReceiptText className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          className="items-center w-9 px-0 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
+                          variant={"outline"}
+                          type="button"
+                          onClick={() =>
+                            onOpen(
+                              "delete-product-approve-scan-result",
+                              item.id
+                            )
+                          }
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="h-[200px] flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2 text-gray-500">
+                      <Grid2x2X className="w-8 h-8" />
+                      <p className="text-sm font-semibold">No Data Viewed.</p>
+                    </div>
+                  </div>
+                )}
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            )}
           </div>
-          <div className="flex gap-5 ml-auto items-center">
-            <p className="text-sm">Page {page} of 3</p>
-            <div className="flex items-center gap-2">
-              <Button
-                className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
-                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-              <Button
-                className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
-                onClick={() => setPage((prev) => prev + 1)}
-              >
-                <ChevronRight className="w-5 h-5" />
-              </Button>
+          <div className="flex items-center justify-between">
+            <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
+              Total: {page.total}
+            </Badge>
+            <div className="flex gap-5 items-center">
+              <p className="text-sm">
+                Page {page.current} of {page.last}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
+                  onClick={() =>
+                    setPage((prev) => ({ ...prev, current: prev.current - 1 }))
+                  }
+                  disabled={page.current === 1}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <Button
+                  className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
+                  onClick={() =>
+                    setPage((prev) => ({ ...prev, current: prev.current + 1 }))
+                  }
+                  disabled={page.current === page.last}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>

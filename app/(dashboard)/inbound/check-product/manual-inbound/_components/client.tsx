@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -8,45 +7,40 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useDebounce } from "@/hooks/use-debounce";
-import { ArrowLeft, Loader, Search, Send, ShieldCheck } from "lucide-react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import qs from "query-string";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import Loading from "../loading";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+import { useModal } from "@/hooks/use-modal";
+import { useDebounce } from "@/hooks/use-debounce";
 import { baseUrl, cn, formatRupiah } from "@/lib/utils";
-import { useCookies } from "next-client-cookies";
+
 import axios from "axios";
 import { toast } from "sonner";
-import { useModal } from "@/hooks/use-modal";
+import { Loader, Send } from "lucide-react";
+import { useCookies } from "next-client-cookies";
+import { FormEvent, useEffect, useRef, useState } from "react";
+
+import Loading from "../loading";
 
 export const Client = () => {
+  // state boolean
   const [isMounted, setIsMounted] = useState(false);
-  const router = useRouter();
+  const [loadingPrice, setLoadingPrice] = useState(false);
+
+  // core
+  const { onOpen } = useModal();
+  const nameRef = useRef<HTMLInputElement | null>(null);
+
+  // cookies
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
-  const [loadingPrice, setLoadingPrice] = useState(false);
-  const { onOpen } = useModal();
 
+  // state data
   const [input, setInput] = useState({
     name: "",
     price: "0",
@@ -68,9 +62,12 @@ export const Client = () => {
       max_price_category: "0",
     },
   ]);
+
+  // debounce
   const inputValue = useDebounce(input.price);
 
-  const handleGetBarcode = async () => {
+  // handle GET
+  const handleGetPrice = async () => {
     setLoadingPrice(true);
     try {
       const response = await axios.get(
@@ -115,6 +112,7 @@ export const Client = () => {
     }
   };
 
+  // handle Submit
   const handleSubmit = async (
     e: FormEvent,
     type: "lolos" | "abnormal" | "damaged"
@@ -144,12 +142,15 @@ export const Client = () => {
       });
       const dataResponse = response.data.data;
       if (dataResponse.resource.new_category_product) {
-        onOpen("manifest-inbound-barcode-printered", {
+        onOpen("manual-inbound-barcode-printered", {
           barcode: dataResponse.resource.new_barcode_product,
           newPrice: dataResponse.resource.new_price_product,
           oldPrice: dataResponse.resource.old_price_product,
           category: dataResponse.resource.new_category_product,
         });
+      }
+      if (nameRef.current) {
+        nameRef.current.focus();
       }
       setInput({
         name: "",
@@ -178,6 +179,7 @@ export const Client = () => {
     }
   };
 
+  // effect change default value
   useEffect(() => {
     if (isNaN(parseFloat(input.qty)) || parseFloat(input.qty) <= 0) {
       setInput((prev) => ({ ...prev, qty: "1" }));
@@ -190,6 +192,7 @@ export const Client = () => {
     }
   }, [input]);
 
+  // effect count discount
   useEffect(() => {
     if (parseFloat(input.price) < 100000) {
       setInput((prev) => ({
@@ -209,8 +212,9 @@ export const Client = () => {
     }
   }, [input.price, input.fixed_price_color, input.discount]);
 
+  // effect GET price
   useEffect(() => {
-    handleGetBarcode();
+    handleGetPrice();
   }, [inputValue]);
 
   useEffect(() => {
@@ -249,6 +253,8 @@ export const Client = () => {
                     setInput((prev) => ({ ...prev, name: e.target.value }))
                   }
                   className="w-full border-sky-400/80 focus-visible:ring-sky-400"
+                  autoFocus
+                  ref={nameRef}
                 />
               </div>
               <div className="flex w-full gap-4">
@@ -431,9 +437,8 @@ export const Client = () => {
                 disabled={
                   (!input.category && parseFloat(input.price) > 100000) ||
                   !input.name ||
-                  parseFloat(input.price) !== 0 ||
-                  parseFloat(input.discountPrice) !== 0 ||
-                  parseFloat(input.qty) !== 0
+                  parseFloat(input.price) === 0 ||
+                  parseFloat(input.qty) === 0
                 }
               >
                 <Send className="w-4 h-4 mr-2" />
@@ -461,9 +466,8 @@ export const Client = () => {
                 disabled={
                   !input.damaged ||
                   !input.name ||
-                  parseFloat(input.price) !== 0 ||
-                  parseFloat(input.discountPrice) !== 0 ||
-                  parseFloat(input.qty) !== 0
+                  parseFloat(input.price) === 0 ||
+                  parseFloat(input.qty) === 0
                 }
               >
                 <Send className="w-4 h-4 mr-2" />
@@ -491,9 +495,8 @@ export const Client = () => {
                 disabled={
                   !input.abnormal ||
                   !input.name ||
-                  parseFloat(input.price) !== 0 ||
-                  parseFloat(input.discountPrice) !== 0 ||
-                  parseFloat(input.qty) !== 0
+                  parseFloat(input.price) === 0 ||
+                  parseFloat(input.qty) === 0
                 }
               >
                 <Send className="w-4 h-4 mr-2" />
