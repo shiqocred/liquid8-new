@@ -1,40 +1,9 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-  CommandShortcut,
-} from "@/components/ui/command";
-import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
-import { useDebounce } from "@/hooks/use-debounce";
-import { useModal } from "@/hooks/use-modal";
-import { baseUrl } from "@/lib/baseUrl";
-import { cn, formatRupiah } from "@/lib/utils";
-import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
-import axios from "axios";
 import {
   ArrowLeft,
   ArrowLeftRight,
   ArrowRightCircle,
-  ArrowUpDown,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -43,15 +12,33 @@ import {
   Loader,
   RefreshCw,
   Trash2,
-  XCircle,
 } from "lucide-react";
-import { useCookies } from "next-client-cookies";
+import axios from "axios";
 import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
+import { useCookies } from "next-client-cookies";
 import { useCallback, useEffect, useState } from "react";
-import Loading from "../loading";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+
+import { Badge } from "@/components/ui/badge";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+
+import { baseUrl } from "@/lib/baseUrl";
+import { useModal } from "@/hooks/use-modal";
+import { cn, formatRupiah } from "@/lib/utils";
+import { useDebounce } from "@/hooks/use-debounce";
+import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
+
+import Loading from "../loading";
 import NotFound from "@/app/not-found";
 
 interface DetailManifest {
@@ -66,23 +53,29 @@ interface DetailManifest {
 }
 
 export const Client = () => {
+  // core
+  const params = useParams();
+  const router = useRouter();
   const { onOpen } = useModal();
+  const searchParams = useSearchParams();
+
+  // state boolean
   const [is404, setIs404] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [isFilter, setIsFilter] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [copied, setCopied] = useState<number | null>(null);
+
+  // state search & orientasion
   const [dataSearch, setDataSearch] = useState("");
   const searchValue = useDebounce(dataSearch);
-  const params = useParams();
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const [filter, setFilter] = useState(searchParams.get("f") ?? "");
-  const [orientation, setOrientation] = useState(searchParams.get("s") ?? "");
-  const [copied, setCopied] = useState<number | null>(null);
-  const [dataResults, setDataResults] = useState<DetailManifest[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  // cookies
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
+
+  // state data
+  const [dataResults, setDataResults] = useState<DetailManifest[]>([]);
   const [metaData, setMetaData] = useState({
     document_name: "",
     status: "",
@@ -97,6 +90,7 @@ export const Client = () => {
     total: 1, //total data
   });
 
+  // handle copy
   const handleCopy = (code: string, id: number) => {
     navigator.clipboard.writeText(code).then(() => {
       setCopied(id);
@@ -104,10 +98,9 @@ export const Client = () => {
     });
   };
 
+  // handle search parrams
   const handleCurrentId = useCallback(
-    (q: string, f: string, s: string) => {
-      setFilter(f);
-      setOrientation(s);
+    (q: string) => {
       let currentQuery = {};
 
       if (searchParams) {
@@ -117,20 +110,10 @@ export const Client = () => {
       const updateQuery: any = {
         ...currentQuery,
         q: q,
-        f: f,
-        s: s,
       };
 
       if (!q || q === "") {
         delete updateQuery.q;
-      }
-      if (!f || f === "") {
-        delete updateQuery.f;
-        setFilter("");
-      }
-      if (!s || s === "") {
-        delete updateQuery.s;
-        setOrientation("");
       }
 
       const url = qs.stringifyUrl(
@@ -141,15 +124,12 @@ export const Client = () => {
         { skipNull: true }
       );
 
-      router.push(url);
+      router.push(url, { scroll: false });
     },
     [searchParams, router]
   );
 
-  useEffect(() => {
-    handleCurrentId(searchValue, filter, orientation);
-  }, [searchValue]);
-
+  // handle GET
   const fetchDetailDocuments = async () => {
     setLoading(true);
     const codeDocument = `${params.manifestInboundId}/${params.manifestInboundMonth}/${params.manifestInboundYear}`;
@@ -174,12 +154,15 @@ export const Client = () => {
       if (err.response.status === 404) {
         setIs404(true);
       }
-      console.log(err);
-      setError(err.message || "An error occurred");
+      console.log("ERROR_GET_DETAIL:", err);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    handleCurrentId(searchValue);
+  }, [searchValue]);
 
   useEffect(() => {
     if (cookies.get("detailManifestInbound")) {
@@ -311,206 +294,15 @@ export const Client = () => {
                   />
                 </Button>
               </TooltipProviderPage>
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-3">
-                  <Popover open={isFilter} onOpenChange={setIsFilter}>
-                    <PopoverTrigger asChild>
-                      <Button className="border-sky-400/80 border text-black bg-transparent border-dashed hover:bg-transparent flex px-3 hover:border-sky-400">
-                        <ArrowUpDown className="h-4 w-4 mr-2" />
-                        Sort by
-                        {filter && (
-                          <Separator
-                            orientation="vertical"
-                            className="mx-2 bg-gray-500 w-[1.5px]"
-                          />
-                        )}
-                        {filter && (
-                          <Badge
-                            className={cn(
-                              "rounded w-20 px-0 justify-center text-black font-normal capitalize",
-                              filter === "barcode" &&
-                                "bg-sky-200 hover:bg-sky-200",
-                              filter === "product" &&
-                                "bg-indigo-200 hover:bg-indigo-200",
-                              filter === "price" &&
-                                "bg-green-200 hover:bg-green-200"
-                            )}
-                          >
-                            {filter === "barcode" && "Barcode"}
-                            {filter === "product" && "Product"}
-                            {filter === "price" && "Price"}
-                          </Badge>
-                        )}
-                        {orientation && (
-                          <Badge
-                            className={cn(
-                              "rounded w-12 px-0 justify-center text-black font-normal lowercase ml-2",
-                              orientation === "asc" &&
-                                "bg-gray-200 hover:bg-gray-200",
-                              orientation === "desc" &&
-                                "bg-black hover:bg-black text-white"
-                            )}
-                          >
-                            {orientation === "asc" && "asc"}
-                            {orientation === "desc" && "desc"}
-                          </Badge>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="p-0 w-52" align="start">
-                      <Command>
-                        <CommandGroup>
-                          <CommandList>
-                            <CommandItem
-                              onSelect={() => {
-                                handleCurrentId(dataSearch, "barcode", "asc");
-                                setIsFilter(false);
-                              }}
-                            >
-                              <Checkbox
-                                className="w-4 h-4 mr-2"
-                                checked={
-                                  filter === "barcode" && orientation === "asc"
-                                }
-                                onCheckedChange={() => {
-                                  handleCurrentId(dataSearch, "barcode", "asc");
-                                  setIsFilter(false);
-                                }}
-                              />
-                              Barcode
-                              <CommandShortcut>asc</CommandShortcut>
-                            </CommandItem>
-                            <CommandItem
-                              onSelect={() => {
-                                handleCurrentId(dataSearch, "barcode", "desc");
-                                setIsFilter(false);
-                              }}
-                            >
-                              <Checkbox
-                                className="w-4 h-4 mr-2"
-                                checked={
-                                  filter === "barcode" && orientation === "desc"
-                                }
-                                onCheckedChange={() => {
-                                  handleCurrentId(
-                                    dataSearch,
-                                    "barcode",
-                                    "desc"
-                                  );
-                                  setIsFilter(false);
-                                }}
-                              />
-                              Barcode
-                              <CommandShortcut>desc</CommandShortcut>
-                            </CommandItem>
-                            <CommandItem
-                              onSelect={() => {
-                                handleCurrentId(dataSearch, "product", "asc");
-                                setIsFilter(false);
-                              }}
-                            >
-                              <Checkbox
-                                className="w-4 h-4 mr-2"
-                                checked={
-                                  filter === "product" && orientation === "asc"
-                                }
-                                onCheckedChange={() => {
-                                  handleCurrentId(dataSearch, "product", "asc");
-                                  setIsFilter(false);
-                                }}
-                              />
-                              Product
-                              <CommandShortcut>asc</CommandShortcut>
-                            </CommandItem>
-                            <CommandItem
-                              onSelect={() => {
-                                handleCurrentId(dataSearch, "product", "desc");
-                                setIsFilter(false);
-                              }}
-                            >
-                              <Checkbox
-                                className="w-4 h-4 mr-2"
-                                checked={
-                                  filter === "product" && orientation === "desc"
-                                }
-                                onCheckedChange={() => {
-                                  handleCurrentId(
-                                    dataSearch,
-                                    "product",
-                                    "desc"
-                                  );
-                                  setIsFilter(false);
-                                }}
-                              />
-                              Product
-                              <CommandShortcut>desc</CommandShortcut>
-                            </CommandItem>
-                            <CommandItem
-                              onSelect={() => {
-                                handleCurrentId(dataSearch, "price", "asc");
-                                setIsFilter(false);
-                              }}
-                            >
-                              <Checkbox
-                                className="w-4 h-4 mr-2"
-                                checked={
-                                  filter === "price" && orientation === "asc"
-                                }
-                                onCheckedChange={() => {
-                                  handleCurrentId(dataSearch, "price", "asc");
-                                  setIsFilter(false);
-                                }}
-                              />
-                              Price
-                              <CommandShortcut>asc</CommandShortcut>
-                            </CommandItem>
-                            <CommandItem
-                              onSelect={() => {
-                                handleCurrentId(dataSearch, "price", "desc");
-                                setIsFilter(false);
-                              }}
-                            >
-                              <Checkbox
-                                className="w-4 h-4 mr-2"
-                                checked={
-                                  filter === "price" && orientation === "desc"
-                                }
-                                onCheckedChange={() => {
-                                  handleCurrentId(dataSearch, "price", "desc");
-                                  setIsFilter(false);
-                                }}
-                              />
-                              Price
-                              <CommandShortcut>desc</CommandShortcut>
-                            </CommandItem>
-                          </CommandList>
-                        </CommandGroup>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  {filter && (
-                    <Button
-                      variant={"ghost"}
-                      className="flex px-3"
-                      onClick={() => {
-                        handleCurrentId(dataSearch, "", "");
-                      }}
-                    >
-                      Reset
-                      <XCircle className="h-4 w-4 ml-2" />
-                    </Button>
-                  )}
-                </div>
-                <div className="flex gap-2 items-center">
-                  <Link
-                    href={`/inbound/check-product/manifest-inbound/${params.manifestInboundId}/${params.manifestInboundMonth}/${params.manifestInboundYear}/check`}
-                  >
-                    <Button className="bg-sky-400/80 hover:bg-sky-400 text-black">
-                      <ArrowRightCircle className="w-4 h-4 mr-1" />
-                      Next
-                    </Button>
-                  </Link>
-                </div>
+              <div className="flex items-center justify-end w-full">
+                <Link
+                  href={`/inbound/check-product/manifest-inbound/${params.manifestInboundId}/${params.manifestInboundMonth}/${params.manifestInboundYear}/check`}
+                >
+                  <Button className="bg-sky-400/80 hover:bg-sky-400 text-black">
+                    <ArrowRightCircle className="w-4 h-4 mr-1" />
+                    Next
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>

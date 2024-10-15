@@ -24,13 +24,15 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/use-debounce";
-import { cn, formatRupiah } from "@/lib/utils";
+import { baseUrl, cn, formatRupiah } from "@/lib/utils";
 import {
   ArrowLeft,
   ArrowLeftRight,
   ChevronLeft,
   ChevronRight,
   FileDown,
+  Grid2x2X,
+  Loader,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -46,12 +48,12 @@ import {
   ChartLegendContent,
 } from "@/components/ui/chart";
 import Loading from "../loading";
-const chartData = [
-  { dataType: "good", values: 275, fill: "var(--color-good)" },
-  { dataType: "damaged", values: 200, fill: "var(--color-damaged)" },
-  { dataType: "discrepancy", values: 287, fill: "var(--color-discrepancy)" },
-  { dataType: "abnormal", values: 173, fill: "var(--color-abnormal)" },
-];
+import axios from "axios";
+import { toast } from "sonner";
+import { useCookies } from "next-client-cookies";
+import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+
 const chartConfig = {
   values: {
     label: "Values",
@@ -83,13 +85,94 @@ export const Client = () => {
   const router = useRouter();
   const [filter, setFilter] = useState(searchParams.get("f") ?? "good");
   const params = useParams();
+  const [loading, setLoading] = useState(false);
+  // cookies
+  const cookies = useCookies();
+  const accessToken = cookies.get("accessToken");
+
+  // state data
+  const [data, setData] = useState<any>();
+  const [products, setProducts] = useState<any[]>([]);
+  const [page, setPage] = useState({
+    current: parseFloat(searchParams.get("page") ?? "1") ?? 1, //page saat ini
+    last: 1, //page terakhir
+    from: 0, //data dimulai dari (untuk memulai penomoran tabel)
+    total: 0, //total data
+  });
+
+  const chartData = [
+    {
+      dataType: "good",
+      values: data?.total_data_lolos ?? 0,
+      fill: "var(--color-good)",
+    },
+    {
+      dataType: "damaged",
+      values: data?.total_data_damaged ?? 0,
+      fill: "var(--color-damaged)",
+    },
+    {
+      dataType: "discrepancy",
+      values: data?.total_discrepancy ?? 0,
+      fill: "var(--color-discrepancy)",
+    },
+    {
+      dataType: "abnormal",
+      values: data?.total_data_abnormal ?? 0,
+      fill: "var(--color-abnormal)",
+    },
+  ];
+
+  // handle GET
+  const fetchDocuments = async () => {
+    try {
+      const response = await axios.get(`${baseUrl}/historys/${params.id}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      setData(response.data.data.resource);
+    } catch (err: any) {
+      toast.error(`Error ${err.response.status}: Something went wrong`);
+      console.log("ERROR_GET_DOCUMENT:", err);
+    }
+  };
+  const handleGetProduct = async (type: string) => {
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `${baseUrl}/${type === "good" ? "getProductLolos" : ""}${
+          type === "damaged" ? "getProductDamaged" : ""
+        }${type === "abnormal" ? "getProductAbnormal" : ""}${
+          type === "discrepancy" ? "discrepancy" : ""
+        }/${data?.code_document}?page=${page.current}&q=${searchValue}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      setProducts(response.data.data.resource.data);
+      setPage({
+        current: response.data.data.resource.current_page ?? 1,
+        last: response.data.data.resource.last_page ?? 1,
+        from: response.data.data.resource.from ?? 0,
+        total: response.data.data.resource.total ?? 0,
+      });
+    } catch (err: any) {
+      toast.error(`Error ${err.response?.status}: Something went wrong`);
+      console.log("ERROR_GET_DOCUMENT:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const totalVisitors = React.useMemo(() => {
     return chartData.reduce((acc, curr) => acc + curr.values, 0);
-  }, []);
+  }, [data]);
 
   const handleCurrentId = useCallback(
-    (q: string, f: string) => {
+    (q: string, f: string, p: number) => {
       setFilter(f);
       let currentQuery = {};
 
@@ -101,10 +184,14 @@ export const Client = () => {
         ...currentQuery,
         q: q,
         f: f,
+        page: p,
       };
 
       if (!q || q === "") {
         delete updateQuery.q;
+      }
+      if (!p || p <= 1) {
+        delete updateQuery.page;
       }
 
       const url = qs.stringifyUrl(
@@ -115,16 +202,20 @@ export const Client = () => {
         { skipNull: true }
       );
 
-      router.push(url);
+      router.push(url, { scroll: false });
     },
     [searchParams, router]
   );
 
   useEffect(() => {
-    handleCurrentId(searchValue, filter);
-  }, [searchValue]);
+    handleCurrentId(searchValue, filter, page.current);
+    if (data?.code_document) {
+      handleGetProduct(filter);
+    }
+  }, [searchValue, data?.code_document, filter, page.current]);
 
   useEffect(() => {
+    fetchDocuments();
     setIsMounted(true);
   }, []);
 
@@ -151,7 +242,7 @@ export const Client = () => {
       </Breadcrumb>
       <div className="flex w-full gap-4">
         <div className="flex w-full flex-col gap-4">
-          <div className="flex text-sm text-gray-500 py-3 rounded-md shadow bg-white w-full px-5 h-24 items-center">
+          <div className="flex text-sm text-gray-500 py-3 rounded-md shadow bg-white w-full px-5 h-24 items-center justify-between">
             <div className="flex w-full items-center">
               <Link href={"/inbound/check-history"} className="group">
                 <button
@@ -163,193 +254,201 @@ export const Client = () => {
                   </div>
                 </button>
               </Link>
-              <div className="w-2/3">
-                <p>Document Code</p>
-                <h3 className="text-black font-semibold text-xl">
-                  0062/07/2024
+              <div className="w-full">
+                <p>Base Document</p>
+                <h3 className="text-black font-semibold text-xl w-full text-ellipsis whitespace-nowrap">
+                  {data?.base_document}
                 </h3>
               </div>
             </div>
-            <div className="flex w-full">
-              <div className="flex flex-col w-full border-l pl-2 border-black gap-2 py-2">
-                <h3 className="text-xs">Status Check</h3>
-                <div>
-                  <Badge className="rounded-full bg-green-400 text-black hover:bg-green-400">
-                    Done
-                  </Badge>
-                </div>
-              </div>
-              <div className="flex flex-col w-full border-l pl-2 border-black gap-2 py-2">
-                <h3 className="text-xs">Status Approve</h3>
-                <div>
-                  <Badge className="rounded-full bg-green-400 text-black hover:bg-green-400">
-                    Done
-                  </Badge>
-                </div>
-              </div>
+            <div className="flex flex-col text-end w-fit flex-none">
+              <h3 className="text-xs font-semibold">Document Code</h3>
+              <p className="text-black font-light text-sm">
+                {data?.code_document}
+              </p>
             </div>
           </div>
           <div className="grid grid-cols-4 w-full gap-4">
-            <div className="flex flex-col gap-4 col-span-2 xl:col-span-1">
+            <div className="flex flex-col gap-4 col-span-2">
               <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
-                <p className="text-sm font-light text-gray-500">Total Data</p>
+                <p className="text-sm font-light text-gray-500">
+                  Total <span className="font-semibold underline">Data</span>
+                </p>
                 <div className="flex justify-between items-center">
                   <h3 className="text-gray-700 font-bold text-2xl">
-                    {(2600).toLocaleString()}
+                    {(data?.total_data ?? 0).toLocaleString()}
                   </h3>
                   <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
-                    100%
+                    {Math.round(data?.precentage_total_data ?? 0)}%
                   </Badge>
                 </div>
               </div>
               <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
                 <p className="text-sm font-light text-gray-500">
-                  Total Data In
+                  Total <span className="font-semibold underline">Data In</span>
                 </p>
                 <div className="flex justify-between items-center">
                   <h3 className="text-gray-700 font-bold text-2xl">
-                    {(2600).toLocaleString()}
+                    {(data?.total_data_in ?? 0).toLocaleString()}
                   </h3>
                   <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
-                    100%
-                  </Badge>
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col gap-4 col-span-2 xl:col-span-1">
-              <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
-                <p className="text-sm font-light text-gray-500">
-                  Total By Category
-                </p>
-                <div className="flex justify-between items-center">
-                  <h3 className="text-gray-700 font-bold text-2xl">
-                    {(2600).toLocaleString()}
-                  </h3>
-                </div>
-              </div>
-              <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
-                <p className="text-sm font-light text-gray-500">
-                  Total By Color
-                </p>
-                <div className="flex justify-between items-center">
-                  <h3 className="text-gray-700 font-bold text-2xl">
-                    {(2600).toLocaleString()}
-                  </h3>
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col gap-4 col-span-2 xl:col-span-1">
-              <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
-                <p className="text-sm font-light text-gray-500">
-                  Total Good Data
-                </p>
-                <div className="flex justify-between items-center">
-                  <h3 className="text-gray-700 font-bold text-2xl">
-                    {(2600).toLocaleString()}
-                  </h3>
-                  <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
-                    100%
-                  </Badge>
-                </div>
-              </div>
-              <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
-                <p className="text-sm font-light text-gray-500">
-                  Total Damaged Data
-                </p>
-                <div className="flex justify-between items-center">
-                  <h3 className="text-gray-700 font-bold text-2xl">
-                    {(2600).toLocaleString()}
-                  </h3>
-                  <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
-                    100%
+                    {Math.round(data?.percentage_in ?? 0)}%
                   </Badge>
                 </div>
               </div>
             </div>
-            <div className="flex flex-col gap-4 col-span-2 xl:col-span-1">
+            <div className="flex flex-col gap-4 col-span-2">
               <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
                 <p className="text-sm font-light text-gray-500">
-                  Total Abnormal Data
+                  Total{" "}
+                  <span className="font-semibold underline">By Category</span>
                 </p>
                 <div className="flex justify-between items-center">
                   <h3 className="text-gray-700 font-bold text-2xl">
-                    {(2600).toLocaleString()}
+                    {(data?.total_product_category ?? 0).toLocaleString()}
+                  </h3>
+                </div>
+              </div>
+              <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
+                <p className="text-sm font-light text-gray-500">
+                  Total{" "}
+                  <span className="font-semibold underline">By Color</span>
+                </p>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-gray-700 font-bold text-2xl">
+                    {(data?.total_product_color ?? 0).toLocaleString()}
+                  </h3>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col gap-4 col-span-2">
+              <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
+                <p className="text-sm font-light text-gray-500">
+                  Total{" "}
+                  <span className="font-semibold underline">Good Data</span>
+                </p>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-gray-700 font-bold text-2xl">
+                    {(data?.total_data_lolos ?? 0).toLocaleString()}
                   </h3>
                   <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
-                    100%
+                    {Math.round(data?.percentage_lolos ?? 0)}%
                   </Badge>
                 </div>
               </div>
               <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
                 <p className="text-sm font-light text-gray-500">
-                  Total Discrepancy Data
+                  Total{" "}
+                  <span className="font-semibold underline">Damaged Data</span>
                 </p>
                 <div className="flex justify-between items-center">
                   <h3 className="text-gray-700 font-bold text-2xl">
-                    {(2600).toLocaleString()}
+                    {(data?.total_data_damaged ?? 0).toLocaleString()}
                   </h3>
                   <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
-                    100%
+                    {Math.round(data?.percentage_damaged ?? 0)}%
                   </Badge>
                 </div>
               </div>
             </div>
-            <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 col-span-2 xl:col-span-1 flex-col">
+            <div className="flex flex-col gap-4 col-span-2">
+              <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
+                <p className="text-sm font-light text-gray-500">
+                  Total{" "}
+                  <span className="font-semibold underline">Abnormal Data</span>
+                </p>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-gray-700 font-bold text-2xl">
+                    {(data?.total_data_abnormal ?? 0).toLocaleString()}
+                  </h3>
+                  <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
+                    {Math.round(data?.percentage_abnormal ?? 0)}%
+                  </Badge>
+                </div>
+              </div>
+              <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
+                <p className="text-sm font-light text-gray-500">
+                  Total{" "}
+                  <span className="font-semibold underline">
+                    Discrepancy Data
+                  </span>
+                </p>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-gray-700 font-bold text-2xl">
+                    {(data?.total_discrepancy ?? 0).toLocaleString()}
+                  </h3>
+                  <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
+                    {Math.round(data?.percentage_discrepancy ?? 0)}%
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 col-span-2 flex-col">
               <p className="text-sm font-light text-gray-500">
-                Total Price Good Data
+                Total{" "}
+                <span className="font-semibold underline">Price Good Data</span>
               </p>
               <div className="flex flex-col gap-1">
                 <h3 className="text-gray-700 font-bold text-2xl">
-                  {formatRupiah(40546966)}
+                  {formatRupiah(data?.lolos?.total_old_price) ?? "Rp. 0"}
                 </h3>
                 <div>
                   <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
-                    100%
+                    {Math.round(data?.lolos?.price_percentage ?? 0)}%
                   </Badge>
                 </div>
               </div>
             </div>
-            <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 col-span-2 xl:col-span-1 flex-col">
+            <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 col-span-2 flex-col">
               <p className="text-sm font-light text-gray-500">
-                Total Price Damaged Data
+                Total{" "}
+                <span className="font-semibold underline">
+                  Price Damaged Data
+                </span>
               </p>
               <div className="flex flex-col gap-1">
                 <h3 className="text-gray-700 font-bold text-2xl">
-                  {formatRupiah(404225)}
+                  {formatRupiah(data?.damaged?.total_old_price) ?? "Rp. 0"}
                 </h3>
                 <div>
                   <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
-                    100%
+                    {Math.round(data?.damaged?.price_percentage ?? 0)}%
                   </Badge>
                 </div>
               </div>
             </div>
-            <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 col-span-2 xl:col-span-1 flex-col">
+            <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 col-span-2 flex-col">
               <p className="text-sm font-light text-gray-500">
-                Total Price Abnormal Data
+                Total{" "}
+                <span className="font-semibold underline">
+                  Price Abnormal Data
+                </span>
               </p>
               <div className="flex flex-col gap-1">
                 <h3 className="text-gray-700 font-bold text-2xl">
-                  {formatRupiah(4326000)}
+                  {formatRupiah(data?.abnormal?.total_old_price) ?? "Rp. 0"}
                 </h3>
                 <div>
                   <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
-                    100%
+                    {Math.round(data?.abnormal?.price_percentage ?? 0)}%
                   </Badge>
                 </div>
               </div>
             </div>
-            <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 col-span-2 xl:col-span-1 flex-col">
+            <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 col-span-2 flex-col">
               <p className="text-sm font-light text-gray-500">
-                Total Price Discrepancy Data
+                Total{" "}
+                <span className="font-semibold underline">
+                  Price Discrepancy Data
+                </span>
               </p>
               <div className="flex flex-col gap-1">
                 <h3 className="text-gray-700 font-bold text-2xl">
-                  {formatRupiah(55661885)}
+                  {formatRupiah(data?.priceDiscrepancy) ?? "Rp. 0"}
                 </h3>
                 <div>
                   <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
-                    100%
+                    {Math.round(data?.price_percentage ?? 0)}%
                   </Badge>
                 </div>
               </div>
@@ -357,7 +456,7 @@ export const Client = () => {
           </div>
         </div>
         <div className="flex flex-col gap-4">
-          <div className="flex h-[544px] xl:h-auto relative rounded-md shadow bg-white">
+          <div className="flex h-[544px] relative rounded-md shadow bg-white">
             <div className="flex text-sm text-gray-500 h-[320px] flex-none sticky top-0">
               <ChartContainer
                 config={chartConfig}
@@ -413,16 +512,16 @@ export const Client = () => {
               </ChartContainer>
             </div>
           </div>
-          <div className="flex h-[304px] xl:h-auto relative rounded-md shadow bg-white">
+          <div className="flex h-[304px] relative rounded-md shadow bg-white">
             <div className="flex w-full px-5 justify-center h-36 gap-4 flex-col sticky top-0">
               <p className="text-sm font-light text-gray-500">Total Price</p>
               <div className="flex flex-col gap-1">
                 <h3 className="text-gray-700 font-bold text-2xl">
-                  {formatRupiah(100939076)}
+                  {formatRupiah(data?.total_price) ?? "Rp. 0"}
                 </h3>
                 <div>
                   <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
-                    100%
+                    {Math.round(data?.price_percentage ?? 0)}%
                   </Badge>
                 </div>
               </div>
@@ -484,7 +583,11 @@ export const Client = () => {
                           <CommandList>
                             <CommandItem
                               onSelect={(e) => {
-                                handleCurrentId(dataSearch, "good");
+                                handleCurrentId(
+                                  dataSearch,
+                                  "good",
+                                  page.current
+                                );
                                 setIsFilter(false);
                               }}
                             >
@@ -492,7 +595,11 @@ export const Client = () => {
                                 className="w-4 h-4 mr-2"
                                 checked={filter === "good"}
                                 onCheckedChange={() => {
-                                  handleCurrentId(dataSearch, "good");
+                                  handleCurrentId(
+                                    dataSearch,
+                                    "good",
+                                    page.current
+                                  );
                                   setIsFilter(false);
                                 }}
                               />
@@ -500,7 +607,11 @@ export const Client = () => {
                             </CommandItem>
                             <CommandItem
                               onSelect={(e) => {
-                                handleCurrentId(dataSearch, "damaged");
+                                handleCurrentId(
+                                  dataSearch,
+                                  "damaged",
+                                  page.current
+                                );
                                 setIsFilter(false);
                               }}
                             >
@@ -508,7 +619,11 @@ export const Client = () => {
                                 className="w-4 h-4 mr-2"
                                 checked={filter === "damaged"}
                                 onCheckedChange={() => {
-                                  handleCurrentId(dataSearch, "damaged");
+                                  handleCurrentId(
+                                    dataSearch,
+                                    "damaged",
+                                    page.current
+                                  );
                                   setIsFilter(false);
                                 }}
                               />
@@ -516,7 +631,11 @@ export const Client = () => {
                             </CommandItem>
                             <CommandItem
                               onSelect={(e) => {
-                                handleCurrentId(dataSearch, "abnormal");
+                                handleCurrentId(
+                                  dataSearch,
+                                  "abnormal",
+                                  page.current
+                                );
                                 setIsFilter(false);
                               }}
                             >
@@ -524,7 +643,11 @@ export const Client = () => {
                                 className="w-4 h-4 mr-2"
                                 checked={filter === "abnormal"}
                                 onCheckedChange={() => {
-                                  handleCurrentId(dataSearch, "abnormal");
+                                  handleCurrentId(
+                                    dataSearch,
+                                    "abnormal",
+                                    page.current
+                                  );
                                   setIsFilter(false);
                                 }}
                               />
@@ -532,7 +655,11 @@ export const Client = () => {
                             </CommandItem>
                             <CommandItem
                               onSelect={(e) => {
-                                handleCurrentId(dataSearch, "discrepancy");
+                                handleCurrentId(
+                                  dataSearch,
+                                  "discrepancy",
+                                  page.current
+                                );
                                 setIsFilter(false);
                               }}
                             >
@@ -540,7 +667,11 @@ export const Client = () => {
                                 className="w-4 h-4 mr-2"
                                 checked={filter === "discrepancy"}
                                 onCheckedChange={() => {
-                                  handleCurrentId(dataSearch, "discrepancy");
+                                  handleCurrentId(
+                                    dataSearch,
+                                    "discrepancy",
+                                    page.current
+                                  );
                                   setIsFilter(false);
                                 }}
                               />
@@ -560,41 +691,90 @@ export const Client = () => {
             </Button>
           </div>
           <div className="w-full p-4 rounded-md border border-sky-400/80">
-            <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-2 font-semibold items-center hover:bg-sky-200/80">
-              <p className="w-10 text-center flex-none">No</p>
-              <p className="w-36 flex-none">Old Barcode</p>
-              <p className="w-36 flex-none">New Barcode</p>
-              <p className="w-full text-center">Name</p>
-              <p className="w-8 text-center flex-none">Qty</p>
-              <p className="w-40 flex-none text-center">Price</p>
-            </div>
-            {Array.from({ length: 5 }, (_, i) => (
-              <div
-                className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
-                key={i}
-              >
-                <p className="w-10 text-center flex-none">{i + 1}</p>
-                <div className="w-36 flex-none flex items-center">
-                  <p>106000868w</p>
-                </div>
-                <p className="w-36 flex-none">LTJRDROR</p>
-                <p className="w-full text-start">Lorem ipsum dolor sit amet.</p>
-                <p className="w-8 text-center flex-none">1</p>
-                <div className="w-40 flex-none flex justify-center gap-4">
-                  {formatRupiah(10450000)}
-                </div>
+            {loading ? (
+              <div className="h-[200px] flex items-center justify-center">
+                <Loader className="w-5 h-5 animate-spin" />
               </div>
-            ))}
+            ) : (
+              <ScrollArea>
+                <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-2 font-semibold items-center hover:bg-sky-200/80">
+                  <p className="w-10 text-center flex-none">No</p>
+                  <p className="w-36 flex-none">Old Barcode</p>
+                  <p className="w-36 flex-none">New Barcode</p>
+                  <p className="w-full min-w-72 max-w-[500px] text-center">
+                    Name
+                  </p>
+                  <p className="w-8 text-center flex-none">Qty</p>
+                  <p className="w-40 flex-none text-center">Price</p>
+                </div>
+                {products.length > 0 ? (
+                  products.map((item, index) => (
+                    <div
+                      className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
+                      key={item.id}
+                    >
+                      <p className="w-10 text-center flex-none">
+                        {page.from + index}
+                      </p>
+                      <div className="w-36 flex-none flex items-center">
+                        <p>{item?.old_barcode_product}</p>
+                      </div>
+                      <p className="w-36 flex-none">
+                        {item?.new_barcode_product}
+                      </p>
+                      <TooltipProviderPage value={item?.new_name_product}>
+                        <p className="w-full min-w-72 max-w-[500px] text-ellipsis whitespace-nowrap overflow-hidden text-start">
+                          {item?.new_name_product}
+                        </p>
+                      </TooltipProviderPage>
+                      <p className="w-8 text-center flex-none">
+                        {item?.new_quantity_product}
+                      </p>
+                      <div className="w-40 flex-none flex justify-center gap-4">
+                        {formatRupiah(item?.old_price_product) ?? "Rp. 0"}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="h-[200px] flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2 text-gray-500">
+                      <Grid2x2X className="w-8 h-8" />
+                      <p className="text-sm font-semibold">No Data Viewed.</p>
+                    </div>
+                  </div>
+                )}
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            )}
           </div>
-          <div className="flex gap-5 ml-auto items-center">
-            <p className="text-sm">Page 1 of 3</p>
-            <div className="flex items-center gap-2">
-              <Button className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black">
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-              <Button className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black">
-                <ChevronRight className="w-5 h-5" />
-              </Button>
+          <div className="flex items-center justify-between">
+            <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
+              Total: {page.total}
+            </Badge>
+            <div className="flex gap-5 items-center">
+              <p className="text-sm">
+                Page {page.current} of {page.last}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
+                  onClick={() =>
+                    setPage((prev) => ({ ...prev, current: prev.current - 1 }))
+                  }
+                  disabled={page.current === 1}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <Button
+                  className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
+                  onClick={() =>
+                    setPage((prev) => ({ ...prev, current: prev.current + 1 }))
+                  }
+                  disabled={page.current === page.last}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>

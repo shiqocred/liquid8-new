@@ -7,9 +7,13 @@ import {
   ArrowLeft,
   ArrowRight,
   Ban,
+  Barcode,
   Check,
   ChevronDown,
+  Disc,
   FileSpreadsheet,
+  FolderEdit,
+  Gem,
   MoreHorizontal,
   RefreshCcw,
   Save,
@@ -30,17 +34,14 @@ import {
 import { useRouter } from "next/navigation";
 import { useCookies } from "next-client-cookies";
 import Loading from "../loading";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface UploadedFileProps {
   file: File;
   name: string;
   size: number;
-}
-
-interface Generate {
-  code_document: string;
-  headers: string[];
-  file_name: string;
 }
 
 const steps = ["Step 1", "Step 2"];
@@ -67,9 +68,14 @@ export const Client = () => {
   const [selectedFile, setSelectedFile] = useState<UploadedFileProps | null>(
     null
   );
-  const [results, setResults] = useState<Generate | undefined>();
+  const [results, setResults] = useState<any>();
   const [headers, setHeaders] = useState<string[]>([]);
-  const [selectedHeaders, setSelectedHeaders] = useState<string[]>([]);
+  const [selected, setSelected] = useState({
+    barcode: "",
+    name: "",
+    qty: "",
+    price: "",
+  });
   const router = useRouter();
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
@@ -120,11 +126,6 @@ export const Client = () => {
             const result = await response.json();
             setResults(result.data.resource);
             setHeaders(result.data.resource.headers);
-            setSelectedHeaders(
-              new Array(result.data.resource.headers.length).fill(
-                "Choose Header"
-              )
-            );
           } else {
             console.error("Upload failed");
           }
@@ -147,22 +148,23 @@ export const Client = () => {
     maxFiles: 1, // Limit file upload to only one
   });
 
-  const handleHeaderChange = (index: number, header: string) => {
-    const newSelectedHeaders = [...selectedHeaders];
-    newSelectedHeaders[index] = header;
-    setSelectedHeaders(newSelectedHeaders);
-  };
-
   const handleComplete = async () => {
-    if (!results || selectedHeaders.length === 0) return;
+    if (
+      !results ||
+      !selected.barcode ||
+      !selected.name ||
+      !selected.price ||
+      !selected.qty
+    )
+      return;
 
     const payload = {
       code_document: results.code_document,
       headerMappings: {
-        old_barcode_product: [selectedHeaders[0]],
-        old_name_product: [selectedHeaders[1]],
-        old_quantity_product: [selectedHeaders[2]],
-        old_price_product: [selectedHeaders[3]],
+        old_barcode_product: selected.barcode,
+        old_name_product: selected.name,
+        old_quantity_product: selected.qty,
+        old_price_product: selected.price,
       },
     };
 
@@ -356,58 +358,161 @@ export const Client = () => {
             {currentStep === 1 && (
               <div className="p-4 bg-white rounded shadow flex flex-col gap-6">
                 <h2 className="text-xl font-bold">Pick Header</h2>
-                <div className="flex flex-col w-full">
-                  <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
-                    <p className="w-10 text-center flex-none">No</p>
-                    <p className="flex-none w-60">Data Name</p>
-                    <div className="flex w-full gap-4">
-                      <p className="w-1/4 text-center">Resi Number</p>
-                      <p className="w-1/4 text-center">Product Name</p>
-                      <p className="w-1/4 text-center">Quantity</p>
-                      <p className="w-1/4 text-center">Price</p>
+                <div className="w-full flex flex-col border rounded border-gray-500 p-3">
+                  <div className="flex items-center text-sm font-semibold border-b border-gray-500 pb-3">
+                    <FileSpreadsheet className="w-4 h-4 mr-2" />
+                    <div className="flex w-full items-center justify-between">
+                      <p>Uploaded File</p>
+                      <Badge className="bg-gray-200 hover:bg-gray-200 border border-black rounded-full text-black">
+                        {results?.code_document}
+                      </Badge>
                     </div>
                   </div>
-                  <div className="flex w-full px-5 py-5 text-sm gap-4 border-b border-sky-100 items-center hover:border-sky-200">
-                    <p className="w-10 flex-none text-center">{1}</p>
-                    <p className="w-60 flex-none">{results?.code_document}</p>
-                    <div className="flex w-full gap-4 items-center">
-                      {["Resi Number", "Product Name", "Quantity", "Price"].map(
-                        (_, headerIndex) => (
-                          <Popover key={headerIndex}>
-                            <PopoverTrigger asChild>
-                              <Button
-                                className="w-1/4 justify-between shadow-none hover:bg-sky-50"
-                                variant={"outline"}
-                              >
-                                {selectedHeaders[headerIndex] ||
-                                  "Choose Header"}
-                                <ChevronDown className="w-4 h-4" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="p-0 w-52">
-                              <Command>
-                                <CommandGroup>
-                                  <CommandList>
-                                    {headers.map((header, headerItemIndex) => (
-                                      <CommandItem
-                                        key={headerItemIndex}
-                                        onSelect={() =>
-                                          handleHeaderChange(
-                                            headerIndex,
-                                            header
-                                          )
-                                        }
-                                      >
-                                        {header}
-                                      </CommandItem>
-                                    ))}
-                                  </CommandList>
-                                </CommandGroup>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
-                        )
-                      )}
+                  <div className="flex gap-3 border-b py-5 border-gray-500">
+                    <div className="flex flex-col pl-6 w-full overflow-hidden gap-1">
+                      <p className="text-xs font-medium">File Name</p>
+                      <p className="text-sm text-gray-500 w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                        {results?.file_name}
+                      </p>
+                    </div>
+                    <div className="w-1/3 flex-none pl-6 flex gap-2 ">
+                      <div className="flex flex-col w-2/3 overflow-hidden gap-1">
+                        <p className="text-xs font-medium">Total Columns</p>
+                        <p className="text-sm text-gray-500 w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                          {results?.fileDetails.total_column_count}
+                        </p>
+                      </div>
+                      <div className="flex flex-col w-1/3 overflow-hidden gap-1">
+                        <p className="text-xs font-medium">Total Row</p>
+                        <p className="text-sm text-gray-500 w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                          {results?.fileDetails.total_row_count}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="w-full flex">
+                    <div className="w-full flex justify-center mt-2 flex-col items-start">
+                      <p className="text-sm py-3 font-semibold flex items-center">
+                        <div className="w-8 h-8 rounded-full border flex justify-center items-center mr-2 border-black">
+                          <Barcode className="w-4 h-4" />
+                        </div>
+                        Barcode
+                      </p>
+                      <RadioGroup
+                        value={selected.barcode}
+                        onValueChange={(e) =>
+                          setSelected((prev) => ({ ...prev, barcode: e }))
+                        }
+                        className="flex w-full flex-col p-1 border border-gray-500 rounded-md border-dashed"
+                      >
+                        {headers.map((item) => (
+                          <Label
+                            key={item + "barcode"}
+                            htmlFor={item + "barcode"}
+                            className={cn(
+                              "flex w-full px-5 py-2 gap-2 items-center rounded hover:bg-sky-100",
+                              selected.barcode === item &&
+                                "bg-sky-100 hover:bg-sky-200"
+                            )}
+                          >
+                            <RadioGroupItem
+                              value={item}
+                              id={item + "barcode"}
+                            />
+                            <p>{item}</p>
+                          </Label>
+                        ))}
+                      </RadioGroup>
+                    </div>
+                    <div className="w-full flex justify-center mt-2 flex-col items-start border-l ml-3 pl-3 border-gray-500">
+                      <p className="text-sm py-3 font-semibold flex items-center">
+                        <div className="w-8 h-8 rounded-full border flex justify-center items-center mr-2 border-black">
+                          <FolderEdit className="w-4 h-4" />
+                        </div>
+                        Product Name
+                      </p>
+                      <RadioGroup
+                        value={selected.name}
+                        onValueChange={(e) =>
+                          setSelected((prev) => ({ ...prev, name: e }))
+                        }
+                        className="flex w-full flex-col p-1 border border-gray-500 rounded-md border-dashed"
+                      >
+                        {headers.map((item) => (
+                          <Label
+                            key={item + "name"}
+                            htmlFor={item + "name"}
+                            className={cn(
+                              "flex w-full px-5 py-2 gap-2 items-center rounded hover:bg-sky-100",
+                              selected.name === item &&
+                                "bg-sky-100 hover:bg-sky-200"
+                            )}
+                          >
+                            <RadioGroupItem value={item} id={item + "name"} />
+                            <p>{item}</p>
+                          </Label>
+                        ))}
+                      </RadioGroup>
+                    </div>
+                    <div className="w-full flex justify-center mt-2 flex-col items-start border-l ml-3 pl-3 border-gray-500">
+                      <p className="text-sm py-3 font-semibold flex items-center">
+                        <div className="w-8 h-8 rounded-full border flex justify-center items-center mr-2 border-black">
+                          <Disc className="w-4 h-4" />
+                        </div>
+                        Qty
+                      </p>
+                      <RadioGroup
+                        value={selected.qty}
+                        onValueChange={(e) =>
+                          setSelected((prev) => ({ ...prev, qty: e }))
+                        }
+                        className="flex w-full flex-col p-1 border border-gray-500 rounded-md border-dashed"
+                      >
+                        {headers.map((item) => (
+                          <Label
+                            key={item + "qty"}
+                            htmlFor={item + "qty"}
+                            className={cn(
+                              "flex w-full px-5 py-2 gap-2 items-center rounded hover:bg-sky-100",
+                              selected.qty === item &&
+                                "bg-sky-100 hover:bg-sky-200"
+                            )}
+                          >
+                            <RadioGroupItem value={item} id={item + "qty"} />
+                            <p>{item}</p>
+                          </Label>
+                        ))}
+                      </RadioGroup>
+                    </div>
+                    <div className="w-full flex justify-center mt-2 flex-col items-start border-l ml-3 pl-3 border-gray-500">
+                      <p className="text-sm py-3 font-semibold flex items-center">
+                        <div className="w-8 h-8 rounded-full border flex justify-center items-center mr-2 border-black">
+                          <Gem className="w-4 h-4" />
+                        </div>
+                        Price
+                      </p>
+                      <RadioGroup
+                        value={selected.price}
+                        onValueChange={(e) =>
+                          setSelected((prev) => ({ ...prev, price: e }))
+                        }
+                        className="flex w-full flex-col p-1 border border-gray-500 rounded-md border-dashed"
+                      >
+                        {headers.map((item) => (
+                          <Label
+                            key={item + "price"}
+                            htmlFor={item + "price"}
+                            className={cn(
+                              "flex w-full px-5 py-2 gap-2 items-center rounded hover:bg-sky-100",
+                              selected.price === item &&
+                                "bg-sky-100 hover:bg-sky-200"
+                            )}
+                          >
+                            <RadioGroupItem value={item} id={item + "price"} />
+                            <p>{item}</p>
+                          </Label>
+                        ))}
+                      </RadioGroup>
                     </div>
                   </div>
                 </div>

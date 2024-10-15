@@ -1,8 +1,35 @@
 "use client";
 
+import {
+  ChevronLeft,
+  ChevronRight,
+  CircleFadingPlus,
+  Loader,
+  ReceiptText,
+  RefreshCw,
+  ShieldCheck,
+  Trash2,
+  XCircle,
+} from "lucide-react";
 import axios from "axios";
+import Link from "next/link";
+import qs from "query-string";
+import { format } from "date-fns";
+import { useCookies } from "next-client-cookies";
 import { useState, useEffect, useCallback } from "react";
-import { Badge } from "@/components/ui/badge";
+import { useRouter, useSearchParams } from "next/navigation";
+
+import {
+  Command,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,45 +37,20 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
-import { useDebounce } from "@/hooks/use-debounce";
-import { useModal } from "@/hooks/use-modal";
-import { cn } from "@/lib/utils";
-import {
-  ChevronLeft,
-  ChevronRight,
-  CircleFadingPlus,
-  Loader,
-  PlusCircle,
-  ReceiptText,
-  RefreshCw,
-  ShieldCheck,
-  Trash2,
-  XCircle,
-} from "lucide-react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import qs from "query-string";
-import { baseUrl } from "@/lib/baseUrl";
-import { useCookies } from "next-client-cookies";
-import Loading from "../loading";
-import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
-import { format } from "date-fns";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+
+import { cn } from "@/lib/utils";
+import { baseUrl } from "@/lib/baseUrl";
+import { useModal } from "@/hooks/use-modal";
+import { useDebounce } from "@/hooks/use-debounce";
+import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
+
+import Loading from "../loading";
 
 interface Document {
   id: string;
@@ -60,20 +62,27 @@ interface Document {
 }
 
 export const Client = () => {
-  const [isMounted, setIsMounted] = useState(false);
-  const { onOpen } = useModal();
-  const [isFilter, setIsFilter] = useState(false);
-  const [dataSearch, setDataSearch] = useState("");
-  const searchValue = useDebounce(dataSearch);
-  const searchParams = useSearchParams();
+  // core
   const router = useRouter();
-  const [filter, setFilter] = useState(searchParams.get("f") ?? "");
-  const [documents, setDocuments] = useState<Document[]>([]);
+  const { onOpen } = useModal();
+  const searchParams = useSearchParams();
+
+  // state boolean
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isFilter, setIsFilter] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // cookies
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
 
+  // state search & filter
+  const [dataSearch, setDataSearch] = useState("");
+  const searchValue = useDebounce(dataSearch);
+  const [filter, setFilter] = useState(searchParams.get("f") ?? "");
+
+  // state data
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [page, setPage] = useState({
     current: parseFloat(searchParams.get("page") ?? "1") ?? 1, //page saat ini
     last: 1, //page terakhir
@@ -81,6 +90,7 @@ export const Client = () => {
     total: 1, //total data
   });
 
+  // handle GET Data
   const fetchDocuments = async () => {
     setLoading(true);
     try {
@@ -101,12 +111,13 @@ export const Client = () => {
         total: response.data.data.resource.total,
       });
     } catch (err: any) {
-      setError(err.message || "An error occurred");
+      console.log("ERROR_GET_DOCUMENT:", err);
     } finally {
       setLoading(false);
     }
   };
 
+  // handle search params
   const handleCurrentId = useCallback(
     (q: string, f: string, p: number) => {
       setFilter(f);
@@ -147,10 +158,12 @@ export const Client = () => {
     [searchParams, router]
   );
 
+  // effect update search & page
   useEffect(() => {
     handleCurrentId(searchValue, filter, page.current);
-  }, [searchValue]);
+  }, [searchValue, page.current]);
 
+  // effect update when...
   useEffect(() => {
     if (cookies.get("manifestInbound")) {
       fetchDocuments();

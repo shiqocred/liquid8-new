@@ -39,6 +39,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Copy,
+  Loader,
   ReceiptText,
   ShieldCheck,
   Trash2,
@@ -64,22 +65,49 @@ interface DetailManifest {
 
 export const Client = () => {
   const { onOpen } = useModal();
-  const [isFilter, setIsFilter] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [dataSearch, setDataSearch] = useState("");
   const searchValue = useDebounce(dataSearch);
-  const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [filter, setFilter] = useState(searchParams.get("f") ?? "");
-  const [orientation, setOrientation] = useState(searchParams.get("s") ?? "");
-  const [copied, setCopied] = useState<number | null>(null);
-  const [dataResults, setDataResults] = useState<DetailManifest[]>([]);
-  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
+
+  const [data, setData] = useState<any[]>([]);
+  const [page, setPage] = useState({
+    current: parseFloat(searchParams.get("page") ?? "1") ?? 1, //page saat ini
+    last: 1, //page terakhir
+    from: 1, //data dimulai dari (untuk memulai penomoran tabel)
+    total: 1, //total data
+  });
+
+  // handle GET Data
+  const handleGetData = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `${baseUrl}/product_scans?page=${page.current}&q=${searchValue}`,
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      setData(response.data.data.resource.data);
+      setPage({
+        current: response.data.data.resource.current_page,
+        last: response.data.data.resource.last_page,
+        from: response.data.data.resource.from,
+        total: response.data.data.resource.total,
+      });
+    } catch (err: any) {
+      console.log("ERROR_GET_DOCUMENT:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCurrentId = useCallback(
     (q: string) => {
@@ -117,6 +145,7 @@ export const Client = () => {
 
   useEffect(() => {
     setIsMounted(true);
+    handleGetData();
   }, []);
 
   if (!isMounted) {
@@ -152,65 +181,97 @@ export const Client = () => {
             </div>
           </div>
           <div className="w-full p-4 rounded-md border border-sky-400/80">
-            <ScrollArea>
-              <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
-                <p className="w-10 text-center flex-none">No</p>
-                <p className="w-full min-w-72">Product Name</p>
-                <p className="w-44 flex-none">Price</p>
-                <p className="w-36 flex-none">User</p>
-                <p className="w-52 flex-none text-center">Action</p>
+            {loading ? (
+              <div className="h-[200px] flex items-center justify-center">
+                <Loader className="w-5 h-5 animate-spin" />
               </div>
-              {Array.from({ length: 5 }, (_, i) => (
-                <div
-                  className="flex w-full px-5 py-5 text-sm gap-4 border-b border-sky-100 items-center hover:border-sky-200"
-                  key={i}
-                >
-                  <p className="w-10 text-center flex-none">{i + 1}</p>
-                  <p className="w-full min-w-72">
-                    [WARNA BARU] HUAWEI Band 9 | Smartband | Comfortable All-Day
-                    Wearing | Advanced Sleep Health Management | Up to Two-Week
-                    Battery Life | Smartwatch-like Display
-                  </p>
-                  <p className="w-44 flex-none">{formatRupiah(150000000)}</p>
-                  <p className="w-36 flex-none whitespace-nowrap text-ellipsis overflow-hidden">
-                    spv debug
-                  </p>
-                  <div className="w-52 flex-none flex gap-3 justify-center">
-                    <TooltipProviderPage value={<p>Detail</p>}>
-                      <Button
-                        className="items-center px-3 flex-none h-9 border-green-400 text-green-700 hover:text-green-700 hover:bg-green-50"
-                        variant={"outline"}
-                      >
-                        <ShieldCheck className="w-4 h-4 mr-1" />
-                        Check
-                      </Button>
-                    </TooltipProviderPage>
-                    <TooltipProviderPage value={<p>Delete</p>}>
-                      <Button
-                        className="items-center px-3 flex-none h-9 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
-                        variant={"outline"}
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" />
-                        Delete
-                      </Button>
-                    </TooltipProviderPage>
-                  </div>
+            ) : (
+              <ScrollArea>
+                <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-3 font-semibold items-center hover:bg-sky-200/80">
+                  <p className="w-10 text-center flex-none">No</p>
+                  <p className="w-full min-w-72 max-w-[500px]">Product Name</p>
+                  <p className="w-52 flex-none">Price</p>
+                  <p className="w-52 flex-none">User</p>
+                  <p className="w-24 flex-none text-center">Action</p>
                 </div>
-              ))}
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
+                {data.map((item, i) => (
+                  <div
+                    className="flex w-full px-5 py-3 text-sm gap-3 border-b border-sky-200 items-center hover:border-sky-300"
+                    key={item.id}
+                  >
+                    <p className="w-10 text-center flex-none">
+                      {page.from + i}
+                    </p>
+                    <p className="w-full min-w-72 max-w-[500px] whitespace-nowrap overflow-hidden text-ellipsis">
+                      {item.product_name}
+                    </p>
+                    <p className="w-52 flex-none overflow-hidden text-ellipsis">
+                      {formatRupiah(parseFloat(item.product_price))}
+                    </p>
+                    <p className="w-52 flex-none overflow-hidden text-ellipsis">
+                      {item.user.username}
+                    </p>
+                    <div className="w-24 flex-none flex gap-4 justify-center">
+                      <TooltipProviderPage value="Check">
+                        <Link
+                          href={`/inbound/check-product/scan-result/${item.id}`}
+                          className="w-9"
+                        >
+                          <Button
+                            className="items-center w-full px-0  border-green-400 text-green-700 hover:text-green-700 hover:bg-green-50"
+                            variant={"outline"}
+                          >
+                            <ShieldCheck className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                      </TooltipProviderPage>
+                      <TooltipProviderPage value="Delete">
+                        <Button
+                          className="items-center px-0  border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50 w-9"
+                          variant={"outline"}
+                          type="button"
+                          onClick={() =>
+                            onOpen("delete-manifest-inbound", item.id)
+                          }
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TooltipProviderPage>
+                    </div>
+                  </div>
+                ))}
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            )}
           </div>
-          <div className="flex gap-5 ml-auto items-center">
-            <p className="text-sm">
-              Page {page} of {page}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black">
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-              <Button className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black">
-                <ChevronRight className="w-5 h-5" />
-              </Button>
+          <div className="flex items-center justify-between">
+            <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
+              Total: {page.total}
+            </Badge>
+            <div className="flex gap-5 items-center">
+              <p className="text-sm">
+                Page {page.current} of {page.last}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
+                  onClick={() =>
+                    setPage((prev) => ({ ...prev, current: prev.current - 1 }))
+                  }
+                  disabled={page.current === 1}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <Button
+                  className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
+                  onClick={() =>
+                    setPage((prev) => ({ ...prev, current: prev.current - 1 }))
+                  }
+                  disabled={page.current === page.last}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>

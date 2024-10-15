@@ -31,7 +31,6 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
-import BarcodePrinted from "@/components/barcode";
 import { baseUrl, cn, formatRupiah } from "@/lib/utils";
 import Loading from "../loading";
 import axios from "axios";
@@ -757,12 +756,6 @@ export const Client = () => {
                 </form>
               </TabsContent>
             </Tabs>
-            {/* <BarcodePrinted
-          barcode="LQC12345"
-          category="TOYS HOBBIES (200-699)"
-          newPrice={formatRupiah(20000) ?? ""}
-          oldPrice={formatRupiah(10000) ?? ""}
-        /> */}
           </div>
         </div>
       )}
