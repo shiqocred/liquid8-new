@@ -1,42 +1,33 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
 import {
+  Ban,
+  Gem,
+  Disc,
+  Save,
+  Check,
+  Barcode,
   ArrowLeft,
   ArrowRight,
-  Ban,
-  Barcode,
-  Check,
-  ChevronDown,
-  Disc,
-  FileSpreadsheet,
   FolderEdit,
-  Gem,
-  MoreHorizontal,
   RefreshCcw,
-  Save,
+  MoreHorizontal,
+  FileSpreadsheet,
 } from "lucide-react";
-import { useDropzone } from "react-dropzone";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { motion, AnimatePresence } from "framer-motion";
+import { useCallback, useEffect, useState } from "react";
+
+import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { useDropzone } from "react-dropzone";
 import { useCookies } from "next-client-cookies";
+
 import Loading from "../loading";
+
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { toast } from "sonner";
 
 interface UploadedFileProps {
   file: File;
@@ -62,9 +53,14 @@ const variants = {
 };
 
 export const Client = () => {
+  // state boolean
   const [isMounted, setIsMounted] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
+
+  // slide core
   const [direction, setDirection] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
+
+  // state data
   const [selectedFile, setSelectedFile] = useState<UploadedFileProps | null>(
     null
   );
@@ -76,10 +72,15 @@ export const Client = () => {
     qty: "",
     price: "",
   });
+
+  // core
   const router = useRouter();
+
+  // cookies
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
 
+  // handle slide
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setDirection(1);
@@ -96,46 +97,47 @@ export const Client = () => {
     }
   };
 
-  const onDrop = useCallback(
-    async (acceptedFiles: File[]) => {
-      if (acceptedFiles.length > 0) {
-        const file = acceptedFiles[0];
-        setSelectedFile({
-          file,
-          name: file.name,
-          size: file.size,
-        });
+  // handle upload file
+  const onDrop = async (acceptedFiles: File[]) => {
+    if (acceptedFiles.length > 0) {
+      const file = acceptedFiles[0];
+      setSelectedFile({
+        file,
+        name: file.name,
+        size: file.size,
+      });
 
-        // Upload file ke API
-        const formData = new FormData();
-        formData.append("file", file);
+      // Upload file ke API
+      const formData = new FormData();
+      formData.append("file", file);
 
-        try {
-          const response = await fetch(
-            "https://wms-server.digitalindustryagency.com/api/generate",
-            {
-              method: "POST",
-              body: formData,
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            }
-          );
-
-          if (response.ok) {
-            const result = await response.json();
-            setResults(result.data.resource);
-            setHeaders(result.data.resource.headers);
-          } else {
-            console.error("Upload failed");
+      try {
+        const response = await fetch(
+          "https://wms-server.digitalindustryagency.com/api/generate",
+          {
+            method: "POST",
+            body: formData,
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
           }
-        } catch (error) {
-          console.error("An error occurred while uploading the file", error);
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+          setResults(result.data.resource);
+          setHeaders(result.data.resource.headers);
+          toast.success("File Uploaded");
+        } else {
+          toast.error(`Error: Upload File Failed`);
+          console.error("Upload failed");
         }
+      } catch (error: any) {
+        toast.error(`Error ${error.response.status}: Upload File Failed`);
+        console.error("An error occurred while uploading the file", error);
       }
-    },
-    [accessToken]
-  );
+    }
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -148,6 +150,7 @@ export const Client = () => {
     maxFiles: 1, // Limit file upload to only one
   });
 
+  // handle merge
   const handleComplete = async () => {
     if (
       !results ||
@@ -184,12 +187,15 @@ export const Client = () => {
       if (response.ok) {
         const result = await response.json();
         console.log("Merge successful:", result);
+        toast.success("File Merged");
         // Redirect or show a success message if needed
         router.push("/inbound/check-product/manifest-inbound");
       } else {
+        toast.error("Error: File Merge Failed");
         console.error("Merge failed");
       }
-    } catch (error) {
+    } catch (error: any) {
+      toast.error(`Error ${error.response.status}: File Merge Failed`);
       console.error("An error occurred while merging headers", error);
     }
   };

@@ -1,33 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
-  ArrowLeft,
-  ArrowRight,
-  Ban,
-  Check,
   CheckCircle2,
   ChevronDown,
   FileSpreadsheet,
-  MoreHorizontal,
   RefreshCcw,
   Save,
 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -42,7 +25,6 @@ import { Separator } from "@/components/ui/separator";
 import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
