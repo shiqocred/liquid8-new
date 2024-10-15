@@ -1,36 +1,38 @@
 "use client";
 
-import React, { FormEvent, MouseEvent, useEffect, useState } from "react";
+import React, { FormEvent } from "react";
 import { useModal } from "@/hooks/use-modal";
 import { Modal } from "@/components/modal";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { FileSpreadsheet, Trash2 } from "lucide-react";
 import axios from "axios";
 import { baseUrl } from "@/lib/utils";
 import { useCookies } from "next-client-cookies";
 import { toast } from "sonner";
 
-export const DoneCheckAllApproveScanResultModal = () => {
+export const DoneCheckAllStaggingProductModal = () => {
   const { isOpen, onClose, type, data } = useModal();
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
 
   const isModalOpen =
-    isOpen && type === "done-check-all-approve-scan-result-modal";
+    isOpen && type === "done-check-all-stagging-product-modal";
 
   const handleDoneCheckAll = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.get(`${baseUrl}/stagingTransactionApprove`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const response = await axios.post(
+        `${baseUrl}/staging_products`,
+        {},
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
       toast.success("Product successfully checked all");
-      cookies.set("approveScanResult", "updated");
+      cookies.set("updateStaggingProduct", "checkedAll");
+      onClose();
     } catch (err: any) {
       toast.success("Product failed to check all");
       toast.error("Something went wrong.");
