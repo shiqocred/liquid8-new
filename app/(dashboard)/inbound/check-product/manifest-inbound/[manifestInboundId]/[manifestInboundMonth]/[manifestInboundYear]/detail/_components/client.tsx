@@ -40,6 +40,7 @@ import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
 
 import Loading from "../loading";
 import NotFound from "@/app/not-found";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DetailManifest {
   id: string;
@@ -62,7 +63,6 @@ export const Client = () => {
   // state boolean
   const [is404, setIs404] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [isFilter, setIsFilter] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [copied, setCopied] = useState<number | null>(null);
 
@@ -75,7 +75,7 @@ export const Client = () => {
   const accessToken = cookies.get("accessToken");
 
   // state data
-  const [dataResults, setDataResults] = useState<DetailManifest[]>([]);
+  const [dataResults, setDataResults] = useState<any[]>([]);
   const [metaData, setMetaData] = useState({
     document_name: "",
     status: "",
@@ -88,6 +88,7 @@ export const Client = () => {
     last: 1, //page terakhir
     from: 1, //data dimulai dari (untuk memulai penomoran tabel)
     total: 1, //total data
+    perPage: 1,
   });
 
   // handle copy
@@ -100,7 +101,7 @@ export const Client = () => {
 
   // handle search parrams
   const handleCurrentId = useCallback(
-    (q: string) => {
+    (q: string, p: number) => {
       let currentQuery = {};
 
       if (searchParams) {
@@ -110,10 +111,14 @@ export const Client = () => {
       const updateQuery: any = {
         ...currentQuery,
         q: q,
+        page: p,
       };
 
       if (!q || q === "") {
         delete updateQuery.q;
+      }
+      if (!p || p <= 1) {
+        delete updateQuery.page;
       }
 
       const url = qs.stringifyUrl(
@@ -135,7 +140,7 @@ export const Client = () => {
     const codeDocument = `${params.manifestInboundId}/${params.manifestInboundMonth}/${params.manifestInboundYear}`;
     try {
       const response = await axios.get(
-        `${baseUrl}/product_olds-search?search=${codeDocument}&page=${page.current}`,
+        `${baseUrl}/product_olds-search?search=${codeDocument}&page=${page.current}&q=${searchValue}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -145,10 +150,11 @@ export const Client = () => {
       setDataResults(response.data.data.resource.data.data);
       setMetaData(response.data.data.resource);
       setPage({
-        current: response.data.data.resource.current_page ?? 1,
-        last: response.data.data.resource.last_page ?? 1,
-        from: response.data.data.resource.from ?? 0,
-        total: response.data.data.resource.total ?? 0,
+        current: response.data.data.resource.data.current_page ?? 1,
+        last: response.data.data.resource.data.last_page ?? 1,
+        from: response.data.data.resource.data.from ?? 0,
+        total: response.data.data.resource.data.total ?? 0,
+        perPage: response.data.data.resource.data.per_page ?? 0,
       });
     } catch (err: any) {
       if (err.response.status === 404) {
@@ -161,8 +167,9 @@ export const Client = () => {
   };
 
   useEffect(() => {
-    handleCurrentId(searchValue);
-  }, [searchValue]);
+    handleCurrentId(searchValue, page.current);
+    fetchDetailDocuments();
+  }, [searchValue, page.current]);
 
   useEffect(() => {
     if (cookies.get("detailManifestInbound")) {
@@ -197,6 +204,10 @@ export const Client = () => {
           <BreadcrumbItem>
             <BreadcrumbLink href="/">Home</BreadcrumbLink>
           </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>Inbound</BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>Check Product</BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbLink href="/inbound/check-product/manifest-inbound/">
@@ -258,7 +269,7 @@ export const Client = () => {
                   custom_barcode: metaData.custom_barcode,
                 })
               }
-              className="text-sm font-medium flex items-center hover:bg-sky-100 rounded-md px-3"
+              className="text-sm font-medium flex items-center hover:bg-sky-100 rounded-md px-3 underline text-sky-700"
             >
               Barcode
               <ArrowLeftRight className="w-3 h-3 ml-1" />
@@ -307,89 +318,123 @@ export const Client = () => {
             </div>
           </div>
           <div className="w-full p-4 rounded-md border border-sky-400/80">
-            {loading ? (
-              <div className="h-[200px] flex items-center justify-center">
-                <Loader className="w-5 h-5 animate-spin" />
+            <ScrollArea>
+              <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-2 font-semibold items-center hover:bg-sky-200/80">
+                <p className="w-10 text-center flex-none">No</p>
+                <p className="w-52 flex-none">Resi Number</p>
+                <p className="w-full min-w-72 max-w-[700px]">Product Name</p>
+                <p className="w-24 text-center flex-none">QTY</p>
+                <p className="w-28 flex-none">Price</p>
+                <p className="w-20 flex-none text-center">Action</p>
               </div>
-            ) : (
-              <ScrollArea>
-                <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-2 font-semibold items-center hover:bg-sky-200/80">
-                  <p className="w-10 text-center flex-none">No</p>
-                  <p className="w-52 flex-none">Resi Number</p>
-                  <p className="w-full">Product Name</p>
-                  <p className="w-24 text-center flex-none">QTY</p>
-                  <p className="w-28 flex-none">Price</p>
-                  <p className="xl:w-32 w-20 flex-none text-center">Action</p>
-                </div>
-                {dataResults.length > 0 ? (
-                  dataResults.map((item, index) => (
+              {loading ? (
+                <div className="w-full h-full">
+                  {Array.from({ length: 5 }, (_, i) => (
                     <div
-                      className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
-                      key={item.id}
+                      key={i}
+                      className="flex w-full px-5 py-7 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
                     >
-                      <p className="w-10 text-center flex-none">{index + 1}</p>
+                      <div className="w-10 text-center flex-none">
+                        <Skeleton className="w-8 h-4" />
+                      </div>
                       <div className="w-52 flex-none flex items-center">
-                        <p>{item.old_barcode_product}</p>
-                        <TooltipProviderPage
-                          value={
-                            <p>
-                              {copied === index ? "Copied" : "Copy Barcode"}
-                            </p>
-                          }
-                        >
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleCopy(item.old_barcode_product, index);
-                            }}
-                            disabled={copied === index}
+                        <Skeleton className="w-40 h-4" />
+                      </div>
+                      <div className="w-full min-w-72 max-w-[700px]">
+                        <Skeleton className="w-64 h-4" />
+                      </div>
+                      <div className="w-24 flex justify-center flex-none">
+                        <Skeleton className="w-14 h-4" />
+                      </div>
+                      <div className="w-28 flex-none">
+                        <Skeleton className="w-20 h-4" />
+                      </div>
+                      <div className="w-20 flex-none flex justify-center">
+                        <Skeleton className="w-10 h-4" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="w-full h-full">
+                  {dataResults.length > 0 ? (
+                    dataResults.map((item, index) => (
+                      <div
+                        className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
+                        key={item.id}
+                      >
+                        <p className="w-10 text-center flex-none">
+                          {index + 1}
+                        </p>
+                        <div className="w-52 flex-none flex items-center">
+                          <p>{item.old_barcode_product}</p>
+                          <TooltipProviderPage
+                            value={
+                              <p>
+                                {copied === index ? "Copied" : "Copy Barcode"}
+                              </p>
+                            }
                           >
-                            {copied === index ? (
-                              <Check className="w-3 h-3 ml-2" />
-                            ) : (
-                              <Copy className="w-3 h-3 ml-2" />
-                            )}
-                          </button>
-                        </TooltipProviderPage>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleCopy(item.old_barcode_product, index);
+                              }}
+                              disabled={copied === index}
+                            >
+                              {copied === index ? (
+                                <Check className="w-3 h-3 ml-2" />
+                              ) : (
+                                <Copy className="w-3 h-3 ml-2" />
+                              )}
+                            </button>
+                          </TooltipProviderPage>
+                        </div>
+                        <p className="w-full min-w-72 max-w-[700px] text-ellipsis whitespace-nowrap overflow-hidden">
+                          {item.old_name_product}
+                        </p>
+                        <p className="w-24 text-center flex-none">
+                          {item.old_quantity_product}
+                        </p>
+                        <p className="w-28 flex-none">
+                          {formatRupiah(item.old_price_product)}
+                        </p>
+                        <div className="w-20 flex-none flex justify-center">
+                          <Button
+                            className="items-center w-9 px-0 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
+                            variant={"outline"}
+                            onClick={() =>
+                              onOpen("delete-detail-manifest-inbound", item.id)
+                            }
+                            type="button"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <p className="w-full">{item.old_name_product}</p>
-                      <p className="w-24 text-center flex-none">
-                        {item.old_quantity_product}
-                      </p>
-                      <p className="w-28 flex-none">
-                        {formatRupiah(item.old_price_product)}
-                      </p>
-                      <div className="xl:w-32 w-20 flex-none flex justify-center">
-                        <Button
-                          className="items-center xl:w-full w-9 px-0 xl:px-4 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
-                          variant={"outline"}
-                          onClick={() =>
-                            onOpen("delete-detail-manifest-inbound", item.id)
-                          }
-                          type="button"
-                        >
-                          <Trash2 className="w-4 h-4 xl:mr-1" />
-                          <div className="hidden xl:flex">Delete</div>
-                        </Button>
+                    ))
+                  ) : (
+                    <div className="h-[200px] flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-2 text-gray-500">
+                        <Grid2x2X className="w-8 h-8" />
+                        <p className="text-sm font-semibold">No Data Viewed.</p>
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="h-[200px] flex items-center justify-center">
-                    <div className="flex flex-col items-center gap-2 text-gray-500">
-                      <Grid2x2X className="w-8 h-8" />
-                      <p className="text-sm font-semibold">No Data Viewed.</p>
-                    </div>
-                  </div>
-                )}
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
-            )}
+                  )}
+                </div>
+              )}
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           </div>
           <div className="flex items-center justify-between">
-            <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
-              Total: {page.total}
-            </Badge>
+            <div className="flex gap-3 items-center">
+              <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
+                Total: {page.total}
+              </Badge>
+              <Badge className="rounded-full hover:bg-green-100 bg-green-100 text-black border border-green-500 text-sm">
+                Row per page: {page.perPage}
+              </Badge>
+            </div>
             <div className="flex gap-5 items-center">
               <p className="text-sm">
                 Page {page.current} of {page.last}
@@ -407,7 +452,7 @@ export const Client = () => {
                 <Button
                   className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
                   onClick={() =>
-                    setPage((prev) => ({ ...prev, current: prev.current - 1 }))
+                    setPage((prev) => ({ ...prev, current: prev.current + 1 }))
                   }
                   disabled={page.current === page.last}
                 >

@@ -24,20 +24,24 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/use-debounce";
-import { baseUrl, cn, formatRupiah } from "@/lib/utils";
+import { cn, formatRupiah } from "@/lib/utils";
 import {
   ArrowLeft,
   ArrowLeftRight,
   ChevronLeft,
   ChevronRight,
   FileDown,
+  FileText,
+  Gem,
   Grid2x2X,
   Loader,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { MouseEvent, useCallback, useEffect, useState } from "react";
 import { Label, Pie, PieChart } from "recharts";
 import {
   ChartConfig,
@@ -53,6 +57,8 @@ import { toast } from "sonner";
 import { useCookies } from "next-client-cookies";
 import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { baseUrl } from "@/lib/baseUrl";
 
 const chartConfig = {
   values: {
@@ -86,6 +92,7 @@ export const Client = () => {
   const [filter, setFilter] = useState(searchParams.get("f") ?? "good");
   const params = useParams();
   const [loading, setLoading] = useState(false);
+  const [loadingExport, setLoadingExport] = useState(false);
   // cookies
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
@@ -98,6 +105,7 @@ export const Client = () => {
     last: 1, //page terakhir
     from: 0, //data dimulai dari (untuk memulai penomoran tabel)
     total: 0, //total data
+    perPage: 0, //total data
   });
 
   const chartData = [
@@ -158,12 +166,40 @@ export const Client = () => {
         last: response.data.data.resource.last_page ?? 1,
         from: response.data.data.resource.from ?? 0,
         total: response.data.data.resource.total ?? 0,
+        perPage: response.data.data.resource.per_page ?? 0,
       });
     } catch (err: any) {
       toast.error(`Error ${err.response?.status}: Something went wrong`);
-      console.log("ERROR_GET_DOCUMENT:", err);
+      console.log("ERROR_GET_DETAIL:", err);
     } finally {
       setLoading(false);
+    }
+  };
+  const handleExport = async (e: MouseEvent) => {
+    e.preventDefault();
+    setLoadingExport(true);
+    try {
+      const response = await axios.post(
+        `${baseUrl}/history/exportToExcel`,
+        { code_document: data?.code_document },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      toast.success("File Successfully Exported");
+      // download export
+      const link = document.createElement("a");
+      link.href = response.data.data.resource;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err: any) {
+      toast.error(`Error Export ${err.response?.status}: Something went wrong`);
+      console.log("ERROR_EXPORT:", err);
+    } finally {
+      setLoadingExport(false);
     }
   };
 
@@ -208,6 +244,13 @@ export const Client = () => {
   );
 
   useEffect(() => {
+    if (cookies.get("detailCheckHistory")) {
+      handleGetProduct(filter);
+      return cookies.remove("detailCheckHistory");
+    }
+  }, [cookies.get("detailCheckHistory")]);
+
+  useEffect(() => {
     handleCurrentId(searchValue, filter, page.current);
     if (data?.code_document) {
       handleGetProduct(filter);
@@ -240,156 +283,359 @@ export const Client = () => {
           <BreadcrumbItem>Detail</BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-      <div className="flex w-full gap-4">
-        <div className="flex w-full flex-col gap-4">
-          <div className="flex text-sm text-gray-500 py-3 rounded-md shadow bg-white w-full px-5 h-24 items-center justify-between">
-            <div className="flex w-full items-center">
-              <Link href={"/inbound/check-history"} className="group">
-                <button
-                  type="button"
-                  className="flex items-center text-black group-hover:mr-6 mr-4 transition-all w-auto"
-                >
-                  <div className="w-10 h-10 rounded-full group-hover:shadow justify-center flex items-center group-hover:bg-gray-100 transition-all">
-                    <ArrowLeft className="w-5 h-5" />
-                  </div>
-                </button>
-              </Link>
-              <div className="w-full">
-                <p>Base Document</p>
-                <h3 className="text-black font-semibold text-xl w-full text-ellipsis whitespace-nowrap">
-                  {data?.base_document}
-                </h3>
-              </div>
-            </div>
-            <div className="flex flex-col text-end w-fit flex-none">
-              <h3 className="text-xs font-semibold">Document Code</h3>
-              <p className="text-black font-light text-sm">
-                {data?.code_document}
-              </p>
+      <div className="w-full flex flex-col gap-4">
+        <div className="flex text-sm text-gray-500 py-3 rounded-md shadow bg-white w-full px-5 h-24 items-center justify-between">
+          <div className="flex w-full items-center">
+            <Link href={"/inbound/check-history"} className="group">
+              <button
+                type="button"
+                className="flex items-center text-black group-hover:mr-6 mr-4 transition-all w-auto"
+              >
+                <div className="w-10 h-10 rounded-full group-hover:shadow justify-center flex items-center group-hover:bg-gray-100 transition-all">
+                  <ArrowLeft className="w-5 h-5" />
+                </div>
+              </button>
+            </Link>
+            <div className="w-full">
+              <p>Base Document</p>
+              <h3 className="text-black font-semibold text-xl w-full text-ellipsis whitespace-nowrap">
+                {data?.base_document}
+              </h3>
             </div>
           </div>
-          <div className="grid grid-cols-4 w-full gap-4">
-            <div className="flex flex-col gap-4 col-span-2">
-              <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
-                <p className="text-sm font-light text-gray-500">
-                  Total <span className="font-semibold underline">Data</span>
-                </p>
-                <div className="flex justify-between items-center">
-                  <h3 className="text-gray-700 font-bold text-2xl">
-                    {(data?.total_data ?? 0).toLocaleString()}
-                  </h3>
-                  <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
-                    {Math.round(data?.precentage_total_data ?? 0)}%
-                  </Badge>
+          <Badge className="text-sky-700 bg-sky-100 hover:bg-sky-100 rounded-full border border-sky-700">
+            {data?.code_document}
+          </Badge>
+        </div>
+        <div className="w-full flex flex-col gap-4 p-3 border border-sky-500 rounded-lg">
+          <div className="w-full flex gap-2 items-center py-3">
+            <div className="w-9 h-9 rounded-full border-[1.5px] border-sky-500 text-sky-500 flex items-center justify-center">
+              <FileText className="w-5 h-5" />
+            </div>
+            <h3 className="text-xl font-semibold text-black">
+              Inventory Details
+            </h3>
+          </div>
+          <div className="w-full flex gap-4">
+            <div className="w-full flex flex-col gap-4">
+              <div className="w-full flex gap-4">
+                <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
+                  <p className="text-sm font-light text-gray-500">
+                    Total <span className="font-semibold underline">Data</span>
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-gray-700 font-bold text-2xl">
+                      {(data?.total_data ?? 0).toLocaleString()}
+                    </h3>
+                    <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
+                      {Math.round(data?.precentage_total_data ?? 0)}%
+                    </Badge>
+                  </div>
+                </div>
+                <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
+                  <p className="text-sm font-light text-gray-500">
+                    Total{" "}
+                    <span className="font-semibold underline">Data In</span>
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-gray-700 font-bold text-2xl">
+                      {(data?.total_data_in ?? 0).toLocaleString()}
+                    </h3>
+                    <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
+                      {Math.round(data?.percentage_in ?? 0)}%
+                    </Badge>
+                  </div>
                 </div>
               </div>
-              <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
-                <p className="text-sm font-light text-gray-500">
-                  Total <span className="font-semibold underline">Data In</span>
-                </p>
-                <div className="flex justify-between items-center">
-                  <h3 className="text-gray-700 font-bold text-2xl">
-                    {(data?.total_data_in ?? 0).toLocaleString()}
-                  </h3>
+              <div className="w-full flex gap-4">
+                <div className="flex w-full bg-sky-200 rounded-md overflow-hidden shadow px-5 justify-center h-28 gap-2 flex-col">
+                  <div className="flex w-full flex-col text-sm text-gray-700 font-semibold">
+                    <p>Total</p>
+                    <p className="underline">Good Data</p>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-gray-900 font-bold text-2xl">
+                      {(data?.total_data_lolos ?? 0).toLocaleString()}
+                    </h3>
+                    <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
+                      {Math.round(data?.percentage_lolos ?? 0)}%
+                    </Badge>
+                  </div>
+                </div>
+                <div className="flex w-full bg-sky-200 rounded-md overflow-hidden shadow px-5 justify-center h-28 gap-2 flex-col">
+                  <div className="flex w-full flex-col text-sm text-gray-700 font-semibold">
+                    <p>Total</p>
+                    <p className="underline">Damaged Data</p>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-gray-900 font-bold text-2xl">
+                      {(data?.total_data_damaged ?? 0).toLocaleString()}
+                    </h3>
+                    <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
+                      {Math.round(data?.percentage_damaged ?? 0)}%
+                    </Badge>
+                  </div>
+                </div>
+                <div className="flex w-full bg-sky-200 rounded-md overflow-hidden shadow px-5 justify-center h-28 gap-2 flex-col">
+                  <div className="flex w-full flex-col text-sm text-gray-700 font-semibold">
+                    <p>Total</p>
+                    <p className="underline">Abnormal Data</p>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-gray-900 font-bold text-2xl">
+                      {(data?.total_data_abnormal ?? 0).toLocaleString()}
+                    </h3>
+                    <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
+                      {Math.round(data?.percentage_abnormal ?? 0)}%
+                    </Badge>
+                  </div>
+                </div>
+                <div className="flex w-full bg-sky-200 rounded-md overflow-hidden shadow px-5 justify-center h-28 gap-2 flex-col">
+                  <div className="flex w-full flex-col text-sm text-gray-700 font-semibold">
+                    <p>Total</p>
+                    <p className="underline">Discrepancy Data</p>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-gray-900 font-bold text-2xl">
+                      {(data?.total_discrepancy ?? 0).toLocaleString()}
+                    </h3>
+                    <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
+                      {Math.round(data?.percentage_discrepancy ?? 0)}%
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              <div className="w-full flex gap-4">
+                <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
+                  <p className="text-sm font-light text-gray-500">
+                    Total{" "}
+                    <span className="font-semibold underline">By Category</span>
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-gray-700 font-bold text-2xl">
+                      {(data?.total_product_category ?? 0).toLocaleString()}
+                    </h3>
+                  </div>
+                </div>
+                <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
+                  <p className="text-sm font-light text-gray-500">
+                    Total{" "}
+                    <span className="font-semibold underline">By Color</span>
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-gray-700 font-bold text-2xl">
+                      {(data?.total_product_color ?? 0).toLocaleString()}
+                    </h3>
+                  </div>
+                </div>
+              </div>
+              <div className="w-full flex gap-4">
+                <div className="flex w-full bg-sky-200 rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
+                  <p className="text-sm font-light text-gray-700">
+                    Total{" "}
+                    <span className="font-semibold underline">
+                      Stagging Data
+                    </span>
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-gray-900 font-bold text-2xl">
+                      {(data?.total_product_stagings ?? 0).toLocaleString()}
+                    </h3>
+                  </div>
+                </div>
+                <div className="flex w-full bg-sky-200 rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
+                  <p className="text-sm font-light text-gray-700">
+                    Total{" "}
+                    <span className="font-semibold underline">Sale Data</span>
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-gray-900 font-bold text-2xl">
+                      {(data?.total_product_sales ?? 0).toLocaleString()}
+                    </h3>
+                  </div>
+                </div>
+                <div className="flex w-full bg-sky-200 rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
+                  <p className="text-sm font-light text-gray-700">
+                    Total{" "}
+                    <span className="font-semibold underline">Bundle Data</span>
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-gray-900 font-bold text-2xl">
+                      {(data?.total_product_bundle ?? 0).toLocaleString()}
+                    </h3>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="w-1/4 flex-none flex justify-center rounded-md shadow bg-white relative px-5">
+              <div className="flex text-sm text-gray-500 h-[320px] flex-none sticky top-0">
+                <ChartContainer
+                  config={chartConfig}
+                  className="aspect-square h-full"
+                >
+                  <PieChart className="flex gap-2">
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent hideLabel />}
+                    />
+                    <Pie
+                      data={chartData}
+                      dataKey="values"
+                      nameKey="dataType"
+                      innerRadius={35}
+                      stroke="2"
+                    >
+                      <Label
+                        content={({ viewBox }) => {
+                          if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                            return (
+                              <text
+                                x={viewBox.cx}
+                                y={viewBox.cy}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                              >
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={(viewBox.cy ?? 0) - 15}
+                                  className="fill-muted-foreground text-xs"
+                                >
+                                  Total
+                                </tspan>
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={(viewBox.cy ?? 0) + 10}
+                                  className="fill-foreground text-sm font-bold"
+                                >
+                                  {totalVisitors.toLocaleString()}
+                                </tspan>
+                              </text>
+                            );
+                          }
+                        }}
+                      />
+                    </Pie>
+                    <ChartLegend
+                      content={<ChartLegendContent nameKey="dataType" />}
+                      className="-translate-y-2 w-3/4 mx-auto flex-wrap gap-y-1 gap-x-4 [&>*]:basis-1/4 [&>*]:justify-center "
+                    />
+                  </PieChart>
+                </ChartContainer>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="w-full flex flex-col gap-4 p-3 border border-sky-500 rounded-lg">
+          <div className="w-full flex gap-2 items-center py-3">
+            <div className="w-9 h-9 rounded-full border-[1.5px] border-sky-500 text-sky-500 flex items-center justify-center">
+              <Gem className="w-5 h-5" />
+            </div>
+            <h3 className="text-xl font-semibold text-black">
+              Financial Details
+            </h3>
+          </div>
+          <div className="w-full flex gap-4">
+            <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 flex-col">
+              <p className="text-sm font-light text-gray-500">
+                Total{" "}
+                <span className="font-semibold underline">
+                  Price Good Bundle
+                </span>
+              </p>
+              <div className="flex flex-col gap-1">
+                <h3 className="text-gray-700 font-bold text-xl">
+                  {formatRupiah(data?.lolosBundle?.total_old_price) ?? "Rp. 0"}
+                </h3>
+                <div>
                   <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
-                    {Math.round(data?.percentage_in ?? 0)}%
+                    {Math.round(data?.lolosBundle?.price_percentage ?? 0)}%
                   </Badge>
                 </div>
               </div>
             </div>
-            <div className="flex flex-col gap-4 col-span-2">
-              <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
-                <p className="text-sm font-light text-gray-500">
-                  Total{" "}
-                  <span className="font-semibold underline">By Category</span>
-                </p>
-                <div className="flex justify-between items-center">
-                  <h3 className="text-gray-700 font-bold text-2xl">
-                    {(data?.total_product_category ?? 0).toLocaleString()}
-                  </h3>
-                </div>
-              </div>
-              <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
-                <p className="text-sm font-light text-gray-500">
-                  Total{" "}
-                  <span className="font-semibold underline">By Color</span>
-                </p>
-                <div className="flex justify-between items-center">
-                  <h3 className="text-gray-700 font-bold text-2xl">
-                    {(data?.total_product_color ?? 0).toLocaleString()}
-                  </h3>
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col gap-4 col-span-2">
-              <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
-                <p className="text-sm font-light text-gray-500">
-                  Total{" "}
-                  <span className="font-semibold underline">Good Data</span>
-                </p>
-                <div className="flex justify-between items-center">
-                  <h3 className="text-gray-700 font-bold text-2xl">
-                    {(data?.total_data_lolos ?? 0).toLocaleString()}
-                  </h3>
+            <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 flex-col">
+              <p className="text-sm font-light text-gray-500">
+                Total{" "}
+                <span className="font-semibold underline">Price Good Sale</span>
+              </p>
+              <div className="flex flex-col gap-1">
+                <h3 className="text-gray-700 font-bold text-xl">
+                  {formatRupiah(data?.lolosSale?.total_old_price) ?? "Rp. 0"}
+                </h3>
+                <div>
                   <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
-                    {Math.round(data?.percentage_lolos ?? 0)}%
-                  </Badge>
-                </div>
-              </div>
-              <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
-                <p className="text-sm font-light text-gray-500">
-                  Total{" "}
-                  <span className="font-semibold underline">Damaged Data</span>
-                </p>
-                <div className="flex justify-between items-center">
-                  <h3 className="text-gray-700 font-bold text-2xl">
-                    {(data?.total_data_damaged ?? 0).toLocaleString()}
-                  </h3>
-                  <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
-                    {Math.round(data?.percentage_damaged ?? 0)}%
+                    {Math.round(data?.lolosSale?.price_percentage ?? 0)}%
                   </Badge>
                 </div>
               </div>
             </div>
-            <div className="flex flex-col gap-4 col-span-2">
-              <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
-                <p className="text-sm font-light text-gray-500">
-                  Total{" "}
-                  <span className="font-semibold underline">Abnormal Data</span>
-                </p>
-                <div className="flex justify-between items-center">
-                  <h3 className="text-gray-700 font-bold text-2xl">
-                    {(data?.total_data_abnormal ?? 0).toLocaleString()}
-                  </h3>
+          </div>
+          <div className="w-full flex gap-4">
+            <div className="flex w-full bg-sky-200 rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 flex-col">
+              <p className="text-sm font-light text-gray-500">
+                Total{" "}
+                <span className="font-semibold underline">
+                  Price Good Stagging
+                </span>
+              </p>
+              <div className="flex flex-col gap-1">
+                <h3 className="text-gray-700 font-bold text-xl">
+                  {formatRupiah(data?.lolosStaging?.total_old_price) ?? "Rp. 0"}
+                </h3>
+                <div>
                   <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
-                    {Math.round(data?.percentage_abnormal ?? 0)}%
-                  </Badge>
-                </div>
-              </div>
-              <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-24 gap-2 flex-col">
-                <p className="text-sm font-light text-gray-500">
-                  Total{" "}
-                  <span className="font-semibold underline">
-                    Discrepancy Data
-                  </span>
-                </p>
-                <div className="flex justify-between items-center">
-                  <h3 className="text-gray-700 font-bold text-2xl">
-                    {(data?.total_discrepancy ?? 0).toLocaleString()}
-                  </h3>
-                  <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
-                    {Math.round(data?.percentage_discrepancy ?? 0)}%
+                    {Math.round(data?.lolosStaging?.price_percentage ?? 0)}%
                   </Badge>
                 </div>
               </div>
             </div>
-            <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 col-span-2 flex-col">
+            <div className="flex w-full bg-sky-200 rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 flex-col">
+              <p className="text-sm font-light text-gray-500">
+                Total{" "}
+                <span className="font-semibold underline">
+                  Price Damaged Stagging
+                </span>
+              </p>
+              <div className="flex flex-col gap-1">
+                <h3 className="text-gray-700 font-bold text-xl">
+                  {formatRupiah(data?.damagedStaging?.total_old_price) ??
+                    "Rp. 0"}
+                </h3>
+                <div>
+                  <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
+                    {Math.round(data?.damagedStaging?.price_percentage ?? 0)}%
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            <div className="flex w-full bg-sky-200 rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 flex-col">
+              <p className="text-sm font-light text-gray-500">
+                Total{" "}
+                <span className="font-semibold underline">
+                  Price Abnormal Stagging
+                </span>
+              </p>
+              <div className="flex flex-col gap-1">
+                <h3 className="text-gray-700 font-bold text-xl">
+                  {formatRupiah(data?.abnormalStaging?.total_old_price) ??
+                    "Rp. 0"}
+                </h3>
+                <div>
+                  <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
+                    {Math.round(data?.abnormalStaging?.price_percentage ?? 0)}%
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="w-full flex gap-4">
+            <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 flex-col">
               <p className="text-sm font-light text-gray-500">
                 Total{" "}
                 <span className="font-semibold underline">Price Good Data</span>
               </p>
               <div className="flex flex-col gap-1">
-                <h3 className="text-gray-700 font-bold text-2xl">
+                <h3 className="text-gray-700 font-bold text-xl">
                   {formatRupiah(data?.lolos?.total_old_price) ?? "Rp. 0"}
                 </h3>
                 <div>
@@ -399,7 +645,7 @@ export const Client = () => {
                 </div>
               </div>
             </div>
-            <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 col-span-2 flex-col">
+            <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 flex-col">
               <p className="text-sm font-light text-gray-500">
                 Total{" "}
                 <span className="font-semibold underline">
@@ -407,7 +653,7 @@ export const Client = () => {
                 </span>
               </p>
               <div className="flex flex-col gap-1">
-                <h3 className="text-gray-700 font-bold text-2xl">
+                <h3 className="text-gray-700 font-bold text-xl">
                   {formatRupiah(data?.damaged?.total_old_price) ?? "Rp. 0"}
                 </h3>
                 <div>
@@ -417,7 +663,7 @@ export const Client = () => {
                 </div>
               </div>
             </div>
-            <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 col-span-2 flex-col">
+            <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 flex-col">
               <p className="text-sm font-light text-gray-500">
                 Total{" "}
                 <span className="font-semibold underline">
@@ -425,7 +671,7 @@ export const Client = () => {
                 </span>
               </p>
               <div className="flex flex-col gap-1">
-                <h3 className="text-gray-700 font-bold text-2xl">
+                <h3 className="text-gray-700 font-bold text-xl">
                   {formatRupiah(data?.abnormal?.total_old_price) ?? "Rp. 0"}
                 </h3>
                 <div>
@@ -435,7 +681,7 @@ export const Client = () => {
                 </div>
               </div>
             </div>
-            <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 col-span-2 flex-col">
+            <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-36 gap-4 flex-col">
               <p className="text-sm font-light text-gray-500">
                 Total{" "}
                 <span className="font-semibold underline">
@@ -443,7 +689,7 @@ export const Client = () => {
                 </span>
               </p>
               <div className="flex flex-col gap-1">
-                <h3 className="text-gray-700 font-bold text-2xl">
+                <h3 className="text-gray-700 font-bold text-xl">
                   {formatRupiah(data?.priceDiscrepancy) ?? "Rp. 0"}
                 </h3>
                 <div>
@@ -454,76 +700,18 @@ export const Client = () => {
               </div>
             </div>
           </div>
-        </div>
-        <div className="flex flex-col gap-4">
-          <div className="flex h-[544px] relative rounded-md shadow bg-white">
-            <div className="flex text-sm text-gray-500 h-[320px] flex-none sticky top-0">
-              <ChartContainer
-                config={chartConfig}
-                className="aspect-square h-full"
-              >
-                <PieChart className="flex gap-2">
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
-                  />
-                  <Pie
-                    data={chartData}
-                    dataKey="values"
-                    nameKey="dataType"
-                    innerRadius={35}
-                    stroke="2"
-                  >
-                    <Label
-                      content={({ viewBox }) => {
-                        if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                          return (
-                            <text
-                              x={viewBox.cx}
-                              y={viewBox.cy}
-                              textAnchor="middle"
-                              dominantBaseline="middle"
-                            >
-                              <tspan
-                                x={viewBox.cx}
-                                y={(viewBox.cy ?? 0) - 15}
-                                className="fill-muted-foreground text-xs"
-                              >
-                                Total
-                              </tspan>
-                              <tspan
-                                x={viewBox.cx}
-                                y={(viewBox.cy ?? 0) + 10}
-                                className="fill-foreground text-sm font-bold"
-                              >
-                                {totalVisitors.toLocaleString()}
-                              </tspan>
-                            </text>
-                          );
-                        }
-                      }}
-                    />
-                  </Pie>
-                  <ChartLegend
-                    content={<ChartLegendContent nameKey="dataType" />}
-                    className="-translate-y-2 flex-wrap gap-2 [&>*]:basis-1/4 [&>*]:justify-center "
-                  />
-                </PieChart>
-              </ChartContainer>
-            </div>
-          </div>
-          <div className="flex h-[304px] relative rounded-md shadow bg-white">
-            <div className="flex w-full px-5 justify-center h-36 gap-4 flex-col sticky top-0">
-              <p className="text-sm font-light text-gray-500">Total Price</p>
-              <div className="flex flex-col gap-1">
-                <h3 className="text-gray-700 font-bold text-2xl">
-                  {formatRupiah(data?.total_price) ?? "Rp. 0"}
-                </h3>
-                <div>
-                  <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
-                    {Math.round(data?.price_percentage ?? 0)}%
-                  </Badge>
-                </div>
+          <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 justify-center h-28 gap-4 flex-col">
+            <p className="text-sm font-light text-gray-500">
+              Total <span className="font-semibold underline">Price</span>
+            </p>
+            <div className="flex justify-between gap-1">
+              <h3 className="text-gray-700 font-bold text-xl">
+                {formatRupiah(data?.total_price) ?? "Rp. 0"}
+              </h3>
+              <div>
+                <Badge className="rounded-full bg-transparent hover:bg-transparent text-black border border-black">
+                  100%
+                </Badge>
               </div>
             </div>
           </div>
@@ -535,13 +723,28 @@ export const Client = () => {
         </h2>
         <div className="flex flex-col w-full gap-4">
           <div className="flex w-full justify-between">
-            <div className="flex gap-2 items-center w-full flex-auto">
+            <div className="flex gap-2 items-center w-full">
               <Input
                 className="w-2/5 border-sky-400/80 focus-visible:ring-sky-400 flex-none"
                 value={dataSearch}
                 onChange={(e) => setDataSearch(e.target.value)}
                 placeholder="Search..."
               />
+              <TooltipProviderPage value={"Reload Data"}>
+                <Button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    cookies.set("detailCheckHistory", "update");
+                  }}
+                  className="items-center w-9 px-0 flex-none h-9 border-sky-400 text-black hover:bg-sky-50 disabled:opacity-100"
+                  variant={"outline"}
+                  disabled={loading}
+                >
+                  <RefreshCw
+                    className={cn("w-4 h-4", loading ? "animate-spin" : "")}
+                  />
+                </Button>
+              </TooltipProviderPage>
               <div className="flex items-center justify-start w-full">
                 <div className="flex items-center gap-3">
                   <Popover open={isFilter} onOpenChange={setIsFilter}>
@@ -685,72 +888,123 @@ export const Client = () => {
                 </div>
               </div>
             </div>
-            <Button className="bg-sky-400/80 hover:bg-sky-400 text-black">
-              <FileDown className="w-4 h-4 mr-2" />
-              Export
+            <Button
+              type="button"
+              onClick={handleExport}
+              className="bg-sky-400/80 hover:bg-sky-400 text-black disabled:opacity-100"
+              disabled={loadingExport}
+            >
+              {loadingExport ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <FileDown className="w-4 h-4 mr-2" />
+                  Export
+                </>
+              )}
             </Button>
           </div>
           <div className="w-full p-4 rounded-md border border-sky-400/80">
-            {loading ? (
-              <div className="h-[200px] flex items-center justify-center">
-                <Loader className="w-5 h-5 animate-spin" />
+            <ScrollArea>
+              <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-2 font-semibold items-center hover:bg-sky-200/80">
+                <p className="w-10 text-center flex-none">No</p>
+                <p className="w-36 flex-none">Old Barcode</p>
+                <p className="w-36 flex-none">New Barcode</p>
+                <p className="w-full min-w-80 max-w-[600px] text-center">
+                  Name
+                </p>
+                <p className="w-8 text-center flex-none">Qty</p>
+                <p className="w-40 flex-none text-center">Price</p>
               </div>
-            ) : (
-              <ScrollArea>
-                <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-2 font-semibold items-center hover:bg-sky-200/80">
-                  <p className="w-10 text-center flex-none">No</p>
-                  <p className="w-36 flex-none">Old Barcode</p>
-                  <p className="w-36 flex-none">New Barcode</p>
-                  <p className="w-full min-w-72 max-w-[500px] text-center">
-                    Name
-                  </p>
-                  <p className="w-8 text-center flex-none">Qty</p>
-                  <p className="w-40 flex-none text-center">Price</p>
-                </div>
-                {products.length > 0 ? (
-                  products.map((item, index) => (
+              {loading ? (
+                <div className="w-full h-full">
+                  {Array.from({ length: 5 }, (_, i) => (
                     <div
+                      key={i}
                       className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
-                      key={item.id}
                     >
-                      <p className="w-10 text-center flex-none">
-                        {page.from + index}
-                      </p>
-                      <div className="w-36 flex-none flex items-center">
-                        <p>{item?.old_barcode_product}</p>
+                      <div className="w-10 flex justify-center flex-none">
+                        <Skeleton className="w-7 h-4" />
                       </div>
-                      <p className="w-36 flex-none">
-                        {item?.new_barcode_product}
-                      </p>
-                      <TooltipProviderPage value={item?.new_name_product}>
-                        <p className="w-full min-w-72 max-w-[500px] text-ellipsis whitespace-nowrap overflow-hidden text-start">
-                          {item?.new_name_product}
+                      <div className="w-36 flex-none">
+                        <Skeleton className="w-28 h-4" />
+                      </div>
+                      <div className="w-36 flex-none">
+                        <Skeleton className="w-28 h-4" />
+                      </div>
+                      <div className="w-full min-w-80 max-w-[600px]">
+                        <Skeleton className="w-64 h-4" />
+                      </div>
+                      <div className="w-8 flex justify-center flex-none">
+                        <Skeleton className="w-5 h-4" />
+                      </div>
+                      <div className="w-40 flex-none flex justify-center">
+                        <Skeleton className="w-32 h-4" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="w-full h-full">
+                  {products.length > 0 ? (
+                    products.map((item, index) => (
+                      <div
+                        className="flex w-full px-5 py-3 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
+                        key={item.id}
+                      >
+                        <p className="w-10 text-center flex-none">
+                          {page.from + index}
                         </p>
-                      </TooltipProviderPage>
-                      <p className="w-8 text-center flex-none">
-                        {item?.new_quantity_product}
-                      </p>
-                      <div className="w-40 flex-none flex justify-center gap-4">
-                        {formatRupiah(item?.old_price_product) ?? "Rp. 0"}
+                        <div className="w-36 flex-none flex items-center">
+                          {item?.old_barcode_product}
+                        </div>
+                        <p className="w-36 flex-none">
+                          {item?.new_barcode_product}
+                        </p>
+                        <TooltipProviderPage
+                          value={
+                            <p className="max-w-80 w-full">
+                              {item?.new_name_product}
+                            </p>
+                          }
+                        >
+                          <p className="w-full min-w-80 max-w-[600px] text-ellipsis whitespace-nowrap overflow-hidden text-start">
+                            {item?.new_name_product}
+                          </p>
+                        </TooltipProviderPage>
+                        <p className="w-8 text-center flex-none">
+                          {Math.round(item?.new_quantity_product)}
+                        </p>
+                        <div className="w-40 flex-none flex justify-center gap-4">
+                          {formatRupiah(item?.old_price_product) ?? "Rp. 0"}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="h-[200px] flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-2 text-gray-500">
+                        <Grid2x2X className="w-8 h-8" />
+                        <p className="text-sm font-semibold">No Data Viewed.</p>
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="h-[200px] flex items-center justify-center">
-                    <div className="flex flex-col items-center gap-2 text-gray-500">
-                      <Grid2x2X className="w-8 h-8" />
-                      <p className="text-sm font-semibold">No Data Viewed.</p>
-                    </div>
-                  </div>
-                )}
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
-            )}
+                  )}
+                </div>
+              )}
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           </div>
           <div className="flex items-center justify-between">
-            <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
-              Total: {page.total}
-            </Badge>
+            <div className="flex gap-3 items-center">
+              <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
+                Total: {page.total}
+              </Badge>
+              <Badge className="rounded-full hover:bg-green-100 bg-green-100 text-black border border-green-500 text-sm">
+                Row per page: {page.perPage}
+              </Badge>
+            </div>
             <div className="flex gap-5 items-center">
               <p className="text-sm">
                 Page {page.current} of {page.last}
