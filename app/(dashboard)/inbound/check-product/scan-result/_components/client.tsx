@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -8,79 +7,62 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-  CommandShortcut,
-} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { useDebounce } from "@/hooks/use-debounce";
-import { useModal } from "@/hooks/use-modal";
+import { Skeleton } from "@/components/ui/skeleton";
+
 import { baseUrl } from "@/lib/baseUrl";
+import { useModal } from "@/hooks/use-modal";
 import { cn, formatRupiah } from "@/lib/utils";
+import { useDebounce } from "@/hooks/use-debounce";
 import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
-import axios from "axios";
+
 import {
-  ArrowLeft,
-  ArrowRightCircle,
-  ArrowUpDown,
-  Check,
+  Trash2,
+  Grid2x2X,
+  RefreshCw,
   ChevronLeft,
   ChevronRight,
-  Copy,
-  Loader,
-  ReceiptText,
   ShieldCheck,
-  Trash2,
-  XCircle,
 } from "lucide-react";
-import { useCookies } from "next-client-cookies";
+import axios from "axios";
 import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
+import { useCookies } from "next-client-cookies";
 import { useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+
 import Loading from "../loading";
 
-interface DetailManifest {
-  id: string;
-  code_document: string;
-  old_barcode_product: string;
-  old_name_product: string;
-  old_quantity_product: number;
-  old_price_product: number;
-  created_at: string;
-  updated_at: string;
-}
-
 export const Client = () => {
+  // core
+  const router = useRouter();
   const { onOpen } = useModal();
+  const searchParams = useSearchParams();
+
+  // state boolean
+  const [loading, setLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+
+  // state search & page
   const [dataSearch, setDataSearch] = useState("");
   const searchValue = useDebounce(dataSearch);
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const cookies = useCookies();
-  const accessToken = cookies.get("accessToken");
-
-  const [data, setData] = useState<any[]>([]);
   const [page, setPage] = useState({
     current: parseFloat(searchParams.get("page") ?? "1") ?? 1, //page saat ini
     last: 1, //page terakhir
     from: 1, //data dimulai dari (untuk memulai penomoran tabel)
     total: 1, //total data
+    perPage: 1,
   });
+
+  // cookies
+  const cookies = useCookies();
+  const accessToken = cookies.get("accessToken");
+
+  // state data
+  const [data, setData] = useState<any[]>([]);
 
   // handle GET Data
   const handleGetData = async () => {
@@ -97,10 +79,11 @@ export const Client = () => {
       );
       setData(response.data.data.resource.data);
       setPage({
-        current: response.data.data.resource.current_page,
-        last: response.data.data.resource.last_page,
-        from: response.data.data.resource.from,
-        total: response.data.data.resource.total,
+        current: response.data.data.resource.current_page ?? 1,
+        last: response.data.data.resource.last_page ?? 1,
+        from: response.data.data.resource.from ?? 0,
+        total: response.data.data.resource.total ?? 0,
+        perPage: response.data.data.resource.per_page ?? 0,
       });
     } catch (err: any) {
       console.log("ERROR_GET_DOCUMENT:", err);
@@ -109,8 +92,9 @@ export const Client = () => {
     }
   };
 
+  // handle search params
   const handleCurrentId = useCallback(
-    (q: string) => {
+    (q: string, p: number) => {
       let currentQuery = {};
 
       if (searchParams) {
@@ -120,10 +104,14 @@ export const Client = () => {
       const updateQuery: any = {
         ...currentQuery,
         q: q,
+        page: p,
       };
 
       if (!q || q === "") {
         delete updateQuery.q;
+      }
+      if (!p || p <= 1) {
+        delete updateQuery.page;
       }
 
       const url = qs.stringifyUrl(
@@ -134,14 +122,23 @@ export const Client = () => {
         { skipNull: true }
       );
 
-      router.push(url);
+      router.push(url, { scroll: false });
     },
     [searchParams, router]
   );
 
+  // handle auto update
   useEffect(() => {
-    handleCurrentId(searchValue);
-  }, [searchValue]);
+    if (cookies.get("scanResult")) {
+      handleGetData();
+      return cookies.remove("scanResult");
+    }
+  }, [cookies.get("scanResult")]);
+
+  useEffect(() => {
+    handleCurrentId(searchValue, page.current);
+    handleGetData();
+  }, [searchValue, page.current]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -178,76 +175,128 @@ export const Client = () => {
                 onChange={(e) => setDataSearch(e.target.value)}
                 placeholder="Search..."
               />
+              <TooltipProviderPage value={"Reload Data"}>
+                <Button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    cookies.set("scanResult", "update");
+                  }}
+                  className="items-center w-9 px-0 flex-none h-9 border-sky-400 text-black hover:bg-sky-50"
+                  variant={"outline"}
+                >
+                  <RefreshCw
+                    className={cn("w-4 h-4", loading ? "animate-spin" : "")}
+                  />
+                </Button>
+              </TooltipProviderPage>
             </div>
           </div>
           <div className="w-full p-4 rounded-md border border-sky-400/80">
-            {loading ? (
-              <div className="h-[200px] flex items-center justify-center">
-                <Loader className="w-5 h-5 animate-spin" />
+            <ScrollArea>
+              <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-3 font-semibold items-center hover:bg-sky-200/80">
+                <p className="w-10 text-center flex-none">No</p>
+                <p className="w-full min-w-72 max-w-[500px]">Product Name</p>
+                <p className="w-52 flex-none">Price</p>
+                <p className="w-52 flex-none">User</p>
+                <p className="w-24 flex-none text-center">Action</p>
               </div>
-            ) : (
-              <ScrollArea>
-                <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-3 font-semibold items-center hover:bg-sky-200/80">
-                  <p className="w-10 text-center flex-none">No</p>
-                  <p className="w-full min-w-72 max-w-[500px]">Product Name</p>
-                  <p className="w-52 flex-none">Price</p>
-                  <p className="w-52 flex-none">User</p>
-                  <p className="w-24 flex-none text-center">Action</p>
-                </div>
-                {data.map((item, i) => (
-                  <div
-                    className="flex w-full px-5 py-3 text-sm gap-3 border-b border-sky-200 items-center hover:border-sky-300"
-                    key={item.id}
-                  >
-                    <p className="w-10 text-center flex-none">
-                      {page.from + i}
-                    </p>
-                    <p className="w-full min-w-72 max-w-[500px] whitespace-nowrap overflow-hidden text-ellipsis">
-                      {item.product_name}
-                    </p>
-                    <p className="w-52 flex-none overflow-hidden text-ellipsis">
-                      {formatRupiah(parseFloat(item.product_price))}
-                    </p>
-                    <p className="w-52 flex-none overflow-hidden text-ellipsis">
-                      {item.user.username}
-                    </p>
-                    <div className="w-24 flex-none flex gap-4 justify-center">
-                      <TooltipProviderPage value="Check">
-                        <Link
-                          href={`/inbound/check-product/scan-result/${item.id}`}
-                          className="w-9"
-                        >
-                          <Button
-                            className="items-center w-full px-0  border-green-400 text-green-700 hover:text-green-700 hover:bg-green-50"
-                            variant={"outline"}
-                          >
-                            <ShieldCheck className="w-4 h-4" />
-                          </Button>
-                        </Link>
-                      </TooltipProviderPage>
-                      <TooltipProviderPage value="Delete">
-                        <Button
-                          className="items-center px-0  border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50 w-9"
-                          variant={"outline"}
-                          type="button"
-                          onClick={() =>
-                            onOpen("delete-manifest-inbound", item.id)
-                          }
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </TooltipProviderPage>
+              {loading ? (
+                <div className="w-full h-full">
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <div
+                      key={i}
+                      className="flex w-full px-5 py-5 text-sm gap-3 border-b border-sky-200 items-center hover:border-sky-300"
+                    >
+                      <div className="w-10 flex justify-center flex-none">
+                        <Skeleton className="w-7 h-4" />
+                      </div>
+                      <div className="w-full min-w-72 max-w-[500px] ">
+                        <Skeleton className="w-52 h-4" />
+                      </div>
+                      <div className="w-52 flex-none">
+                        <Skeleton className="w-32 h-4" />
+                      </div>
+                      <div className="w-52 flex-none">
+                        <Skeleton className="w-32 h-4" />
+                      </div>
+                      <div className="w-24 flex-none flex gap-4 justify-center">
+                        <Skeleton className="w-9 h-4" />
+                        <Skeleton className="w-9 h-4" />
+                      </div>
                     </div>
-                  </div>
-                ))}
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
-            )}
+                  ))}
+                </div>
+              ) : (
+                <div className="w-full h-full">
+                  {data.length > 0 ? (
+                    data.map((item, i) => (
+                      <div
+                        className="flex w-full px-5 py-3 text-sm gap-3 border-b border-sky-200 items-center hover:border-sky-300"
+                        key={item.id}
+                      >
+                        <p className="w-10 text-center flex-none">
+                          {page.from + i}
+                        </p>
+                        <p className="w-full min-w-72 max-w-[500px] whitespace-nowrap overflow-hidden text-ellipsis">
+                          {item.product_name}
+                        </p>
+                        <p className="w-52 flex-none overflow-hidden text-ellipsis">
+                          {formatRupiah(parseFloat(item.product_price))}
+                        </p>
+                        <p className="w-52 flex-none overflow-hidden text-ellipsis">
+                          {item.user.username}
+                        </p>
+                        <div className="w-24 flex-none flex gap-4 justify-center">
+                          <TooltipProviderPage value="Check">
+                            <Link
+                              href={`/inbound/check-product/scan-result/${item.id}`}
+                              className="w-9"
+                            >
+                              <Button
+                                className="items-center w-full px-0  border-green-400 text-green-700 hover:text-green-700 hover:bg-green-50"
+                                variant={"outline"}
+                              >
+                                <ShieldCheck className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                          </TooltipProviderPage>
+                          <TooltipProviderPage value="Delete">
+                            <Button
+                              className="items-center px-0  border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50 w-9"
+                              variant={"outline"}
+                              type="button"
+                              onClick={() =>
+                                onOpen("delete-scan-result", item.id)
+                              }
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TooltipProviderPage>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="h-[200px] flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-2 text-gray-500">
+                        <Grid2x2X className="w-8 h-8" />
+                        <p className="text-sm font-semibold">No Data Viewed.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           </div>
           <div className="flex items-center justify-between">
-            <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
-              Total: {page.total}
-            </Badge>
+            <div className="flex gap-3 items-center">
+              <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
+                Total: {page.total}
+              </Badge>
+              <Badge className="rounded-full hover:bg-green-100 bg-green-100 text-black border border-green-500 text-sm">
+                Row per page: {page.perPage}
+              </Badge>
+            </div>
             <div className="flex gap-5 items-center">
               <p className="text-sm">
                 Page {page.current} of {page.last}
@@ -265,7 +314,7 @@ export const Client = () => {
                 <Button
                   className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
                   onClick={() =>
-                    setPage((prev) => ({ ...prev, current: prev.current - 1 }))
+                    setPage((prev) => ({ ...prev, current: prev.current + 1 }))
                   }
                   disabled={page.current === page.last}
                 >

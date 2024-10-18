@@ -7,16 +7,17 @@ import { BarcodePrinteredCheckProductManualInboundModal } from "@/app/(dashboard
 import { DoubleBarcodeManifestInboundModal } from "@/app/(dashboard)/inbound/check-product/manifest-inbound/[manifestInboundId]/[manifestInboundMonth]/[manifestInboundYear]/check/_components/_modals/double-barcode-manifest-inbound-modal";
 import { CustomBarcodeModal } from "@/app/(dashboard)/inbound/check-product/manifest-inbound/[manifestInboundId]/[manifestInboundMonth]/[manifestInboundYear]/detail/_components/_modals/custom-barcode-modal";
 import { DeleteCustomBarcodeModal } from "@/app/(dashboard)/inbound/check-product/manifest-inbound/[manifestInboundId]/[manifestInboundMonth]/[manifestInboundYear]/detail/_components/_modals/delete-custom-barcode-modal";
+import { DeleteManifestInboundModal } from "@/app/(dashboard)/inbound/check-product/manifest-inbound/_components/_modals/delete-manifest-inbound-modal";
 import { BarcodePrinteredCheckProductManifestInboundModal } from "@/app/(dashboard)/inbound/check-product/manual-inbound/_components/_modals/barcode-printered-check-product-manifest-inbound-modal";
 import { DeleteProductApproveModal } from "@/app/(dashboard)/inbound/check-product/product-approve/_components/_modals/delete-product-approve-modal";
 import { DeleteProductDetailProductApproveModal } from "@/app/(dashboard)/inbound/check-product/product-approve/_components/_modals/delete-product-detail-product-approve-modal";
 import { DetailProductDetailProductApproveModal } from "@/app/(dashboard)/inbound/check-product/product-approve/_components/_modals/detail-product-detail-product-approve-modal";
 import { StaggingProductApproveModal } from "@/app/(dashboard)/inbound/check-product/product-approve/_components/_modals/staging-product-approve-modal";
 import { ParcodePrinteredCheckProductScanResultModal } from "@/app/(dashboard)/inbound/check-product/scan-result/[scanResultId]/_components/_modals/barcode-printered-check-product-scan-result-modal";
+import { DeleteScanResultModal } from "@/app/(dashboard)/inbound/check-product/scan-result/_components/_modals/delete-scan-result-modal";
 import { DoneCheckAllStaggingProductModal } from "@/app/(dashboard)/stagging/product/_components/_modals/done-check-all-stagging-product-modal";
 import ApprovementProductsModal from "@/components/modal/approve-product-modal";
 import DeleteDetailManifestInboundModal from "@/components/modal/delete-detail-manifest-inbound-modal";
-import DeleteManifestInboundModal from "@/components/modal/delete-manifest-inbound-modal";
 
 const ModalProvider = () => {
   return (
@@ -38,6 +39,7 @@ const ModalProvider = () => {
       <DetailProductApproveScanResultModal />
       <DoneCheckAllApproveScanResultModal />
       <DoneCheckAllStaggingProductModal />
+      <DeleteScanResultModal />
     </>
   );
 };

@@ -1,63 +1,64 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { useDebounce } from "@/hooks/use-debounce";
-import { baseUrl } from "@/lib/baseUrl";
-import { cn, formatDate } from "@/lib/utils";
-import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
-import axios from "axios";
-import {
-  ChevronLeft,
-  ChevronRight,
-  CircleFadingPlus,
-  Combine,
-  Grid2x2X,
-  Loader,
-  ReceiptText,
-  RefreshCcw,
-  RefreshCw,
-  Trash2,
-  X,
-  XCircle,
-} from "lucide-react";
-import { useCookies } from "next-client-cookies";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import qs from "query-string";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
-import Loading from "../loading";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandList,
+  CommandItem,
+  CommandGroup,
+} from "@/components/ui/command";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbLink,
+  BreadcrumbItem,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+
+import { cn } from "@/lib/utils";
+import { baseUrl } from "@/lib/baseUrl";
 import { useModal } from "@/hooks/use-modal";
+import { useDebounce } from "@/hooks/use-debounce";
+import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
+
+import {
+  X,
+  Trash2,
+  Loader,
+  XCircle,
+  Combine,
+  Grid2x2X,
+  RefreshCw,
+  ReceiptText,
+  ChevronLeft,
+  ChevronRight,
+  CircleFadingPlus,
+} from "lucide-react";
+import axios from "axios";
+import qs from "query-string";
+import { toast } from "sonner";
+import { useCookies } from "next-client-cookies";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+
+import Loading from "../loading";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Client = () => {
   // core
@@ -99,12 +100,14 @@ export const Client = () => {
     last: 1, //page terakhir
     from: 1, //data dimulai dari (untuk memulai penomoran tabel)
     total: 1, //total data
+    perPage: 1,
   });
   const [pageDetail, setPageDetail] = useState({
     current: parseFloat(searchParams.get("page") ?? "1") ?? 1, //page saat ini
     last: 1, //page terakhir
     from: 1, //data dimulai dari (untuk memulai penomoran tabel)
     total: 1, //total data
+    perPage: 1,
   });
 
   // handle GET list & detail
@@ -123,10 +126,11 @@ export const Client = () => {
       console.log(response);
       setData(response.data.data.resource.data);
       setPage({
-        current: response.data.data.resource.current_page,
-        last: response.data.data.resource.last_page,
-        from: response.data.data.resource.from,
-        total: response.data.data.resource.total,
+        current: response.data.data.resource.current_page ?? 1,
+        last: response.data.data.resource.last_page ?? 1,
+        from: response.data.data.resource.from ?? 0,
+        total: response.data.data.resource.total ?? 0,
+        perPage: response.data.data.resource.per_page ?? 0,
       });
     } catch (err: any) {
       setError(err.message || "An error occurred");
@@ -152,6 +156,7 @@ export const Client = () => {
         last: response.data.data.resource.last_page,
         from: response.data.data.resource.from,
         total: response.data.data.resource.total,
+        perPage: response.data.data.resource.per_page,
       });
       setIsOpenDetail(true);
       setCodeDetail(code);
@@ -241,6 +246,7 @@ export const Client = () => {
         last: 1, //page terakhir
         from: 1, //data dimulai dari (untuk memulai penomoran tabel)
         total: 1, //total data
+        perPage: 1,
       });
       setDataDetail([]);
       setDataSearchDetail("");
@@ -289,6 +295,8 @@ export const Client = () => {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>Inbound</BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>Check Product</BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>Product Approve</BreadcrumbItem>
         </BreadcrumbList>
@@ -442,111 +450,146 @@ export const Client = () => {
             </div>
           </div>
           <div className="w-full p-4 rounded-md border border-sky-400/80">
-            {loading ? (
-              <div className="h-[200px] flex items-center justify-center">
-                <Loader className="w-5 h-5 animate-spin" />
+            <ScrollArea>
+              <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
+                <p className="w-10 text-center flex-none">No</p>
+                <p className="w-36 flex-none">Document Code</p>
+                <p className="w-full min-w-72 max-w-[500px]">Base Document</p>
+                <p className="w-24 flex-none">Total</p>
+                <p className="w-28 flex-none">Status</p>
+                <p className="w-36 flex-none text-center">Action</p>
               </div>
-            ) : (
-              <ScrollArea>
-                <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
-                  <p className="w-10 text-center flex-none">No</p>
-                  <p className="w-36 flex-none">Document Code</p>
-                  <p className="w-full min-w-72 max-w-[500px]">Base Document</p>
-                  <p className="w-24 flex-none">Total</p>
-                  <p className="w-28 flex-none">Status</p>
-                  <p className="w-36 flex-none text-center">Action</p>
-                </div>
-                {data.length > 0 ? (
-                  data.map((item, i) => (
+              {loading ? (
+                <div className="w-full h-full">
+                  {Array.from({ length: 5 }, (_, i) => (
                     <div
                       className="flex w-full px-5 py-5 text-sm gap-4 border-b border-sky-100 items-center hover:border-sky-200"
-                      key={item.id}
+                      key={i}
                     >
-                      <p className="w-10 text-center flex-none">
-                        {page.from + i}
-                      </p>
-                      <p className="w-36 flex-none">{item.code_document}</p>
-                      <p className="w-full min-w-72 max-w-[500px] whitespace-nowrap overflow-hidden text-ellipsis">
-                        {item.base_document}
-                      </p>
-                      <p className="w-24 flex-none">
-                        {item.total_column_in_document.toLocaleString()}
-                      </p>
+                      <div className="w-10 justify-center flex flex-none">
+                        <Skeleton className="w-7 h-4" />
+                      </div>
+                      <div className="w-36 flex-none">
+                        <Skeleton className="w-28 h-4" />
+                      </div>
+                      <div className="w-full min-w-72 max-w-[500px]">
+                        <Skeleton className="w-52 h-4" />
+                      </div>
+                      <div className="w-24 flex-none">
+                        <Skeleton className="w-16 h-4" />
+                      </div>
                       <div className="w-28 flex-none">
-                        <Badge
-                          className={cn(
-                            "rounded w-20 px-0 justify-center text-black font-normal capitalize",
-                            item.status_document === "pending" &&
-                              "bg-gray-200 hover:bg-gray-200",
-                            item.status_document === "in progress" &&
-                              "bg-yellow-400 hover:bg-yellow-400",
-                            item.status_document === "done" &&
-                              "bg-green-400 hover:bg-green-400"
-                          )}
-                        >
-                          {item.status_document}
-                        </Badge>
+                        <Skeleton className="w-20 h-4" />
                       </div>
                       <div className="w-36 flex gap-4 justify-center">
-                        <TooltipProviderPage value={<p>To Partial Stagging</p>}>
-                          <Button
-                            className="items-center w-9 px-0 flex-none h-9 border-green-400 text-green-700 hover:text-green-700 hover:bg-green-50"
-                            variant={"outline"}
-                            onClick={() =>
-                              onOpen(
-                                "staging-document-product-approve",
-                                item.code_document
-                              )
-                            }
-                          >
-                            <Combine className="w-4 h-4" />
-                          </Button>
-                        </TooltipProviderPage>
-                        <TooltipProviderPage value={<p>Detail</p>}>
-                          <Button
-                            className="items-center w-9 px-0 flex-none h-9 border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
-                            variant={"outline"}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleGetDetail(item.code_document);
-                            }}
-                          >
-                            <ReceiptText className="w-4 h-4" />
-                          </Button>
-                        </TooltipProviderPage>
-                        <TooltipProviderPage value={<p>Delete</p>}>
-                          <Button
-                            className="items-center w-9 px-0 flex-none h-9 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
-                            variant={"outline"}
-                            onClick={() =>
-                              onOpen(
-                                "delete-document-product-approve",
-                                item.code_document
-                              )
-                            }
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </TooltipProviderPage>
+                        <Skeleton className="w-9 h-4" />
+                        <Skeleton className="w-9 h-4" />
+                        <Skeleton className="w-9 h-4" />
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="h-[200px] flex items-center justify-center">
-                    <div className="flex flex-col items-center gap-2 text-gray-500">
-                      <Grid2x2X className="w-8 h-8" />
-                      <p className="text-sm font-semibold">No Data Viewed.</p>
+                  ))}
+                </div>
+              ) : (
+                <div className="w-full h-fu">
+                  {data.length > 0 ? (
+                    data.map((item, i) => (
+                      <div
+                        className="flex w-full px-5 py-3 text-sm gap-4 border-b border-sky-100 items-center hover:border-sky-200"
+                        key={item.id}
+                      >
+                        <p className="w-10 text-center flex-none">
+                          {page.from + i}
+                        </p>
+                        <p className="w-36 flex-none">{item.code_document}</p>
+                        <p className="w-full min-w-72 max-w-[500px] whitespace-nowrap overflow-hidden text-ellipsis">
+                          {item.base_document}
+                        </p>
+                        <p className="w-24 flex-none">
+                          {item.total_column_in_document.toLocaleString()}
+                        </p>
+                        <div className="w-28 flex-none">
+                          <Badge
+                            className={cn(
+                              "rounded w-20 px-0 justify-center text-black font-normal capitalize",
+                              item.status_document === "pending" &&
+                                "bg-gray-200 hover:bg-gray-200",
+                              item.status_document === "in progress" &&
+                                "bg-yellow-400 hover:bg-yellow-400",
+                              item.status_document === "done" &&
+                                "bg-green-400 hover:bg-green-400"
+                            )}
+                          >
+                            {item.status_document}
+                          </Badge>
+                        </div>
+                        <div className="w-36 flex gap-4 justify-center">
+                          <TooltipProviderPage
+                            value={<p>To Partial Stagging</p>}
+                          >
+                            <Button
+                              className="items-center w-9 px-0 flex-none h-9 border-green-400 text-green-700 hover:text-green-700 hover:bg-green-50"
+                              variant={"outline"}
+                              onClick={() =>
+                                onOpen(
+                                  "staging-document-product-approve",
+                                  item.code_document
+                                )
+                              }
+                            >
+                              <Combine className="w-4 h-4" />
+                            </Button>
+                          </TooltipProviderPage>
+                          <TooltipProviderPage value={<p>Detail</p>}>
+                            <Button
+                              className="items-center w-9 px-0 flex-none h-9 border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
+                              variant={"outline"}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleGetDetail(item.code_document);
+                              }}
+                            >
+                              <ReceiptText className="w-4 h-4" />
+                            </Button>
+                          </TooltipProviderPage>
+                          <TooltipProviderPage value={<p>Delete</p>}>
+                            <Button
+                              className="items-center w-9 px-0 flex-none h-9 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
+                              variant={"outline"}
+                              onClick={() =>
+                                onOpen(
+                                  "delete-document-product-approve",
+                                  item.code_document
+                                )
+                              }
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TooltipProviderPage>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="h-[200px] flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-2 text-gray-500">
+                        <Grid2x2X className="w-8 h-8" />
+                        <p className="text-sm font-semibold">No Data Viewed.</p>
+                      </div>
                     </div>
-                  </div>
-                )}
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
-            )}
+                  )}
+                </div>
+              )}
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           </div>
           <div className="flex items-center justify-between">
-            <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
-              Total: {page.total}
-            </Badge>
+            <div className="flex gap-3 items-center">
+              <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
+                Total: {page.total}
+              </Badge>
+              <Badge className="rounded-full hover:bg-green-100 bg-green-100 text-black border border-green-500 text-sm">
+                Row per page: {page.perPage}
+              </Badge>
+            </div>
             <div className="flex gap-5 items-center">
               <p className="text-sm">
                 Page {page.current} of {page.last}
@@ -564,7 +607,7 @@ export const Client = () => {
                 <Button
                   className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
                   onClick={() =>
-                    setPage((prev) => ({ ...prev, current: prev.current - 1 }))
+                    setPage((prev) => ({ ...prev, current: prev.current + 1 }))
                   }
                   disabled={page.current === page.last}
                 >
@@ -615,23 +658,42 @@ export const Client = () => {
           </div>
           <div className="flex w-full flex-col gap-4">
             <div className="w-full p-4 rounded-md border border-sky-400/80">
-              {loadingDetail ? (
-                <div className="h-[200px] flex items-center justify-center">
-                  <Loader className="w-5 h-5 animate-spin" />
+              <ScrollArea>
+                <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
+                  <p className="w-10 text-center flex-none">No</p>
+                  <p className="w-32 flex-none">Old Barcode</p>
+                  <p className="w-32 flex-none">New Barcode</p>
+                  <p className="w-full min-w-44 max-w-[400px]">Product Name</p>
+                  <p className="w-28 flex-none">Status</p>
+                  <p className="w-24 text-center flex-none">Action</p>
                 </div>
-              ) : (
-                <ScrollArea>
-                  <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
-                    <p className="w-10 text-center flex-none">No</p>
-                    <p className="w-32 flex-none">Old Barcode</p>
-                    <p className="w-32 flex-none">New Barcode</p>
-                    <p className="w-full min-w-44 max-w-[400px]">
-                      Product Name
-                    </p>
-                    <p className="w-28 flex-none">Status</p>
-                    <p className="w-24 text-center flex-none">Action</p>
+                {loadingDetail ? (
+                  <div className="w-full h-full">
+                    {Array.from({ length: 3 }, (_, i) => (
+                      <div className="flex w-full px-5 py-5 text-sm gap-4 border-b border-sky-100 items-center hover:border-sky-200">
+                        <div className="w-10 flex justify-center flex-none">
+                          <Skeleton className="w-7 h-4" />
+                        </div>
+                        <div className="w-32 flex-none">
+                          <Skeleton className="w-24 h-4" />
+                        </div>
+                        <div className="w-32 flex-none">
+                          <Skeleton className="w-24 h-4" />
+                        </div>
+                        <div className="w-full min-w-44 max-w-[400px]">
+                          <Skeleton className="w-32 h-4" />
+                        </div>
+                        <div className="w-28 flex-none">
+                          <Skeleton className="w-20 h-4" />
+                        </div>
+                        <div className="w-24 flex-none flex gap-4 justify-center">
+                          <Skeleton className="w-9 h-4" />
+                          <Skeleton className="w-9 h-4" />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-
+                ) : (
                   <ScrollArea className="max-h-[64vh] h-full min-h-[200px]">
                     {dataDetail.length > 0 ? (
                       dataDetail.map((item, i) => (
@@ -701,14 +763,19 @@ export const Client = () => {
                       </div>
                     )}
                   </ScrollArea>
-                  <ScrollBar orientation="horizontal" />
-                </ScrollArea>
-              )}
+                )}
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
             </div>
             <div className="flex items-center justify-between">
-              <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
-                Total: {pageDetail.total}
-              </Badge>
+              <div className="flex gap-3 items-center">
+                <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
+                  Total: {pageDetail.total}
+                </Badge>
+                <Badge className="rounded-full hover:bg-green-100 bg-green-100 text-black border border-green-500 text-sm">
+                  Row per page: {pageDetail.perPage}
+                </Badge>
+              </div>
               <div className="flex gap-5 items-center">
                 <p className="text-sm">
                   Page {pageDetail.current} of {pageDetail.last}
@@ -731,7 +798,7 @@ export const Client = () => {
                     onClick={() =>
                       setPageDetail((prev) => ({
                         ...prev,
-                        current: prev.current - 1,
+                        current: prev.current + 1,
                       }))
                     }
                     disabled={pageDetail.current === pageDetail.last}

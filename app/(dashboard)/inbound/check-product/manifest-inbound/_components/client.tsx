@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleFadingPlus,
+  Grid2x2X,
   Loader,
   ReceiptText,
   RefreshCw,
@@ -51,6 +52,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
 
 import Loading from "../loading";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Document {
   id: string;
@@ -76,19 +78,20 @@ export const Client = () => {
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
 
-  // state search & filter
+  // state search & filter &page
   const [dataSearch, setDataSearch] = useState("");
   const searchValue = useDebounce(dataSearch);
   const [filter, setFilter] = useState(searchParams.get("f") ?? "");
-
-  // state data
-  const [documents, setDocuments] = useState<Document[]>([]);
   const [page, setPage] = useState({
     current: parseFloat(searchParams.get("page") ?? "1") ?? 1, //page saat ini
     last: 1, //page terakhir
     from: 1, //data dimulai dari (untuk memulai penomoran tabel)
     total: 1, //total data
+    perPage: 1,
   });
+
+  // state data
+  const [documents, setDocuments] = useState<Document[]>([]);
 
   // handle GET Data
   const fetchDocuments = async () => {
@@ -105,10 +108,11 @@ export const Client = () => {
       );
       setDocuments(response.data.data.resource.data);
       setPage({
-        current: response.data.data.resource.current_page,
-        last: response.data.data.resource.last_page,
-        from: response.data.data.resource.from,
-        total: response.data.data.resource.total,
+        current: response.data.data.resource.current_page ?? 1,
+        last: response.data.data.resource.last_page ?? 1,
+        from: response.data.data.resource.from ?? 0,
+        total: response.data.data.resource.total ?? 0,
+        perPage: response.data.data.resource.per_page ?? 0,
       });
     } catch (err: any) {
       console.log("ERROR_GET_DOCUMENT:", err);
@@ -141,7 +145,7 @@ export const Client = () => {
         delete updateQuery.f;
         setFilter("");
       }
-      if (!p || p === 1) {
+      if (!p || p <= 1) {
         delete updateQuery.page;
       }
 
@@ -153,7 +157,7 @@ export const Client = () => {
         { skipNull: true }
       );
 
-      router.push(url);
+      router.push(url, { scroll: false });
     },
     [searchParams, router]
   );
@@ -161,6 +165,7 @@ export const Client = () => {
   // effect update search & page
   useEffect(() => {
     handleCurrentId(searchValue, filter, page.current);
+    fetchDocuments();
   }, [searchValue, page.current]);
 
   // effect update when...
@@ -335,102 +340,147 @@ export const Client = () => {
             </div>
           </div>
           <div className="w-full p-4 rounded-md border border-sky-400/80">
-            {loading ? (
-              <div className="h-[200px] flex items-center justify-center">
-                <Loader className="w-5 h-5 animate-spin" />
+            <ScrollArea>
+              <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
+                <p className="w-10 text-center flex-none">No</p>
+                <p className="w-full min-w-72 max-w-[500px]">Document Name</p>
+                <p className="w-56 flex-none">Date</p>
+                <p className="w-32 flex-none">Total Items</p>
+                <p className="w-28 flex-none">Status</p>
+                <p className="w-36 flex-none text-center">Action</p>
               </div>
-            ) : (
-              <ScrollArea>
-                <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-3 font-semibold items-center hover:bg-sky-200/80">
-                  <p className="w-10 text-center flex-none">No</p>
-                  <p className="w-full min-w-72 max-w-[500px]">Data Name</p>
-                  <p className="w-56 flex-none">Date</p>
-                  <p className="w-32 flex-none">Total Items</p>
-                  <p className="w-28 flex-none">Status</p>
-                  <p className="w-36 flex-none text-center">Action</p>
+              {loading ? (
+                <div className="w-full h-">
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <div
+                      className="flex w-full px-5 py-6 text-sm gap-4 border-b border-sky-200 items-center hover:border-sky-300"
+                      key={i}
+                    >
+                      <div className="w-10 flex justify-center flex-none">
+                        <Skeleton className="w-8 h-4" />
+                      </div>
+                      <div className="w-full min-w-72 max-w-[500px] ">
+                        <Skeleton className="w-40 h-4" />
+                      </div>
+                      <div className="w-56 flex-none">
+                        <Skeleton className="w-32 h-4" />
+                      </div>
+                      <div className="w-32 flex-none">
+                        <Skeleton className="w-24 h-4" />
+                      </div>
+                      <div className="w-28 flex-none">
+                        <Skeleton className="w-20 h-4" />
+                      </div>
+                      <div className="w-36 flex-none flex gap-4 justify-center">
+                        <Skeleton className="w-9 h-4" />
+                        <Skeleton className="w-9 h-4" />
+                        <Skeleton className="w-9 h-4" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                {documents.map((doc, i) => (
-                  <div
-                    className="flex w-full px-5 py-3 text-sm gap-3 border-b border-sky-200 items-center hover:border-sky-300"
-                    key={doc.id}
-                  >
-                    <p className="w-10 text-center flex-none">
-                      {page.from + i}
-                    </p>
-                    <p className="w-full min-w-72 max-w-[500px] whitespace-nowrap overflow-hidden text-ellipsis">
-                      {doc.base_document}
-                    </p>
-                    <p className="w-56 flex-none overflow-hidden text-ellipsis">
-                      {format(new Date(doc.date_document), "iiii, dd-MMM-yyyy")}
-                    </p>
-                    <p className="w-32 flex-none overflow-hidden text-ellipsis">
-                      {doc.total_column_in_document.toLocaleString()}
-                    </p>
-                    <div className="w-28 flex-none">
-                      <Badge
-                        className={cn(
-                          "rounded w-20 px-0 justify-center text-black font-normal capitalize",
-                          doc.status_document === "pending" &&
-                            "bg-gray-200 hover:bg-gray-200",
-                          doc.status_document === "in progress" &&
-                            "bg-yellow-400 hover:bg-yellow-400",
-                          doc.status_document === "done" &&
-                            "bg-green-400 hover:bg-green-400"
-                        )}
+              ) : (
+                <div className="w-full h-full">
+                  {documents.length > 0 ? (
+                    documents.map((doc, i) => (
+                      <div
+                        className="flex w-full px-5 py-3 text-sm gap-4 border-b border-sky-200 items-center hover:border-sky-300"
+                        key={doc.id}
                       >
-                        {doc.status_document}
-                      </Badge>
-                    </div>
-                    <div className="w-36 flex-none flex gap-4 justify-center">
-                      <TooltipProviderPage value="Check">
-                        <Link
-                          href={`/inbound/check-product/manifest-inbound/${doc.code_document}/check`}
-                          className="w-9"
-                        >
-                          <Button
-                            className="items-center w-full px-0  border-green-400 text-green-700 hover:text-green-700 hover:bg-green-50"
-                            variant={"outline"}
+                        <p className="w-10 text-center flex-none">
+                          {page.from + i}
+                        </p>
+                        <p className="w-full min-w-72 max-w-[500px] whitespace-nowrap overflow-hidden text-ellipsis">
+                          {doc.base_document}
+                        </p>
+                        <p className="w-56 flex-none whitespace-nowrap overflow-hidden text-ellipsis">
+                          {format(
+                            new Date(doc.date_document),
+                            "iiii, dd-MMM-yyyy"
+                          )}
+                        </p>
+                        <p className="w-32 flex-none whitespace-nowrap overflow-hidden text-ellipsis">
+                          {doc.total_column_in_document.toLocaleString()}
+                        </p>
+                        <div className="w-28 flex-none">
+                          <Badge
+                            className={cn(
+                              "rounded w-20 px-0 justify-center text-black font-normal capitalize",
+                              doc.status_document === "pending" &&
+                                "bg-gray-200 hover:bg-gray-200",
+                              doc.status_document === "in progress" &&
+                                "bg-yellow-400 hover:bg-yellow-400",
+                              doc.status_document === "done" &&
+                                "bg-green-400 hover:bg-green-400"
+                            )}
                           >
-                            <ShieldCheck className="w-4 h-4" />
-                          </Button>
-                        </Link>
-                      </TooltipProviderPage>
-                      <TooltipProviderPage value="Detail">
-                        <Link
-                          href={`/inbound/check-product/manifest-inbound/${doc.code_document}/detail`}
-                          className="w-9"
-                        >
-                          <Button
-                            className="items-center w-full px-0  border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
-                            variant={"outline"}
-                          >
-                            <ReceiptText className="w-4 h-4" />
-                          </Button>
-                        </Link>
-                      </TooltipProviderPage>
-                      <TooltipProviderPage value="Delete">
-                        <Button
-                          className="items-center px-0  border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50 w-9"
-                          variant={"outline"}
-                          type="button"
-                          onClick={() =>
-                            onOpen("delete-manifest-inbound", doc.id)
-                          }
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </TooltipProviderPage>
+                            {doc.status_document}
+                          </Badge>
+                        </div>
+                        <div className="w-36 flex-none flex gap-4 justify-center">
+                          <TooltipProviderPage value="Check">
+                            <Link
+                              href={`/inbound/check-product/manifest-inbound/${doc.code_document}/check`}
+                              className="w-9"
+                            >
+                              <Button
+                                className="items-center w-full px-0  border-green-400 text-green-700 hover:text-green-700 hover:bg-green-50"
+                                variant={"outline"}
+                              >
+                                <ShieldCheck className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                          </TooltipProviderPage>
+                          <TooltipProviderPage value="Detail">
+                            <Link
+                              href={`/inbound/check-product/manifest-inbound/${doc.code_document}/detail`}
+                              className="w-9"
+                            >
+                              <Button
+                                className="items-center w-full px-0  border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
+                                variant={"outline"}
+                              >
+                                <ReceiptText className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                          </TooltipProviderPage>
+                          <TooltipProviderPage value="Delete">
+                            <Button
+                              className="items-center px-0  border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50 w-9"
+                              variant={"outline"}
+                              type="button"
+                              onClick={() =>
+                                onOpen("delete-manifest-inbound", doc.id)
+                              }
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TooltipProviderPage>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="h-[200px] flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-2 text-gray-500">
+                        <Grid2x2X className="w-8 h-8" />
+                        <p className="text-sm font-semibold">No Data Viewed.</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
-            )}
+                  )}
+                </div>
+              )}
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           </div>
           <div className="flex items-center justify-between">
-            <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
-              Total: {page.total}
-            </Badge>
+            <div className="flex gap-3 items-center">
+              <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
+                Total: {page.total}
+              </Badge>
+              <Badge className="rounded-full hover:bg-green-100 bg-green-100 text-black border border-green-500 text-sm">
+                Row per page: {page.perPage}
+              </Badge>
+            </div>
             <div className="flex gap-5 items-center">
               <p className="text-sm">
                 Page {page.current} of {page.last}
@@ -448,7 +498,7 @@ export const Client = () => {
                 <Button
                   className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
                   onClick={() =>
-                    setPage((prev) => ({ ...prev, current: prev.current - 1 }))
+                    setPage((prev) => ({ ...prev, current: prev.current + 1 }))
                   }
                   disabled={page.current === page.last}
                 >

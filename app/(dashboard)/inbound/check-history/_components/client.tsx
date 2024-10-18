@@ -21,8 +21,10 @@ import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
 import {
   ChevronLeft,
   ChevronRight,
+  Grid2x2X,
   Loader,
   ReceiptText,
+  RefreshCw,
   Trash2,
 } from "lucide-react";
 import axios from "axios";
@@ -35,6 +37,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import Loading from "../loading";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Client = () => {
   // core
@@ -61,6 +64,7 @@ export const Client = () => {
     last: 1, //page terakhir
     from: 1, //data dimulai dari (untuk memulai penomoran tabel)
     total: 1, //total data
+    perPage: 1,
   });
 
   // handle GET
@@ -77,10 +81,11 @@ export const Client = () => {
       );
       setHistory(response.data.data.resource.data);
       setPage({
-        current: response.data.data.resource.current_page,
-        last: response.data.data.resource.last_page,
-        from: response.data.data.resource.from,
-        total: response.data.data.resource.total,
+        current: response.data.data.resource.current_page ?? 1,
+        last: response.data.data.resource.last_page ?? 1,
+        from: response.data.data.resource.from ?? 0,
+        total: response.data.data.resource.total ?? 0,
+        perPage: response.data.data.resource.per_page ?? 0,
       });
     } catch (err: any) {
       toast.error(`Error ${err.response.status}: Something went wrong`);
@@ -126,6 +131,13 @@ export const Client = () => {
   );
 
   useEffect(() => {
+    if (cookies.get("checkHistory")) {
+      fetchDocuments();
+      return cookies.remove("checkHistory");
+    }
+  }, [cookies.get("checkHistory")]);
+
+  useEffect(() => {
     handleCurrentId(searchValue, page.current);
     fetchDocuments();
   }, [searchValue, page.current]);
@@ -162,89 +174,150 @@ export const Client = () => {
               onChange={(e) => setDataSearch(e.target.value)}
               placeholder="Search..."
             />
+            <TooltipProviderPage value={"Reload Data"}>
+              <Button
+                onClick={(e) => {
+                  e.preventDefault();
+                  cookies.set("checkHistory", "update");
+                }}
+                className="items-center w-9 px-0 flex-none h-9 border-sky-400 text-black hover:bg-sky-50"
+                variant={"outline"}
+              >
+                <RefreshCw
+                  className={cn("w-4 h-4", loading ? "animate-spin" : "")}
+                />
+              </Button>
+            </TooltipProviderPage>
           </div>
           <div className="w-full p-4 rounded-md border border-sky-400/80">
-            {loading ? (
-              <div className="h-[200px] flex items-center justify-center">
-                <Loader className="w-5 h-5 animate-spin" />
+            <ScrollArea>
+              <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-3 font-semibold items-center hover:bg-sky-200/80">
+                <p className="w-10 text-center flex-none">No</p>
+                <p className="w-full min-w-72 max-w-[500px]">Data Name</p>
+                <p className="w-56 flex-none">Date</p>
+                <p className="w-32 flex-none">Total Items</p>
+                <p className="w-32 flex-none">Total In</p>
+                <p className="w-28 flex-none">Status Approve</p>
+                <p className="w-24 flex-none text-center">Action</p>
               </div>
-            ) : (
-              <ScrollArea>
-                <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-3 font-semibold items-center hover:bg-sky-200/80">
-                  <p className="w-10 text-center flex-none">No</p>
-                  <p className="w-full min-w-72 max-w-[500px]">Data Name</p>
-                  <p className="w-56 flex-none">Date</p>
-                  <p className="w-32 flex-none">Total Items</p>
-                  <p className="w-32 flex-none">Total In</p>
-                  <p className="w-28 flex-none">Status Approve</p>
-                  <p className="w-24 flex-none text-center">Action</p>
+              {loading ? (
+                <div className="w-full h-full">
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <div className="flex w-full px-5 py-5 text-sm gap-3 border-b border-sky-200 items-center hover:border-sky-300">
+                      <div className="w-10 flex justify-center flex-none">
+                        <Skeleton className="w-7 h-4" />
+                      </div>
+                      <div className="w-full min-w-72 max-w-[500px] ">
+                        <Skeleton className="w-52 h-4" />
+                      </div>
+                      <div className="w-56 flex-none ">
+                        <Skeleton className="w-44 h-4" />
+                      </div>
+                      <div className="w-32 flex-none ">
+                        <Skeleton className="w-16 h-4" />
+                      </div>
+                      <div className="w-32 flex-none ">
+                        <Skeleton className="w-16 h-4" />
+                      </div>
+                      <div className="w-28 flex-none">
+                        <Skeleton className="w-20 h-4" />
+                      </div>
+                      <div className="w-24 flex-none flex gap-4 justify-center">
+                        <Skeleton className="w-9 h-4" />
+                        <Skeleton className="w-9 h-4" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                {history.map((item, i) => (
-                  <div
-                    className="flex w-full px-5 py-3 text-sm gap-3 border-b border-sky-200 items-center hover:border-sky-300"
-                    key={item.id}
-                  >
-                    <p className="w-10 text-center flex-none">
-                      {page.from + i}
-                    </p>
-                    <p className="w-full min-w-72 max-w-[500px] whitespace-nowrap overflow-hidden text-ellipsis">
-                      {item.base_document}
-                    </p>
-                    <p className="w-56 flex-none overflow-hidden text-ellipsis">
-                      {format(new Date(item.created_at), "iiii, dd-MMM-yyyy")}
-                    </p>
-                    <p className="w-32 flex-none overflow-hidden text-ellipsis">
-                      {item.total_data.toLocaleString()}
-                    </p>
-                    <p className="w-32 flex-none overflow-hidden text-ellipsis">
-                      {item.total_data_in.toLocaleString()}
-                    </p>
-                    <div className="w-28 flex-none">
-                      <Badge
-                        className={cn(
-                          "rounded w-20 px-0 justify-center text-black font-normal capitalize bg-green-400 hover:bg-green-400"
-                        )}
+              ) : (
+                <div className="w-full h-full">
+                  {history.length > 0 ? (
+                    history.map((item, i) => (
+                      <div
+                        className="flex w-full px-5 py-3 text-sm gap-3 border-b border-sky-200 items-center hover:border-sky-300"
+                        key={item.id}
                       >
-                        {item.status_approve}
-                      </Badge>
-                    </div>
-                    <div className="w-24 flex-none flex gap-4 justify-center">
-                      <TooltipProviderPage value="Detail">
-                        <Link
-                          href={`/inbound/check-history/${item.id}`}
-                          className="w-9 flex-none"
-                        >
-                          <Button
-                            className="items-center w-full px-0  border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
-                            variant={"outline"}
+                        <p className="w-10 text-center flex-none">
+                          {page.from + i}
+                        </p>
+                        <p className="w-full min-w-72 max-w-[500px] whitespace-nowrap overflow-hidden text-ellipsis">
+                          {item.base_document}
+                        </p>
+                        <p className="w-56 flex-none overflow-hidden text-ellipsis">
+                          {format(
+                            new Date(item.created_at),
+                            "iiii, dd-MMM-yyyy"
+                          )}
+                        </p>
+                        <p className="w-32 flex-none overflow-hidden text-ellipsis">
+                          {item.total_data.toLocaleString()}
+                        </p>
+                        <p className="w-32 flex-none overflow-hidden text-ellipsis">
+                          {item.total_data_in.toLocaleString()}
+                        </p>
+                        <div className="w-28 flex-none">
+                          <Badge
+                            className={cn(
+                              "rounded w-20 px-0 justify-center text-black font-normal capitalize",
+                              item.status_approve.toLowerCase() === "done"
+                                ? "bg-green-400 hover:bg-green-400"
+                                : "bg-yellow-400 hover:bg-yellow-400"
+                            )}
                           >
-                            <ReceiptText className="w-4 h-4" />
-                          </Button>
-                        </Link>
-                      </TooltipProviderPage>
-                      <TooltipProviderPage value="Delete">
-                        <Button
-                          className="items-center px-0  border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50 w-9"
-                          variant={"outline"}
-                          type="button"
-                          onClick={() =>
-                            onOpen("delete-manifest-inbound", item.id)
-                          }
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </TooltipProviderPage>
+                            {item.status_approve}
+                          </Badge>
+                        </div>
+                        <div className="w-24 flex-none flex gap-4 justify-center">
+                          <TooltipProviderPage value="Detail">
+                            <Link
+                              href={`/inbound/check-history/${item.id}`}
+                              className="w-9 flex-none"
+                            >
+                              <Button
+                                className="items-center w-full px-0  border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
+                                variant={"outline"}
+                              >
+                                <ReceiptText className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                          </TooltipProviderPage>
+                          <TooltipProviderPage value="Delete">
+                            <Button
+                              className="items-center px-0  border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50 w-9"
+                              variant={"outline"}
+                              type="button"
+                              onClick={() =>
+                                onOpen("delete-manifest-inbound", item.id)
+                              }
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TooltipProviderPage>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="h-[200px] flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-2 text-gray-500">
+                        <Grid2x2X className="w-8 h-8" />
+                        <p className="text-sm font-semibold">No Data Viewed.</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
-            )}
+                  )}
+                </div>
+              )}
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           </div>
           <div className="flex items-center justify-between">
-            <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
-              Total: {page.total}
-            </Badge>
+            <div className="flex gap-3 items-center">
+              <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
+                Total: {page.total}
+              </Badge>
+              <Badge className="rounded-full hover:bg-green-100 bg-green-100 text-black border border-green-500 text-sm">
+                Row per page: {page.perPage}
+              </Badge>
+            </div>
             <div className="flex gap-5 items-center">
               <p className="text-sm">
                 Page {page.current} of {page.last}
@@ -276,74 +349,3 @@ export const Client = () => {
     </div>
   );
 };
-
-{
-  /* <div className="w-full p-4 rounded-md border border-sky-400/80">
-  <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-2 font-semibold items-center hover:bg-sky-200/80">
-    <p className="w-10 text-center flex-none">No</p>
-    <p className="xl:w-40 w-32 flex-none">Document Code</p>
-    <p className="xl:w-44 w-36 flex-none">Date</p>
-    <p className="xl:w-24 w-20 flex-none">Total Data</p>
-    <p className="xl:w-24 w-20 flex-none">Total In</p>
-    <p className="w-28 flex-none">Status Check</p>
-    <p className="w-32 flex-none">Status Approved</p>
-    <p className="w-full text-center">Action</p>
-  </div>
-  {history.map((item, i) => (
-    <div
-      className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
-      key={item.id}
-    >
-      <p className="w-10 text-center flex-none">{i + 1}</p>
-      <p className="xl:w-40 w-32 flex-none">{item.code_document}</p>
-      <p className="xl:w-44 w-36 flex-none">{formatDate(item.created_at)}</p>
-      <p className="xl:w-24 w-20 flex-none">{item.total_data}</p>
-      <p className="xl:w-24 w-20 flex-none">{item.total_data_in}</p>
-      <div className="w-28 flex-none">
-        <Badge
-          className={cn(
-            "rounded w-20 px-0 justify-center text-black font-normal capitalize bg-green-400 hover:bg-green-400"
-          )}
-        >
-          Done
-        </Badge>
-      </div>
-      <div className="w-32 flex-none">
-        <Badge
-          className={cn(
-            "rounded w-20 px-0 justify-center text-black font-normal capitalize",
-            item.status_approve === "pending" &&
-              "bg-gray-200 hover:bg-gray-200",
-            item.status_approve === "in progress" &&
-              "bg-yellow-400 hover:bg-yellow-400",
-            item.status_approve === "done" && "bg-green-400 hover:bg-green-400"
-          )}
-        >
-          {item.status_approve.charAt(0).toUpperCase() +
-            item.status_approve.slice(1)}
-        </Badge>
-      </div>
-      <div className="w-full flex gap-4 justify-center">
-        <Link href={"/inbound/check-history/1"} className="w-9">
-          <TooltipProviderPage value={<p>Detail</p>}>
-            <Button
-              className="items-center w-9 px-0 flex-none h-9 border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
-              variant={"outline"}
-            >
-              <ReceiptText className="w-4 h-4" />
-            </Button>
-          </TooltipProviderPage>
-        </Link>
-        <TooltipProviderPage value={<p>Delete</p>}>
-          <Button
-            className="items-center w-9 px-0 flex-none h-9 border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
-            variant={"outline"}
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </TooltipProviderPage>
-      </div>
-    </div>
-  ))}
-</div>; */
-}
