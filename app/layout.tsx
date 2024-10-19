@@ -52,6 +52,27 @@ export const metadata: Metadata = {
       },
     ],
   },
+  twitter: {
+    title: "Liquid8 - Liquidasi Retail Online",
+    description:
+      "Perusahaan likuidasi hulu ke hiir pertama di Indonesia. Pusat grosir barang gagal kirim COD marketplace dengan diskon upto 70%.",
+    images: [
+      {
+        url: "/images/liquid8_og_800x800.png",
+        width: 800,
+        height: 800,
+        type: "image/png",
+        alt: "liquid8",
+      },
+      {
+        url: "/images/liquid8_og_1200x1200.png",
+        width: 1200,
+        height: 1200,
+        type: "image/png",
+        alt: "liquid8",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
