@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useModal } from "@/hooks/use-modal";
 import { useDebounce } from "@/hooks/use-debounce";
-import { baseUrl, cn, formatRupiah } from "@/lib/utils";
+import { cn, formatRupiah } from "@/lib/utils";
 
 import axios from "axios";
 import { toast } from "sonner";
@@ -26,6 +26,7 @@ import { useCookies } from "next-client-cookies";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 import Loading from "../loading";
+import { baseUrl } from "@/lib/baseUrl";
 
 export const Client = () => {
   // state boolean

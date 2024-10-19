@@ -1,24 +1,20 @@
 "use client";
 
-import React, { FormEvent, MouseEvent, useEffect, useState } from "react";
+import React, { FormEvent, useEffect, useState } from "react";
 import { useModal } from "@/hooks/use-modal";
 import { Modal } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  AlertCircle,
-  FileSpreadsheet,
-  ScanBarcode,
-  Trash2,
-} from "lucide-react";
+import { AlertCircle, ScanBarcode } from "lucide-react";
 import axios from "axios";
-import { baseUrl, formatRupiah } from "@/lib/utils";
+import { formatRupiah } from "@/lib/utils";
 import { useCookies } from "next-client-cookies";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import BarcodePrinted from "@/components/barcode";
 import { useRouter } from "next/navigation";
+import { baseUrl } from "@/lib/baseUrl";
 
 interface QualityData {
   lolos: string | null;

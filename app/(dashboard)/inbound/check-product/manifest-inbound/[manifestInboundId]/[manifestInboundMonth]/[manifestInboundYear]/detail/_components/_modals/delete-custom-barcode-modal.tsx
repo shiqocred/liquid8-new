@@ -1,16 +1,13 @@
 "use client";
 
-import React, { FormEvent, MouseEvent, useEffect, useState } from "react";
+import React, { FormEvent } from "react";
 import { useModal } from "@/hooks/use-modal";
 import { Modal } from "@/components/modal";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { FileSpreadsheet, Trash2 } from "lucide-react";
 import axios from "axios";
-import { baseUrl } from "@/lib/utils";
 import { useCookies } from "next-client-cookies";
 import { toast } from "sonner";
+import { baseUrl } from "@/lib/baseUrl";
 
 export const DeleteCustomBarcodeModal = () => {
   const { isOpen, onClose, type, data, onOpen } = useModal();

@@ -21,10 +21,10 @@ import BarcodePrinted from "@/components/barcode";
 import { useRouter } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 
-export const DetailProductApproveScanResultModal = () => {
+export const DetailProductStaggingApproveModal = () => {
   const { isOpen, onClose, type, data } = useModal();
 
-  const isModalOpen = isOpen && type === "detail-product-approve-scan-result";
+  const isModalOpen = isOpen && type === "detail-product-stagging-approve";
 
   return (
     <Modal

@@ -5,9 +5,9 @@ import { useModal } from "@/hooks/use-modal";
 import { Modal } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
-import { baseUrl } from "@/lib/utils";
 import { useCookies } from "next-client-cookies";
 import { toast } from "sonner";
+import { baseUrl } from "@/lib/baseUrl";
 
 export const DeleteProductDetailProductApproveModal = () => {
   const { isOpen, onClose, type, data } = useModal();

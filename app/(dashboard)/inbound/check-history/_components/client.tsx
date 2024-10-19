@@ -203,7 +203,10 @@ export const Client = () => {
               {loading ? (
                 <div className="w-full h-full">
                   {Array.from({ length: 5 }, (_, i) => (
-                    <div className="flex w-full px-5 py-5 text-sm gap-3 border-b border-sky-200 items-center hover:border-sky-300">
+                    <div
+                      key={i}
+                      className="flex w-full px-5 py-5 text-sm gap-3 border-b border-sky-200 items-center hover:border-sky-300"
+                    >
                       <div className="w-10 flex justify-center flex-none">
                         <Skeleton className="w-7 h-4" />
                       </div>

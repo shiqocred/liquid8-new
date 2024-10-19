@@ -15,6 +15,9 @@ import { DetailProductDetailProductApproveModal } from "@/app/(dashboard)/inboun
 import { StaggingProductApproveModal } from "@/app/(dashboard)/inbound/check-product/product-approve/_components/_modals/staging-product-approve-modal";
 import { ParcodePrinteredCheckProductScanResultModal } from "@/app/(dashboard)/inbound/check-product/scan-result/[scanResultId]/_components/_modals/barcode-printered-check-product-scan-result-modal";
 import { DeleteScanResultModal } from "@/app/(dashboard)/inbound/check-product/scan-result/_components/_modals/delete-scan-result-modal";
+import { DeleteProductStaggingApproveModal } from "@/app/(dashboard)/stagging/approvement/_components/_modals/delete-product-stagging-approve-modal";
+import { DetailProductStaggingApproveModal } from "@/app/(dashboard)/stagging/approvement/_components/_modals/detail-product-stagging-approve-modal";
+import { DoneCheckAllStaggingApproveModal } from "@/app/(dashboard)/stagging/approvement/_components/_modals/done-check-all-stagging-approve-modal";
 import { DoneCheckAllStaggingProductModal } from "@/app/(dashboard)/stagging/product/_components/_modals/done-check-all-stagging-product-modal";
 import ApprovementProductsModal from "@/components/modal/approve-product-modal";
 import DeleteDetailManifestInboundModal from "@/components/modal/delete-detail-manifest-inbound-modal";
@@ -38,6 +41,9 @@ const ModalProvider = () => {
       <DeleteProductApproveScanResultModal />
       <DetailProductApproveScanResultModal />
       <DoneCheckAllApproveScanResultModal />
+      <DeleteProductStaggingApproveModal />
+      <DetailProductStaggingApproveModal />
+      <DoneCheckAllStaggingApproveModal />
       <DoneCheckAllStaggingProductModal />
       <DeleteScanResultModal />
     </>
