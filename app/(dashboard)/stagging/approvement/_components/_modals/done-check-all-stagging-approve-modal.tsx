@@ -4,48 +4,48 @@ import React, { FormEvent, MouseEvent, useEffect, useState } from "react";
 import { useModal } from "@/hooks/use-modal";
 import { Modal } from "@/components/modal";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { FileSpreadsheet, Trash2 } from "lucide-react";
 import axios from "axios";
 import { useCookies } from "next-client-cookies";
 import { toast } from "sonner";
 import { baseUrl } from "@/lib/baseUrl";
 
-export const DeleteProductApproveScanResultModal = () => {
+export const DoneCheckAllStaggingApproveModal = () => {
   const { isOpen, onClose, type, data } = useModal();
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
 
-  const isModalOpen = isOpen && type === "delete-product-approve-scan-result";
+  const isModalOpen =
+    isOpen && type === "done-check-all-stagging-approve-modal";
 
-  const onDelete = async (e: FormEvent) => {
+  const handleDoneCheckAll = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      const res = await axios.delete(`${baseUrl}/staging_approves/${data}`, {
+      const response = await axios.get(`${baseUrl}/stagingTransactionApprove`, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
       });
+      toast.success("Product successfully checked all");
       cookies.set("approveScanResult", "updated");
-      toast.success("Successfully deleted the product bundle list");
-      onClose();
-    } catch (error: any) {
-      toast.error(`Error ${error.response.status}: Something went wrong`);
-      console.log("ERROR_DELETE_PRODUCT:", error);
+    } catch (err: any) {
+      toast.success("Product failed to check all");
+      toast.error("Something went wrong.");
     }
   };
 
   return (
     <Modal
-      title="Delete Product Approve Scan Result"
+      title="Check All Product"
       description="Are you Sure? This action cannot be undone."
       isOpen={isModalOpen}
       onClose={onClose}
       className="max-w-sm"
     >
-      <form onSubmit={onDelete} className="w-full flex flex-col gap-4">
+      <form
+        onSubmit={handleDoneCheckAll}
+        className="w-full flex flex-col gap-4"
+      >
         <div className="flex w-full gap-2">
           <Button
             className="w-full bg-transparent hover:bg-transparent text-black border-black/50 border hover:border-black"
@@ -55,10 +55,10 @@ export const DeleteProductApproveScanResultModal = () => {
             Cancel
           </Button>
           <Button
-            className="bg-red-400 hover:bg-red-400/80 text-black w-full"
+            className="bg-sky-400 hover:bg-sky-400/80 text-black w-full"
             type="submit"
           >
-            Delete
+            Done
           </Button>
         </div>
       </form>

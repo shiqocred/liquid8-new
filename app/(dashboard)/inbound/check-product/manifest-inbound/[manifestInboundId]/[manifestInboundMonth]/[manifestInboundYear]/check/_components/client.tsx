@@ -31,7 +31,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
-import { baseUrl, cn, formatRupiah } from "@/lib/utils";
+import { cn, formatRupiah } from "@/lib/utils";
 import Loading from "../loading";
 import axios from "axios";
 import { useCookies } from "next-client-cookies";
@@ -39,6 +39,7 @@ import NotFound from "@/app/not-found";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useModal } from "@/hooks/use-modal";
+import { baseUrl } from "@/lib/baseUrl";
 
 export const Client = () => {
   // core

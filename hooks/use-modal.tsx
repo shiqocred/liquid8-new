@@ -6,6 +6,7 @@ import { ManualInboundType } from "@/app/(dashboard)/inbound/check-product/manua
 import { ProductApproveType } from "@/app/(dashboard)/inbound/check-product/product-approve/_components/_modals/type-modal";
 import { ScanResultProductType } from "@/app/(dashboard)/inbound/check-product/scan-result/[scanResultId]/_components/_modals/type-modal";
 import { ScanResultType } from "@/app/(dashboard)/inbound/check-product/scan-result/_components/_modals/type-modal";
+import { StaggingApproveType } from "@/app/(dashboard)/stagging/approvement/_components/_modals/type-modal";
 import { StaggingProductType } from "@/app/(dashboard)/stagging/product/_components/_modals/type-modal";
 import { StoreApi, UseBoundStore, create } from "zustand";
 
@@ -20,7 +21,8 @@ export type ModalType =
   | ApproveScanResultType
   | StaggingProductType
   | ManifestInboundType
-  | ScanResultType;
+  | ScanResultType
+  | StaggingApproveType;
 
 interface UseModalProps {
   type: ModalType | null;

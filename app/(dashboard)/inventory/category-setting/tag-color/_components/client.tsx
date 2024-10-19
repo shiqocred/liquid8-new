@@ -7,7 +7,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { baseUrl, formatRupiah } from "@/lib/utils";
+import { formatRupiah } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -49,6 +49,7 @@ import { useCookies } from "next-client-cookies";
 import axios from "axios";
 import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
 import Loading from "../loading";
+import { baseUrl } from "@/lib/baseUrl";
 
 interface SettingColor {
   id: number;

@@ -312,17 +312,8 @@ export const Client = () => {
                     </Badge>
                   </div>
                   <div className="xl:w-48 w-28 flex-none flex gap-4 justify-center">
-                    {/* <Button
-                      className="items-center xl:w-full w-9 px-0 xl:px-4 border-green-400 text-green-700 hover:text-green-700 hover:bg-green-50"
-                      variant={"outline"}
-                      type="button"
-                      onClick={() => onOpen("approve-documents", product.id)}
-                    >
-                      <ShieldCheck className="w-4 h-4 xl:mr-1" />
-                      <p className="hidden xl:flex">Approve</p>
-                    </Button> */}
                     <Link
-                      href={`/inbound/check-product/approvement-product/${product.code_document}`}
+                      href={`/inbound/check-product/approvement-document/${product.code_document}`}
                       className="xl:w-full w-9"
                       onClick={() => {
                         const approvementDocumentData = {
@@ -365,55 +356,6 @@ export const Client = () => {
                 No approved documents found.
               </p>
             )}
-            {/* {Array.from({ length: 5 }, (_, i) => (
-              <div
-                className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
-                key={i}
-              >
-                <p className="w-10 text-center flex-none">{i + 1}</p>
-                <p className="w-36 xl:44 flex-none overflow-hidden text-ellipsis">
-                  0062/07/2024
-                </p>
-                <p className="w-full overflow-hidden text-ellipsis">
-                  JNT 09.07.2024.xlsx
-                </p>
-                <p className="w-32 flex-none overflow-hidden text-ellipsis">
-                  3454
-                </p>
-                <div className="w-28 flex-none">
-                  <Badge
-                    className={cn(
-                      "rounded w-20 px-0 justify-center text-black font-normal capitalize bg-gray-200 hover:bg-gray-200"
-                    )}
-                  >
-                    Pending
-                  </Badge>
-                </div>
-                <div className="xl:w-48 w-28 flex-none flex gap-4 justify-center">
-                  <Button
-                    className="items-center xl:w-full w-9 px-0 xl:px-4 border-green-400 text-green-700 hover:text-green-700 hover:bg-green-50"
-                    variant={"outline"}
-                    type="button"
-                    onClick={() => onOpen("approve-documents", "id")}
-                  >
-                    <Trash2 className="w-4 h-4 xl:mr-1" />
-                    <p className="hidden xl:flex">Approve</p>
-                  </Button>
-                  <Link
-                    href={"/inbound/check-product/approvement-product/1"}
-                    className="xl:w-full w-9"
-                  >
-                    <Button
-                      className="items-center w-full px-0 xl:px-4 border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
-                      variant={"outline"}
-                    >
-                      <ReceiptText className="w-4 h-4 xl:mr-1" />
-                      <p className="hidden xl:flex">Detail</p>
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            ))} */}
           </div>
           <div className="flex gap-5 ml-auto items-center">
             <p className="text-sm">Page 1 of 3</p>

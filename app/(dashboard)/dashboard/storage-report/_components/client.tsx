@@ -134,7 +134,7 @@ export const Client = () => {
         },
       });
 
-      setChartData(res.data.data.resource.chart);
+      setChartData(res.data.data.resource.chart.category);
       setData(res.data.data.resource);
     } catch (error) {
       console.log(error);
@@ -391,6 +391,39 @@ export const Client = () => {
           <p className="text-2xl font-bold">
             {formatRupiah(data?.total_all_price_category)}
           </p>
+        </div>
+      </div>
+      <div className="flex flex-col gap-6 bg-white rounded-md overflow-hidden shadow p-3 w-full">
+        <div className="w-full px-5">
+          <div className="w-full border-b border-gray-500 pb-3">
+            <h2 className="text-xl font-bold">Report Product Per-Color</h2>
+          </div>
+        </div>
+        <div className="w-full inset-0 gap-4 flex items-center ">
+          {data?.chart?.tag_product.map((item: any) => (
+            <div
+              key={item.tag_product}
+              className="flex w-full  flex-col gap-2 py-2 first:border-none first:pl-2 pl-4 border-l border-gray-300"
+            >
+              <div className="flex flex-col gap-2 px-3">
+                <div className="flex items-center justify-between">
+                  <p>Total Product</p>
+                  <Badge className="border-black border rounded-full text-black bg-transparent hover:bg-transparent shadow-none text-sm">
+                    {item.tag_product}
+                  </Badge>
+                </div>
+                <p className="text-2xl font-bold">
+                  {item.total_tag_product.toLocaleString()}
+                </p>
+              </div>
+              <div className="flex items-center justify-between bg-sky-200 py-1 rounded px-3">
+                <p>Total Value</p>
+                <p className="text-xl font-bold">
+                  {formatRupiah(item.total_price_tag_product) ?? "Rp 0"}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
       <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 items-center flex-col">

@@ -458,16 +458,18 @@ export const Client = () => {
                                     </p>
                                   </TooltipProviderPage>
                                   <div className="w-14 flex-none flex gap-4 justify-center">
-                                    <Button
-                                      className="items-center border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50 p-0 w-9"
-                                      variant={"outline"}
-                                      type="button"
-                                      onClick={(e) =>
-                                        handleDeleteFilter(e, item.id)
-                                      }
-                                    >
-                                      <XCircle className="w-4 h-4" />
-                                    </Button>
+                                    <TooltipProviderPage value="Remove from filter">
+                                      <Button
+                                        className="items-center border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50 p-0 w-9"
+                                        variant={"outline"}
+                                        type="button"
+                                        onClick={(e) =>
+                                          handleDeleteFilter(e, item.id)
+                                        }
+                                      >
+                                        <XCircle className="w-4 h-4" />
+                                      </Button>
+                                    </TooltipProviderPage>
                                   </div>
                                 </div>
                               ))
@@ -604,7 +606,7 @@ export const Client = () => {
                           {formatRupiah(item?.new_price_product) ?? "Rp 0"}
                         </p>
                         <div className="w-14 flex-none flex gap-4 justify-center">
-                          <TooltipProviderPage value="Add">
+                          <TooltipProviderPage value="Add to filter">
                             <Button
                               className="items-center w-9 px-0 border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
                               variant={"outline"}

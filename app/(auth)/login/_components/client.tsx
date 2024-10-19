@@ -29,8 +29,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
-import { baseUrl } from "@/lib/utils";
 import Loading from "../loading";
+import { baseUrl } from "@/lib/baseUrl";
 
 const formSchema = z.object({
   email_or_username: z.string().min(1, {

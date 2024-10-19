@@ -12,12 +12,12 @@ import { useCookies } from "next-client-cookies";
 import { toast } from "sonner";
 import { baseUrl } from "@/lib/baseUrl";
 
-export const DeleteProductApproveScanResultModal = () => {
+export const DeleteProductStaggingApproveModal = () => {
   const { isOpen, onClose, type, data } = useModal();
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
 
-  const isModalOpen = isOpen && type === "delete-product-approve-scan-result";
+  const isModalOpen = isOpen && type === "delete-product-stagging-approve";
 
   const onDelete = async (e: FormEvent) => {
     e.preventDefault();
