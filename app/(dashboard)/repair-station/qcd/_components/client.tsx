@@ -37,6 +37,7 @@ import {
   PlusCircle,
   ReceiptText,
   Trash2,
+  Unplug,
   XCircle,
 } from "lucide-react";
 import { useCookies } from "next-client-cookies";
@@ -220,7 +221,7 @@ export const Client = () => {
                       </Button>
                     </Link>
                     <Button
-                      className="items-center border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
+                      className="items-center border-orange-400 text-orange-700 hover:text-orange-700 hover:bg-orange-50"
                       variant={"outline"}
                       type="button"
                       onClick={() => alert("pop up")}
@@ -229,12 +230,12 @@ export const Client = () => {
                       <p>Unbundle</p>
                     </Button>
                     <Button
-                      className="items-center border-indigo-400 text-indigo-700 hover:text-indigo-700 hover:bg-indigo-50"
+                      className="items-center border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
                       variant={"outline"}
                       type="button"
                       onClick={() => alert("pop up")}
                     >
-                      <PackageOpen className="w-4 h-4 mr-1" />
+                      <Unplug className="w-4 h-4 mr-1" />
                       <p>To Scrap Bundle</p>
                     </Button>
                   </div>

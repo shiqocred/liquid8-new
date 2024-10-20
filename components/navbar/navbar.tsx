@@ -17,16 +17,25 @@ import {
   SheetTrigger,
 } from "../ui/sheet";
 import { MenuSidebar } from "../sidebar/menu";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCookies } from "next-client-cookies";
 import { Skeleton } from "../ui/skeleton";
+import { toast } from "sonner";
 
 const Navbar = () => {
   const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
   const cookies = useCookies();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [profileData, setProfileData] = useState<any>();
+
+  const handleLogout = () => {
+    cookies.remove("profile");
+    cookies.remove("accessToken");
+    toast.success("Logout successfully");
+    router.push("/login");
+  };
 
   useEffect(() => {
     if (cookies.get("profile")) {
@@ -183,9 +192,15 @@ const Navbar = () => {
           </Popover>
         </div>
         <Separator orientation="vertical" />
-        <Button className="w-8 h-8 p-0 bg-red-100 text-red-500 hover:bg-red-200">
-          <LogOut className="w-4 h-4" />
-        </Button>
+        <TooltipProviderPage value="Logout" align="end" sideOffset={15}>
+          <Button
+            type="button"
+            onClick={handleLogout}
+            className="w-8 h-8 p-0 bg-red-100 text-red-500 hover:bg-red-200"
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
+        </TooltipProviderPage>
       </div>
     </div>
   );

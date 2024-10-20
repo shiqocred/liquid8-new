@@ -33,6 +33,7 @@ import {
   FileDown,
   LayoutGrid,
   LayoutList,
+  Loader,
   RefreshCcw,
   Search,
   Send,
@@ -61,6 +62,7 @@ import { baseUrl } from "@/lib/baseUrl";
 import { useCookies } from "next-client-cookies";
 import { cn, formatRupiah } from "@/lib/utils";
 import Loading from "../loading";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ChartData {
   category_product: string;
@@ -104,10 +106,8 @@ const ContentTooltip = ({
 };
 
 export const Client = () => {
-  const [isFilter, setIsFilter] = useState(false);
-  const [isVertical, setIsVertical] = useState(false);
-  const [isHorizontal, setIsHorizontal] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [dataSearch, setDataSearch] = useState("");
   const searchValue = useDebounce(dataSearch);
   const searchParams = useSearchParams();
@@ -127,6 +127,7 @@ export const Client = () => {
   const [data, setData] = useState<any>();
 
   const getStorageReport = async () => {
+    setLoading(true);
     try {
       const res = await axios.get(`${baseUrl}/dashboard/storage-report`, {
         headers: {
@@ -138,6 +139,8 @@ export const Client = () => {
       setData(res.data.data.resource);
     } catch (error) {
       console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -183,6 +186,13 @@ export const Client = () => {
   );
 
   useEffect(() => {
+    if (cookies.get("storageReport")) {
+      getStorageReport();
+      return cookies.remove("storageReport");
+    }
+  }, [cookies.get("storageReport")]);
+
+  useEffect(() => {
     handleCurrentId(searchValue, layout);
   }, [searchValue]);
 
@@ -197,56 +207,41 @@ export const Client = () => {
 
   return (
     <div className="flex flex-col items-start bg-gray-100 w-full relative px-4 gap-4 py-4">
-      <div className="w-full flex items-center justify-between">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/">Home</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>Dashboard</BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>Storage Report</BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        <div className="flex gap-4 items-center border px-3 py-1 border-gray-500 rounded-md">
-          <Badge className="bg-sky-300 hover:bg-sky-300 text-black rounded-full">
-            Development
-          </Badge>
-          <Button onClick={() => setIsVertical(!isVertical)}>
-            {!isVertical ? (
-              <Eye className="w-4 h-4 mr-1" />
-            ) : (
-              <EyeOff className="w-4 h-4 mr-1" />
-            )}
-            Vertical Chart
-          </Button>
-          <Button onClick={() => setIsHorizontal(!isHorizontal)}>
-            {!isHorizontal ? (
-              <Eye className="w-4 h-4 mr-1" />
-            ) : (
-              <EyeOff className="w-4 h-4 mr-1" />
-            )}
-            Horizontal Chart
-          </Button>
-        </div>
-      </div>
-      {isHorizontal && (
-        <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 flex-col">
-          <div className="w-full justify-between items-center flex mb-5">
-            <h2 className="text-xl font-bold">Report Product Per-Category</h2>
-            <div className="flex gap-2">
-              <p className="px-5 h-10 border rounded flex items-center text-sm border-gray-500 cursor-default">
-                {data?.month.current_month.month +
-                  " " +
-                  data?.month.current_month.year}
-              </p>
-              <button className="w-10 h-10 flex items-center justify-center border border-l-none rounded border-gray-500 hover:bg-sky-100">
-                <RefreshCcw className="w-4 h-4" />
-              </button>
-            </div>
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/">Home</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>Dashboard</BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>Storage Report</BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 flex-col">
+        <div className="w-full justify-between items-center flex mb-5">
+          <h2 className="text-xl font-bold">Report Product Per-Category</h2>
+          <div className="flex gap-2">
+            <p className="px-5 h-10 border rounded flex items-center text-sm border-gray-500 cursor-default">
+              {data?.month.current_month.month +
+                " " +
+                data?.month.current_month.year}
+            </p>
+            <button
+              type="button"
+              onClick={() => cookies.set("storageReport", "updated")}
+              className="w-10 h-10 flex items-center justify-center border border-l-none rounded border-gray-500 hover:bg-sky-100"
+            >
+              <RefreshCcw className="w-4 h-4" />
+            </button>
           </div>
-          <div className="h-[300px] w-full relative">
+        </div>
+        <div className="h-[300px] w-full relative">
+          {loading ? (
+            <div className="w-full h-full absolute top-0 left-0 bg-sky-500/15 backdrop-blur z-10 rounded flex justify-center items-center border border-sky-500">
+              <Loader className="w-7 h-7 animate-spin" />
+            </div>
+          ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={chartData}
@@ -302,95 +297,29 @@ export const Client = () => {
                 />
               </BarChart>
             </ResponsiveContainer>
-          </div>
+          )}
         </div>
-      )}
-      {isVertical && (
-        <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 flex-col">
-          <div className="w-full justify-between items-center flex mb-5">
-            <h2 className="text-xl font-bold">Report Product Per-Category</h2>
-            <div className="flex gap-2">
-              <p className="px-5 h-10 border rounded flex items-center text-sm border-gray-500 cursor-default">
-                {data?.month.current_month.month +
-                  " " +
-                  data?.month.current_month.year}
-              </p>
-              <button className="w-10 h-10 flex items-center justify-center border border-l-none rounded border-gray-500 hover:bg-sky-100">
-                <RefreshCcw className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-          <div className="h-[500px] w-full relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={chartData}
-                margin={{
-                  top: 5,
-                  right: 50,
-                  bottom: 5,
-                }}
-                layout="vertical"
-              >
-                <CartesianGrid
-                  horizontal={false}
-                  className="stroke-gray-200"
-                  verticalCoordinatesGenerator={(props) =>
-                    props.width > 1280 ? [300, 500, 700, 900, 1100] : [200, 400]
-                  }
-                />
-                <XAxis type="number" dataKey="total_category" hide />
-                <YAxis
-                  dataKey="category_product"
-                  type="category"
-                  tickLine={false}
-                  tickMargin={10}
-                  axisLine={false}
-                  fontSize={"10px"}
-                  width={200}
-                />
-                <Tooltip
-                  cursor={false}
-                  content={({ active, payload, label }) => (
-                    <ContentTooltip
-                      active={active}
-                      payload={payload}
-                      label={label}
-                    />
-                  )}
-                />
-                <Bar
-                  dataKey="total_category"
-                  fill="#7dd3fc"
-                  strokeWidth={2}
-                  stroke="#38bdf8"
-                  radius={[4, 4, 4, 4]}
-                  activeBar={{ fill: "#38bdf8" }}
-                >
-                  <LabelList
-                    dataKey="total_category"
-                    position="right"
-                    offset={8}
-                    className="fill-foreground"
-                    fontSize={12}
-                  />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
+      </div>
       <div className="w-full flex items-center gap-4">
         <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 py-3 flex-col gap-2">
           <p>Total Product</p>
-          <p className="text-2xl font-bold">
-            {data?.total_all_category.toLocaleString()}
-          </p>
+          {loading ? (
+            <Skeleton className="h-8 w-1/3" />
+          ) : (
+            <p className="text-2xl font-bold">
+              {data?.total_all_category.toLocaleString()}
+            </p>
+          )}
         </div>
         <div className="flex w-full bg-white rounded-md overflow-hidden shadow px-5 py-3 flex-col gap-2">
           <p>Total Value</p>
-          <p className="text-2xl font-bold">
-            {formatRupiah(data?.total_all_price_category)}
-          </p>
+          {loading ? (
+            <Skeleton className="h-8 w-2/3" />
+          ) : (
+            <p className="text-2xl font-bold">
+              {formatRupiah(data?.total_all_price_category)}
+            </p>
+          )}
         </div>
       </div>
       <div className="flex flex-col gap-6 bg-white rounded-md overflow-hidden shadow p-3 w-full">
@@ -399,32 +328,55 @@ export const Client = () => {
             <h2 className="text-xl font-bold">Report Product Per-Color</h2>
           </div>
         </div>
-        <div className="w-full inset-0 gap-4 flex items-center ">
-          {data?.chart?.tag_product.map((item: any) => (
-            <div
-              key={item.tag_product}
-              className="flex w-full  flex-col gap-2 py-2 first:border-none first:pl-2 pl-4 border-l border-gray-300"
-            >
-              <div className="flex flex-col gap-2 px-3">
-                <div className="flex items-center justify-between">
-                  <p>Total Product</p>
-                  <Badge className="border-black border rounded-full text-black bg-transparent hover:bg-transparent shadow-none text-sm">
-                    {item.tag_product}
-                  </Badge>
+        {loading ? (
+          <div className="w-full flex items-center gap-4">
+            {Array.from({ length: 4 }, (_, i) => (
+              <div
+                key={i}
+                className="flex w-full  flex-col gap-2 py-2 first:border-none first:pl-2 pl-4 border-l border-gray-300 text-sm"
+              >
+                <div className="flex flex-col gap-2 px-3">
+                  <div className="flex items-center justify-between">
+                    <p>Total Product</p>
+                    <Skeleton className="w-10 h-5" />
+                  </div>
+                  <Skeleton className="w-1/3 h-8" />
                 </div>
-                <p className="text-2xl font-bold">
-                  {item.total_tag_product.toLocaleString()}
-                </p>
+                <div className="flex items-center justify-between bg-sky-200 py-1 rounded px-3">
+                  <p>Total Value</p>
+                  <Skeleton className="w-1/3 h-5" />
+                </div>
               </div>
-              <div className="flex items-center justify-between bg-sky-200 py-1 rounded px-3">
-                <p>Total Value</p>
-                <p className="text-xl font-bold">
-                  {formatRupiah(item.total_price_tag_product) ?? "Rp 0"}
-                </p>
+            ))}
+          </div>
+        ) : (
+          <div className="w-full inset-0 gap-4 flex items-center text-sm">
+            {data?.chart?.tag_product.map((item: any) => (
+              <div
+                key={item.tag_product}
+                className="flex w-full  flex-col gap-2 py-2 first:border-none first:pl-2 pl-4 border-l border-gray-300"
+              >
+                <div className="flex flex-col gap-2 px-3">
+                  <div className="flex items-center justify-between">
+                    <p>Total Product</p>
+                    <Badge className="border-black border rounded-full text-black bg-transparent hover:bg-transparent shadow-none text-sm">
+                      {item.tag_product}
+                    </Badge>
+                  </div>
+                  <p className="text-2xl font-bold">
+                    {item.total_tag_product.toLocaleString()}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between bg-sky-200 py-1 rounded px-3">
+                  <p>Total Value</p>
+                  <p className="text-xl font-bold">
+                    {formatRupiah(item.total_price_tag_product) ?? "Rp 0"}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
       <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 items-center flex-col">
         <div className="w-full flex flex-col gap-4">
@@ -480,10 +432,6 @@ export const Client = () => {
                 </button>
               </div>
             </div>
-            <Button className="bg-sky-300/80 hover:bg-sky-300 text-black">
-              <FileDown className="w-4 h-4 mr-1" />
-              Export Data
-            </Button>
           </div>
         </div>
         {layout === "grid" ? (

@@ -27,6 +27,7 @@ export const DoubleBarcodeManifestInboundModal = () => {
       });
       toast.success(response.data.data.message);
       cookies.set("updatedBarcode", "updated");
+      onClose();
       if (response.data.data.resource.new_category_product) {
         onOpen("manifest-inbound-barcode-printered", {
           barcode: response.data.data.resource.new_barcode_product,
