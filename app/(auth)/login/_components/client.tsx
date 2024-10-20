@@ -31,6 +31,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import Loading from "../loading";
 import { baseUrl } from "@/lib/baseUrl";
+import Image from "next/image";
 
 const formSchema = z.object({
   email_or_username: z.string().min(1, {
@@ -535,11 +536,19 @@ export const Client = () => {
         </svg>
       </div>
       <Card className="w-full max-w-sm backdrop-blur-sm z-10 bg-white/70">
-        <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription>
-            Enter your email below to login to your account.
-          </CardDescription>
+        <CardHeader className="flex-row items-center space-y-0 gap-2">
+          <div className="h-[58px] relative aspect-square">
+            <Image
+              alt=""
+              src={"/images/liquid.png"}
+              fill
+              className="object-contain"
+            />
+          </div>
+          <div className="w-full flex flex-col gap-1.5">
+            <CardTitle className="text-2xl">Login</CardTitle>
+            <CardDescription>Login to your account.</CardDescription>
+          </div>
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>

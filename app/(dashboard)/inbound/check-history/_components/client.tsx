@@ -94,6 +94,19 @@ export const Client = () => {
       setLoading(false);
     }
   };
+  const checkLogin = async () => {
+    try {
+      const response = await axios.get(`${baseUrl}/checkLogin`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      console.log(response);
+    } catch (err: any) {
+      toast.error(`Error ${err.response.status}: Something went wrong`);
+      console.log("ERROR_GET_DOCUMENT:", err);
+    }
+  };
 
   // handle search params
   const handleCurrentId = useCallback(
@@ -145,6 +158,7 @@ export const Client = () => {
   useEffect(() => {
     setIsMounted(true);
     fetchDocuments();
+    checkLogin();
   }, []);
 
   if (!isMounted) {

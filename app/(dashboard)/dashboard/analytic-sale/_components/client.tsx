@@ -37,6 +37,7 @@ import {
   FileDown,
   LayoutGrid,
   LayoutList,
+  Loader,
   RefreshCcw,
   Search,
   Send,
@@ -82,6 +83,7 @@ import {
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import Loading from "../loading";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ChartData {
   product_category_sale: string;
@@ -145,9 +147,8 @@ const colorPalette = [
 ];
 
 export const Client = () => {
-  const [isFilter, setIsFilter] = useState(false);
-  const [isArea, setIsArea] = useState(false);
-  const [isLine, setIsLine] = useState(true);
+  const [loadingMonth, setLoadingMonth] = useState(false);
+  const [loadingYear, setLoadingYear] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [dataSearch, setDataSearch] = useState("");
   const searchValue = useDebounce(dataSearch);
@@ -212,6 +213,7 @@ export const Client = () => {
   };
 
   const getAnalyticSaleMonthly = async () => {
+    setLoadingMonth(true);
     const from = date[0].startDate
       ? format(date[0].startDate, "dd-MM-yyyy")
       : "";
@@ -230,9 +232,12 @@ export const Client = () => {
       setDataMonthly(res.data.data.resource);
     } catch (error) {
       console.log(error);
+    } finally {
+      setLoadingMonth(false);
     }
   };
   const getAnalyticSaleAnnualy = async () => {
+    setLoadingYear(true);
     try {
       const res = await axios.get(
         `${baseUrl}/dashboard/yearly-analytic-sales?y=${yearCurrent}`,
@@ -247,6 +252,8 @@ export const Client = () => {
       setDataAnnualy(res.data.data.resource);
     } catch (error) {
       console.log(error);
+    } finally {
+      setLoadingYear(false);
     }
   };
 
@@ -465,6 +472,20 @@ export const Client = () => {
   };
 
   useEffect(() => {
+    if (cookies.get("analitycSaleMonth")) {
+      getAnalyticSaleMonthly();
+      return cookies.remove("analitycSaleMonth");
+    }
+  }, [cookies.get("analitycSaleMonth")]);
+
+  useEffect(() => {
+    if (cookies.get("analitycSaleYear")) {
+      getAnalyticSaleAnnualy();
+      return cookies.remove("analitycSaleYear");
+    }
+  }, [cookies.get("analitycSaleYear")]);
+
+  useEffect(() => {
     handleCurrentId(searchValue, layout);
   }, [searchValue]);
 
@@ -572,84 +593,110 @@ export const Client = () => {
                     </DialogContent>
                   </Dialog>
                 </div>
-                <button className="w-10 h-10 flex items-center justify-center border border-l-none rounded border-gray-500 hover:bg-sky-100">
+                <button
+                  type="button"
+                  onClick={() => cookies.set("analitycSaleMonth", "updated")}
+                  className="w-10 h-10 flex items-center justify-center border border-l-none rounded border-gray-500 hover:bg-sky-100"
+                >
                   <RefreshCcw className="w-4 h-4" />
                 </button>
               </div>
             </div>
             <div className="h-[500px] w-full relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartDataMonthly}
-                  margin={{
-                    top: 5,
-                    right: 10,
-                    left: 30,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid
-                    vertical={false}
-                    className="stroke-gray-200"
-                    horizontalCoordinatesGenerator={(props) =>
-                      props.height > 400 ? [40, 140, 220, 300, 380] : [100, 200]
-                    }
-                  />
-                  <XAxis
-                    dataKey="date"
-                    stroke="#000"
-                    label={{ fontSize: "10px", color: "#fff" }}
-                    padding={{ left: 0, right: 0 }}
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: "10px", height: "20px" }}
-                  />
-                  <Tooltip
-                    cursor={false}
-                    content={({ active, payload, label }) => (
-                      <ContentTooltipMonthly
-                        active={active}
-                        payload={payload}
-                        label={label}
-                      />
-                    )}
-                  />
-                  <Legend
-                    margin={{ top: 50, bottom: 0, left: 0, right: 0 }}
-                    content={<ContentLegendMonthly />}
-                  />
-                  {Object.keys(colorMapMonthly).map((key) => (
-                    <Bar
-                      stackId={"a"}
-                      dataKey={key}
-                      fill={colorMapMonthly[key]}
-                      key={key}
+              {loadingMonth ? (
+                <div className="w-full h-full absolute top-0 left-0 bg-sky-500/15 backdrop-blur z-10 rounded flex justify-center items-center border border-sky-500">
+                  <Loader className="w-7 h-7 animate-spin" />
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={chartDataMonthly}
+                    margin={{
+                      top: 5,
+                      right: 10,
+                      left: 30,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid
+                      vertical={false}
+                      className="stroke-gray-200"
+                      horizontalCoordinatesGenerator={(props) =>
+                        props.height > 400
+                          ? [40, 140, 220, 300, 380]
+                          : [100, 200]
+                      }
                     />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
+                    <XAxis
+                      dataKey="date"
+                      stroke="#000"
+                      label={{ fontSize: "10px", color: "#fff" }}
+                      padding={{ left: 0, right: 0 }}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: "10px", height: "20px" }}
+                    />
+                    <Tooltip
+                      cursor={false}
+                      content={({ active, payload, label }) => (
+                        <ContentTooltipMonthly
+                          active={active}
+                          payload={payload}
+                          label={label}
+                        />
+                      )}
+                    />
+                    <Legend
+                      margin={{ top: 50, bottom: 0, left: 0, right: 0 }}
+                      content={<ContentLegendMonthly />}
+                    />
+                    {Object.keys(colorMapMonthly).map((key) => (
+                      <Bar
+                        stackId={"a"}
+                        dataKey={key}
+                        fill={colorMapMonthly[key]}
+                        key={key}
+                      />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
           <div className="w-full flex gap-4">
             <div className="w-1/5 p-5 bg-white rounded-md overflow-hidden shadow ">
               <p className="text-sm font-light">Total Category</p>
-              <p className="text-xl font-bold">
-                {(
-                  dataMonthly?.monthly_summary.total_category ?? "0"
-                ).toLocaleString()}
-              </p>
+              {loadingMonth ? (
+                <Skeleton className="w-1/5 h-7" />
+              ) : (
+                <p className="text-xl font-bold">
+                  {(
+                    dataMonthly?.monthly_summary.total_category ?? "0"
+                  ).toLocaleString()}
+                </p>
+              )}
             </div>
             <div className="w-2/5 p-5 bg-white rounded-md overflow-hidden shadow ">
               <p className="text-sm font-light">Display Price</p>
-              <p className="text-xl font-bold">
-                {formatRupiah(dataMonthly?.monthly_summary.display_price_sale)}
-              </p>
+              {loadingMonth ? (
+                <Skeleton className="w-2/3 h-7" />
+              ) : (
+                <p className="text-xl font-bold">
+                  {formatRupiah(
+                    dataMonthly?.monthly_summary.display_price_sale
+                  )}
+                </p>
+              )}
             </div>
             <div className="w-2/5 p-5 bg-white rounded-md overflow-hidden shadow ">
               <p className="text-sm font-light">Sale Price</p>
-              <p className="text-xl font-bold">
-                {formatRupiah(dataMonthly?.monthly_summary.purchase)}
-              </p>
+              {loadingMonth ? (
+                <Skeleton className="w-2/5 h-7" />
+              ) : (
+                <p className="text-xl font-bold">
+                  {formatRupiah(dataMonthly?.monthly_summary.purchase)}
+                </p>
+              )}
             </div>
           </div>
           <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 items-center flex-col">
@@ -711,10 +758,6 @@ export const Client = () => {
                     </button>
                   </div>
                 </div>
-                <Button className="bg-sky-300/80 hover:bg-sky-300 text-black">
-                  <FileDown className="w-4 h-4 mr-1" />
-                  Export Data
-                </Button>
               </div>
             </div>
             {layout === "grid" ? (
@@ -950,90 +993,115 @@ export const Client = () => {
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
-                <button className="w-10 h-10 flex items-center justify-center border border-l-none rounded border-gray-500 hover:bg-sky-100">
+                <button
+                  type="button"
+                  onClick={() => cookies.set("analitycSaleYear", "updated")}
+                  className="w-10 h-10 flex items-center justify-center border border-l-none rounded border-gray-500 hover:bg-sky-100"
+                >
                   <RefreshCcw className="w-4 h-4" />
                 </button>
               </div>
             </div>
             <div className="h-[500px] w-full relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartDataAnnualy}
-                  margin={{
-                    top: 5,
-                    right: 10,
-                    left: 30,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid
-                    vertical={false}
-                    className="stroke-gray-200"
-                    horizontalCoordinatesGenerator={(props) =>
-                      props.height > 400 ? [40, 140, 220, 300, 380] : [100, 200]
-                    }
-                  />
-                  <XAxis
-                    dataKey="month"
-                    stroke="#000"
-                    label={{ fontSize: "10px", color: "#fff" }}
-                    padding={{ left: 0, right: 0 }}
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: "10px", height: "20px" }}
-                  />
-                  <Tooltip
-                    cursor={false}
-                    content={({ active, payload, label }) => (
-                      <ContentTooltipAnnualy
-                        active={active}
-                        payload={payload}
-                        label={label}
-                      />
-                    )}
-                  />
-                  <Legend
-                    margin={{ top: 50, bottom: 0, left: 0, right: 0 }}
-                    content={<ContentLegendAnnualy />}
-                  />
-                  {Object.keys(colorMapAnnualy).map((key) => (
-                    <Bar
-                      stackId={"a"}
-                      dataKey={key}
-                      fill={colorMapAnnualy[key]}
-                      key={key}
+              {loadingYear ? (
+                <div className="w-full h-full absolute top-0 left-0 bg-sky-500/15 backdrop-blur z-10 rounded flex justify-center items-center border border-sky-500">
+                  <Loader className="w-7 h-7 animate-spin" />
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={chartDataAnnualy}
+                    margin={{
+                      top: 5,
+                      right: 10,
+                      left: 30,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid
+                      vertical={false}
+                      className="stroke-gray-200"
+                      horizontalCoordinatesGenerator={(props) =>
+                        props.height > 400
+                          ? [40, 140, 220, 300, 380]
+                          : [100, 200]
+                      }
                     />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
+                    <XAxis
+                      dataKey="month"
+                      stroke="#000"
+                      label={{ fontSize: "10px", color: "#fff" }}
+                      padding={{ left: 0, right: 0 }}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: "10px", height: "20px" }}
+                    />
+                    <Tooltip
+                      cursor={false}
+                      content={({ active, payload, label }) => (
+                        <ContentTooltipAnnualy
+                          active={active}
+                          payload={payload}
+                          label={label}
+                        />
+                      )}
+                    />
+                    <Legend
+                      margin={{ top: 50, bottom: 0, left: 0, right: 0 }}
+                      content={<ContentLegendAnnualy />}
+                    />
+                    {Object.keys(colorMapAnnualy).map((key) => (
+                      <Bar
+                        stackId={"a"}
+                        dataKey={key}
+                        fill={colorMapAnnualy[key]}
+                        key={key}
+                      />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
           <div className="w-full flex gap-4">
             <div className="w-1/5 p-5 bg-white rounded-md overflow-hidden shadow ">
               <p className="text-sm font-light">Total Category</p>
-              <p className="text-xl font-bold">
-                {(
-                  dataAnnualy?.annual_summary.total_all_category ?? "0"
-                ).toLocaleString()}
-              </p>
+              {loadingYear ? (
+                <Skeleton className="w-1/5 h-7" />
+              ) : (
+                <p className="text-xl font-bold">
+                  {(
+                    dataAnnualy?.annual_summary.total_all_category ?? "0"
+                  ).toLocaleString()}
+                </p>
+              )}
             </div>
             <div className="w-2/5 p-5 bg-white rounded-md overflow-hidden shadow ">
               <p className="text-sm font-light">Display Price</p>
-              <p className="text-xl font-bold">
-                {formatRupiah(
-                  dataAnnualy?.annual_summary.total_display_price_sale
-                )}
-              </p>
+              {loadingYear ? (
+                <Skeleton className="w-2/3 h-7" />
+              ) : (
+                <p className="text-xl font-bold">
+                  {formatRupiah(
+                    dataAnnualy?.annual_summary.total_display_price_sale
+                  ) ?? "Rp 0"}
+                </p>
+              )}
             </div>
             <div className="w-2/5 p-5 bg-white rounded-md overflow-hidden shadow ">
               <p className="text-sm font-light">Sale Price</p>
-              <p className="text-xl font-bold">
-                {formatRupiah(
-                  dataAnnualy?.annual_summary.total_product_price_sale
-                )}
-              </p>
+              {loadingYear ? (
+                <Skeleton className="w-2/5 h-7" />
+              ) : (
+                <p className="text-xl font-bold">
+                  {formatRupiah(
+                    dataAnnualy?.annual_summary.total_product_price_sale
+                  ) ?? "Rp 0"}
+                </p>
+              )}
             </div>
           </div>
+
           <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 items-center flex-col">
             <div className="w-full flex flex-col gap-4">
               <h3 className="text-lg font-semibold">
@@ -1093,10 +1161,6 @@ export const Client = () => {
                     </button>
                   </div>
                 </div>
-                <Button className="bg-sky-300/80 hover:bg-sky-300 text-black">
-                  <FileDown className="w-4 h-4 mr-1" />
-                  Export Data
-                </Button>
               </div>
             </div>
             {layout === "grid" ? (

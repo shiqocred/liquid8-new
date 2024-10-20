@@ -35,6 +35,7 @@ import {
   FileDown,
   LayoutGrid,
   LayoutList,
+  Loader,
   RefreshCcw,
   Search,
   Send,
@@ -128,9 +129,7 @@ const ContentTooltip = ({
 };
 
 export const Client = () => {
-  const [isFilter, setIsFilter] = useState(false);
-  const [isArea, setIsArea] = useState(false);
-  const [isLine, setIsLine] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [dataSearch, setDataSearch] = useState("");
   const searchValue = useDebounce(dataSearch);
@@ -179,6 +178,7 @@ export const Client = () => {
       ? format(date[0].startDate, "dd-MM-yyyy")
       : "";
     const to = date[0].endDate ? format(date[0].endDate, "dd-MM-yyyy") : "";
+    setLoading(true);
     try {
       const res = await axios.get(
         `${baseUrl}/dashboard/general-sales?from=${from}&to=${to}`,
@@ -193,6 +193,8 @@ export const Client = () => {
       setData(res.data.data.resource);
     } catch (error) {
       console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -238,6 +240,13 @@ export const Client = () => {
   );
 
   useEffect(() => {
+    if (cookies.get("generalSale")) {
+      getStorageReport();
+      return cookies.remove("generalSale");
+    }
+  }, [cookies.get("generalSale")]);
+
+  useEffect(() => {
     handleCurrentId(searchValue, layout);
   }, [searchValue]);
 
@@ -256,205 +265,87 @@ export const Client = () => {
 
   return (
     <div className="flex flex-col items-start bg-gray-100 w-full relative px-4 gap-4 py-4">
-      <div className="w-full flex items-center justify-between">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/">Home</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>Dashboard</BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>Storage Report</BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        <div className="flex gap-4 items-center border px-3 py-1 border-gray-500 rounded-md">
-          <Badge className="bg-sky-300 hover:bg-sky-300 text-black rounded-full">
-            Development
-          </Badge>
-          <Button onClick={() => setIsArea(!isArea)}>
-            {!isArea ? (
-              <Eye className="w-4 h-4 mr-1" />
-            ) : (
-              <EyeOff className="w-4 h-4 mr-1" />
-            )}
-            Area Chart
-          </Button>
-          <Button onClick={() => setIsLine(!isLine)}>
-            {!isLine ? (
-              <Eye className="w-4 h-4 mr-1" />
-            ) : (
-              <EyeOff className="w-4 h-4 mr-1" />
-            )}
-            Line Chart
-          </Button>
-        </div>
-      </div>
-      {isLine && (
-        <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 flex-col">
-          <div className="w-full justify-between items-center flex mb-5">
-            <h2 className="text-xl font-bold">General Sale</h2>
-            <div className="flex gap-2">
-              <div className="px-3 h-10 py-1 border rounded flex gap-3 items-center text-sm border-gray-500">
-                <p>
-                  {data?.month.current_month.month +
-                    " " +
-                    data?.month.current_month.year}
-                </p>
-                {data?.month.date_from.date !== null && (
-                  <>
-                    <p className="w-[1px] h-full bg-black" />
-                    <p>
-                      {data?.month.date_from.date +
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/">Home</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>Dashboard</BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>Storage Report</BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 flex-col">
+        <div className="w-full justify-between items-center flex mb-5">
+          <h2 className="text-xl font-bold">General Sale</h2>
+          <div className="flex gap-2">
+            <div className="px-3 h-10 py-1 border rounded flex gap-3 items-center text-sm border-gray-500">
+              <p>
+                {data?.month.current_month.month +
+                  " " +
+                  data?.month.current_month.year}
+              </p>
+              {data?.month.date_from.date !== null && (
+                <>
+                  <p className="w-[1px] h-full bg-black" />
+                  <p>
+                    {data?.month.date_from.date +
+                      " " +
+                      data?.month.date_from.month +
+                      " " +
+                      data?.month.date_from.year +
+                      " - " +
+                      (data?.month.date_to.date +
                         " " +
-                        data?.month.date_from.month +
+                        data?.month.date_to.month +
                         " " +
-                        data?.month.date_from.year +
-                        " - " +
-                        (data?.month.date_to.date +
-                          " " +
-                          data?.month.date_to.month +
-                          " " +
-                          data?.month.date_to.year)}
-                    </p>
-                    <button onClick={clearRange}>
-                      <XCircle className="w-4 h-4 text-red-500" />
-                    </button>
-                  </>
-                )}
-                <p className="w-[1px] h-full bg-black" />
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <button onClick={() => {}}>
-                      <ChevronDown className="w-4 h-4" />
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent className="w-auto max-w-5xl p-3 border-gray-300">
-                    <DialogHeader>
-                      <DialogTitle>Pick a Date Range</DialogTitle>
-                    </DialogHeader>
-                    <DateRangePicker
-                      editableDateInputs={true}
-                      onChange={handleSelect}
-                      moveRangeOnFirstSelection={false}
-                      months={2}
-                      maxDate={maxDate}
-                      minDate={minDate}
-                      direction="horizontal"
-                      ranges={date}
-                    />
-                  </DialogContent>
-                </Dialog>
-              </div>
-              <button className="w-10 h-10 flex items-center justify-center border border-l-none rounded border-gray-500 hover:bg-sky-100">
-                <RefreshCcw className="w-4 h-4" />
-              </button>
+                        data?.month.date_to.year)}
+                  </p>
+                  <button onClick={clearRange}>
+                    <XCircle className="w-4 h-4 text-red-500" />
+                  </button>
+                </>
+              )}
+              <p className="w-[1px] h-full bg-black" />
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button onClick={() => {}}>
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="w-auto max-w-5xl p-3 border-gray-300">
+                  <DialogHeader>
+                    <DialogTitle>Pick a Date Range</DialogTitle>
+                  </DialogHeader>
+                  <DateRangePicker
+                    editableDateInputs={true}
+                    onChange={handleSelect}
+                    moveRangeOnFirstSelection={false}
+                    months={2}
+                    maxDate={maxDate}
+                    minDate={minDate}
+                    direction="horizontal"
+                    ranges={date}
+                  />
+                </DialogContent>
+              </Dialog>
             </div>
-          </div>
-          <div className="h-[300px] w-full relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={chartData}
-                margin={{
-                  top: 5,
-                  right: 10,
-                  left: 30,
-                  bottom: 5,
-                }}
-              >
-                <YAxis hide />
-                <XAxis
-                  dataKey="date"
-                  stroke="#000"
-                  fontSize={12}
-                  padding={{ left: 0, right: 0 }}
-                  tickMargin={10}
-                  style={{ fontSize: "10px" }}
-                />
-                <Tooltip
-                  cursor={false}
-                  content={({ active, payload, label }) => (
-                    <ContentTooltip
-                      active={active}
-                      payload={payload}
-                      label={label}
-                    />
-                  )}
-                />
-                <Legend content={<ContentLegend />} />
-                <Line
-                  type={"natural"}
-                  dataKey="total_price_sale"
-                  stroke="#0ea5e9"
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <button
+              type="button"
+              onClick={() => cookies.set("generalSale", "updated")}
+              className="w-10 h-10 flex items-center justify-center border border-l-none rounded border-gray-500 hover:bg-sky-100"
+            >
+              <RefreshCcw className="w-4 h-4" />
+            </button>
           </div>
         </div>
-      )}
-      {isArea && (
-        <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 flex-col">
-          <div className="w-full justify-between items-center flex mb-5">
-            <h2 className="text-xl font-bold">General Sale</h2>
-            <div className="flex gap-2">
-              <div className="px-3 h-10 py-1 border rounded flex gap-3 items-center text-sm border-gray-500">
-                <p>
-                  {data?.month.current_month.month +
-                    " " +
-                    data?.month.current_month.year}
-                </p>
-                {data?.month.date_from.date !== null && (
-                  <>
-                    <p className="w-[1px] h-full bg-black" />
-                    <p>
-                      {data?.month.date_from.date +
-                        " " +
-                        data?.month.date_from.month +
-                        " " +
-                        data?.month.date_from.year +
-                        " - " +
-                        (data?.month.date_to.date +
-                          " " +
-                          data?.month.date_to.month +
-                          " " +
-                          data?.month.date_to.year)}
-                    </p>
-                    <button onClick={clearRange}>
-                      <XCircle className="w-4 h-4 text-red-500" />
-                    </button>
-                  </>
-                )}
-                <p className="w-[1px] h-full bg-black" />
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <button onClick={() => {}}>
-                      <ChevronDown className="w-4 h-4" />
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent className="w-auto max-w-5xl p-3 border-gray-300">
-                    <DialogHeader>
-                      <DialogTitle>Pick a Date Range</DialogTitle>
-                    </DialogHeader>
-                    <DateRangePicker
-                      editableDateInputs={true}
-                      onChange={handleSelect}
-                      moveRangeOnFirstSelection={false}
-                      months={2}
-                      maxDate={maxDate}
-                      minDate={minDate}
-                      direction="horizontal"
-                      ranges={date}
-                    />
-                  </DialogContent>
-                </Dialog>
-              </div>
-              <button className="w-10 h-10 flex items-center justify-center border border-l-none rounded border-gray-500 hover:bg-sky-100">
-                <RefreshCcw className="w-4 h-4" />
-              </button>
+        <div className="h-[300px] w-full relative">
+          {loading ? (
+            <div className="w-full h-full absolute top-0 left-0 bg-sky-500/15 backdrop-blur z-10 rounded flex justify-center items-center border border-sky-500">
+              <Loader className="w-7 h-7 animate-spin" />
             </div>
-          </div>
-          <div className="h-[300px] w-full relative">
+          ) : (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={chartData}
@@ -501,9 +392,9 @@ export const Client = () => {
                 />
               </AreaChart>
             </ResponsiveContainer>
-          </div>
+          )}
         </div>
-      )}
+      </div>
       <div className="flex w-full bg-white rounded-md overflow-hidden shadow p-5 gap-6 items-center flex-col">
         <div className="w-full flex flex-col gap-4">
           <h3 className="text-lg font-semibold">List Product Per-Category</h3>
@@ -558,10 +449,6 @@ export const Client = () => {
                 </button>
               </div>
             </div>
-            <Button className="bg-sky-300/80 hover:bg-sky-300 text-black">
-              <FileDown className="w-4 h-4 mr-1" />
-              Export Data
-            </Button>
           </div>
         </div>
         {layout === "grid" ? (
