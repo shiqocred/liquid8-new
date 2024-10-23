@@ -1,6 +1,12 @@
 "use client";
 
-import React, { Dispatch, ReactNode, SetStateAction, useEffect } from "react";
+import React, {
+  Dispatch,
+  ReactNode,
+  SetStateAction,
+  useEffect,
+  useRef,
+} from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
