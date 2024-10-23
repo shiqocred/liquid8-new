@@ -1,6 +1,6 @@
 "use client";
 
-import React, { FormEvent, MouseEvent, useEffect, useState } from "react";
+import React, { FormEvent } from "react";
 import { useModal } from "@/hooks/use-modal";
 import { Modal } from "@/components/modal";
 import { Button } from "@/components/ui/button";
@@ -9,46 +9,46 @@ import { useCookies } from "next-client-cookies";
 import { toast } from "sonner";
 import { baseUrl } from "@/lib/baseUrl";
 
-export const DoneCheckAllStaggingApproveModal = () => {
+export const QCDLPRModal = () => {
   const { isOpen, onClose, type, data } = useModal();
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
 
-  const isModalOpen =
-    isOpen && type === "done-check-all-stagging-approve-modal";
+  const isModalOpen = isOpen && type === "qcd-lpr-modal";
 
-  const handleDoneCheckAll = async (e: FormEvent) => {
+  const handleLPRToQCD = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.get(`${baseUrl}/stagingTransactionApprove`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      toast.success("Product successfully checked all");
-      cookies.set("approveScanResult", "updated");
+      const response = await axios.put(
+        `${baseUrl}/update-dumps/${data}`,
+        {},
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      toast.success("Product successfully moved to QCD");
+      cookies.set("LPRPage", "moved");
       onClose();
     } catch (err: any) {
       toast.error(
-        err.response.data.data.message ?? "Product failed to check all"
+        err.response.data.data.message ?? "Product failed to move to QCD"
       );
-      console.log("ERROR_DONE_CHECK_ALL_STAGGING_APRV:", err);
+      console.log("ERROR_LPR_TO_QCD:", err);
     }
   };
 
   return (
     <Modal
-      title="Check All Product"
+      title="Move Product To QCD"
       description="Are you Sure? This action cannot be undone."
       isOpen={isModalOpen}
       onClose={onClose}
       className="max-w-sm"
     >
-      <form
-        onSubmit={handleDoneCheckAll}
-        className="w-full flex flex-col gap-4"
-      >
+      <form onSubmit={handleLPRToQCD} className="w-full flex flex-col gap-4">
         <div className="flex w-full gap-2">
           <Button
             className="w-full bg-transparent hover:bg-transparent text-black border-black/50 border hover:border-black"
@@ -58,7 +58,7 @@ export const DoneCheckAllStaggingApproveModal = () => {
             Cancel
           </Button>
           <Button
-            className="bg-sky-400 hover:bg-sky-400/80 text-black w-full"
+            className="bg-red-400 hover:bg-red-400/80 text-black w-full"
             type="submit"
           >
             Done

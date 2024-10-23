@@ -32,10 +32,13 @@ export const DoneCheckAllStaggingProductModal = () => {
       );
       toast.success("Product successfully checked all");
       cookies.set("updateStaggingProduct", "checkedAll");
+      cookies.set("updateStaggingFilteredProduct", "checkedAll");
       onClose();
     } catch (err: any) {
-      toast.success("Product failed to check all");
-      toast.error("Something went wrong.");
+      toast.error(
+        err.response.data.data.message ?? "Product failed to check all"
+      );
+      console.log("[ERROR_DONE_CHECK_ALL_STAGGING_PRODUCT]:", err);
     }
   };
 

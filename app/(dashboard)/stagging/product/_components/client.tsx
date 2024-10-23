@@ -603,7 +603,9 @@ export const Client = () => {
                           {item?.new_category_product ?? item?.new_tag_product}
                         </p>
                         <p className="w-32 flex-none">
-                          {formatRupiah(item?.new_price_product) ?? "Rp 0"}
+                          {formatRupiah(
+                            item?.new_price_product ?? item?.old_price_product
+                          ) ?? "Rp 0"}
                         </p>
                         <div className="w-14 flex-none flex gap-4 justify-center">
                           <TooltipProviderPage value="Add to filter">
