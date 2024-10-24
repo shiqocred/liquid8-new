@@ -8,8 +8,11 @@ import { ScanResultProductType } from "@/app/(dashboard)/inbound/check-product/s
 import { ScanResultType } from "@/app/(dashboard)/inbound/check-product/scan-result/_components/_modals/type-modal";
 import { MovingProductRepairIdType } from "@/app/(dashboard)/inventory/moving-product/repair/[repairId]/_components/_modals/type-modal";
 import { MovingProductRepairType } from "@/app/(dashboard)/inventory/moving-product/repair/_components/_modals/type-modal";
+import { ListProductRType } from "@/app/(dashboard)/repair-station/list-product-repair/_components/_modals/type-modal";
 import { StaggingApproveType } from "@/app/(dashboard)/stagging/approvement/_components/_modals/type-modal";
 import { StaggingProductType } from "@/app/(dashboard)/stagging/product/_components/_modals/type-modal";
+import { IsroModalType } from "@/lib-isro/type-modal-isro";
+import { LusiModalType } from "@/lib-lusi/type-modal-lusi";
 import { StoreApi, UseBoundStore, create } from "zustand";
 
 export type ModalType =
@@ -27,6 +30,9 @@ export type ModalType =
   | StaggingApproveType
   | MovingProductRepairIdType
   | MovingProductRepairType;
+  | ListProductRType
+  | IsroModalType
+  | LusiModalType;
 
 interface UseModalProps {
   type: ModalType | null;

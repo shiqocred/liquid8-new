@@ -276,7 +276,7 @@ const MenuInbound = ({ pathname, setOpen }: MenuInboundProps) => {
   const [openMenu, setOpenMenu] = useState<string>("");
   const [openSubMenu, setOpenSubMenu] = useState<string>("");
   return (
-    <div className="flex flex-col h-full w-full gap-1">
+    <div className="flex flex-col h-full w-full gap-1 relative">
       {sidebarMenu.map((item, i) => (
         <div
           key={item.id}
