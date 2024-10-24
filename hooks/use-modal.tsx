@@ -29,7 +29,7 @@ export type ModalType =
   | ScanResultType
   | StaggingApproveType
   | MovingProductRepairIdType
-  | MovingProductRepairType;
+  | MovingProductRepairType
   | ListProductRType
   | IsroModalType
   | LusiModalType;
