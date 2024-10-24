@@ -9,6 +9,8 @@ import { ScanResultType } from "@/app/(dashboard)/inbound/check-product/scan-res
 import { ListProductRType } from "@/app/(dashboard)/repair-station/list-product-repair/_components/_modals/type-modal";
 import { StaggingApproveType } from "@/app/(dashboard)/stagging/approvement/_components/_modals/type-modal";
 import { StaggingProductType } from "@/app/(dashboard)/stagging/product/_components/_modals/type-modal";
+import { IsroModalType } from "@/lib-isro/type-modal-isro";
+import { LusiModalType } from "@/lib-lusi/type-modal-lusi";
 import { StoreApi, UseBoundStore, create } from "zustand";
 
 export type ModalType =
@@ -24,7 +26,9 @@ export type ModalType =
   | ManifestInboundType
   | ScanResultType
   | StaggingApproveType
-  | ListProductRType;
+  | ListProductRType
+  | IsroModalType
+  | LusiModalType;
 
 interface UseModalProps {
   type: ModalType | null;

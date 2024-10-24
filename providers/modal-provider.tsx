@@ -22,6 +22,7 @@ import { DoneCheckAllStaggingApproveModal } from "@/app/(dashboard)/stagging/app
 import { DoneCheckAllStaggingProductModal } from "@/app/(dashboard)/stagging/product/_components/_modals/done-check-all-stagging-product-modal";
 import ApprovementProductsModal from "@/components/modal/approve-product-modal";
 import DeleteDetailManifestInboundModal from "@/components/modal/delete-detail-manifest-inbound-modal";
+import { ModalProviderLusi } from "@/lib-lusi/modal-provider-lusi";
 
 const ModalProvider = () => {
   return (
@@ -48,6 +49,7 @@ const ModalProvider = () => {
       <DoneCheckAllStaggingProductModal />
       <DeleteScanResultModal />
       <QCDLPRModal />
+      <ModalProviderLusi />
     </>
   );
 };
