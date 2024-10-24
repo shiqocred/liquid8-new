@@ -159,6 +159,7 @@ export const Client = () => {
       console.log("ERROR_GET_DOCUMENTS:", err);
     }
   };
+  
   const handleGetCategories = async () => {
     try {
       const response = await axios.get(`${baseUrl}/categories`, {

@@ -45,6 +45,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
 import { useCallback, useEffect, useState } from "react";
 import Loading from "../loading";
+import { useModal } from "@/hooks/use-modal";
 
 interface Category {
   id: string;
@@ -59,49 +60,66 @@ interface Category {
 }
 
 export const Client = () => {
+  // core
+  const router = useRouter();
+  const { onOpen } = useModal();
+  const searchParams = useSearchParams();
+
+  // state boolean
+  const [loading, setLoading] = useState(false);
   const [isFilter, setIsFilter] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const [dataSearch, setDataSearch] = useState("");
-  const searchValue = useDebounce(dataSearch);
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const [category, setCategory] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
+
+  // cookies
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
 
-  // const fetchCategory = useCallback(
-  //   async (page: number, search: string) => {
-  //     setLoading(true);
-  //     try {
-  //       const response = await axios.get(
-  //         `${baseUrl}/product_byCategory?page=${page}&q=${search}`,
-  //         {
-  //           headers: {
-  //             Authorization: `Bearer ${accessToken}`, // Menambahkan header Authorization
-  //           },
-  //         }
-  //       );
-  //       setCategory(response.data.data.resource.data);
-  //     } catch (err: any) {
-  //       setError(err.message || "An error occurred");
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   },
-  //   [accessToken]
-  // );
+  // state search & filter
+  const [dataSearch, setDataSearch] = useState("");
+  const searchValue = useDebounce(dataSearch);
+  const [filter, setFilter] = useState(searchParams.get("f") ?? "");
 
-  // useEffect(() => {
-  //   if (accessToken) {
-  //     fetchCategory(page, searchValue);
-  //   }
-  // }, [searchValue, page, fetchCategory, accessToken]);
+  // state data
+  const [repairs, setRepairs] = useState<any[]>([]);
+  const [page, setPage] = useState({
+    current: parseFloat(searchParams.get("page") ?? "1") ?? 1, //page saat ini
+    last: 1, //page terakhir
+    from: 1, //data dimulai dari (untuk memulai penomoran tabel)
+    total: 1, //total data
+  });
+  const [error, setError] = useState<string | null>(null);
 
+  // handle GET Data
+  const fetchRepair = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `${baseUrl}/repair-mv?page=${page.current}&q=${searchValue}`,
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      setRepairs(response.data.data.resource.data);
+      setPage({
+        current: response.data.data.resource.current_page,
+        last: response.data.data.resource.last_page,
+        from: response.data.data.resource.from,
+        total: response.data.data.resource.total,
+      });
+    } catch (err: any) {
+      console.log("ERROR_GET_BUNDLES:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // handle search params
   const handleCurrentId = useCallback(
-    (q: string) => {
+    (q: string, f: string, p: number) => {
+      setFilter(f);
       let currentQuery = {};
 
       if (searchParams) {
@@ -111,10 +129,19 @@ export const Client = () => {
       const updateQuery: any = {
         ...currentQuery,
         q: q,
+        f: f,
+        page: p,
       };
 
       if (!q || q === "") {
         delete updateQuery.q;
+      }
+      if (!f || f === "") {
+        delete updateQuery.f;
+        setFilter("");
+      }
+      if (!p || p === 1) {
+        delete updateQuery.page;
       }
 
       const url = qs.stringifyUrl(
@@ -130,12 +157,24 @@ export const Client = () => {
     [searchParams, router]
   );
 
+  // effect update search & page
   useEffect(() => {
-    handleCurrentId(searchValue);
+    handleCurrentId(searchValue, filter, 1);
+    fetchRepair();
   }, [searchValue]);
+
+  // effect update when...
+  useEffect(() => {
+    if (cookies.get("repair")) {
+      handleCurrentId(searchValue, filter, page.current);
+      fetchRepair();
+      return cookies.remove("repair");
+    }
+  }, [cookies.get("repair"), searchValue, page.current]);
 
   useEffect(() => {
     setIsMounted(true);
+    fetchRepair();
   }, []);
 
   if (!isMounted) {
@@ -187,29 +226,34 @@ export const Client = () => {
                 <p className="w-28 flex-none">Status</p>
                 <p className="w-52 text-center flex-none">Action</p>
               </div>
-              {Array.from({ length: 5 }, (_, i) => (
+              {repairs.map((repair: any, i: any) => (
                 <div
                   className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
                   key={i}
                 >
                   <p className="w-10 text-center flex-none">{i + 1}</p>
                   <p className="w-32 flex-none overflow-hidden text-ellipsis">
-                    LQB075831
+                    {repair.barcode}
                   </p>
                   <p className="w-full min-w-72 whitespace-pre-wrap">
-                    bundle dong
+                    {repair.repair_name}
                   </p>
-                  <p className="w-20 flex-none whitespace-pre-wrap">1</p>
+                  <p className="w-20 flex-none whitespace-pre-wrap">
+                    {" "}
+                    {repair.total_products}
+                  </p>
                   <p className="w-40 flex-none whitespace-pre-wrap">
-                    {formatRupiah(5500000000)}
+                    {repair.total_price}
                   </p>
                   <div className="w-28 flex-none">
                     <Badge className="rounded w-20 px-0 justify-center text-black font-normal capitalize bg-sky-400 hover:bg-sky-400">
-                      Bundle
+                      {repair.product_status}
                     </Badge>
                   </div>
                   <div className="w-52 flex-none flex gap-4 justify-center">
-                    <Link href={`/inventory/moving-product/repair/${i + 1}`}>
+                    <Link
+                      href={`/inventory/moving-product/repair/${repair.id}`}
+                    >
                       <Button
                         className="items-center w-full border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
                         variant={"outline"}
@@ -223,10 +267,12 @@ export const Client = () => {
                       className="items-center w-full border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
                       variant={"outline"}
                       type="button"
-                      onClick={() => alert("pop up")}
+                      onClick={() =>
+                        onOpen("delete-moving-product-repair", repair.id)
+                      }
                     >
                       <PackageOpen className="w-4 h-4 mr-1" />
-                      <p>Unbundle</p>
+                      <p>Unrepair</p>
                     </Button>
                   </div>
                 </div>
@@ -234,21 +280,36 @@ export const Client = () => {
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
           </div>
-          <div className="flex gap-5 ml-auto items-center">
-            <p className="text-sm">Page {page} of 3</p>
-            <div className="flex items-center gap-2">
-              <Button
-                className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
-                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-              <Button
-                className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
-                onClick={() => setPage((prev) => prev + 1)}
-              >
-                <ChevronRight className="w-5 h-5" />
-              </Button>
+          <div className="flex items-center justify-between">
+            <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
+              Total: {page.total}
+            </Badge>
+            <div className="flex gap-5 items-center">
+              <p className="text-sm">
+                Page {page.current} of {page.last}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
+                  onClick={() => {
+                    setPage((prev) => ({ ...prev, current: prev.current - 1 }));
+                    cookies.set("repair", "remove");
+                  }}
+                  disabled={page.current === 1}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <Button
+                  className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
+                  onClick={() => {
+                    setPage((prev) => ({ ...prev, current: prev.current + 1 }));
+                    cookies.set("repair", "add");
+                  }}
+                  disabled={page.current === page.last}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
