@@ -18,6 +18,7 @@ import axios from "axios";
 import {
   ChevronLeft,
   ChevronRight,
+  Loader,
   PackageOpen,
   PlusCircle,
   ReceiptText,
@@ -28,6 +29,7 @@ import { useCookies } from "next-client-cookies";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Loading from "../loading";
+import { useModal } from "@/hooks/use-modal";
 
 interface Category {
   id: string;
@@ -42,40 +44,61 @@ interface Category {
 }
 
 export const Client = () => {
+  // core
+  const router = useRouter();
+  const { onOpen } = useModal();
+  const searchParams = useSearchParams();
+
+  // state boolean
+  const [loading, setLoading] = useState(false);
   const [isFilter, setIsFilter] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const [dataSearch, setDataSearch] = useState("");
-  const searchValue = useDebounce(dataSearch);
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const [category, setCategory] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
+
+  // cookies
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
 
-  // const fetchCategory = useCallback(
-  //   async (page: number, search: string) => {
-  //     setLoading(true);
-  //     try {
-  //       const response = await axios.get(
-  //         `${baseUrl}/product_byCategory?page=${page}&q=${search}`,
-  //         {
-  //           headers: {
-  //             Authorization: `Bearer ${accessToken}`, // Menambahkan header Authorization
-  //           },
-  //         }
-  //       );
-  //       setCategory(response.data.data.resource.data);
-  //     } catch (err: any) {
-  //       setError(err.message || "An error occurred");
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   },
-  //   [accessToken]
-  // );
+  // state search & filter
+  const [dataSearch, setDataSearch] = useState("");
+  const searchValue = useDebounce(dataSearch);
+  const [filter, setFilter] = useState(searchParams.get("f") ?? "");
+
+  // state data
+  const [bundles, setBundles] = useState<any[]>([]);
+  const [page, setPage] = useState({
+    current: parseFloat(searchParams.get("page") ?? "1") ?? 1, //page saat ini
+    last: 1, //page terakhir
+    from: 1, //data dimulai dari (untuk memulai penomoran tabel)
+    total: 1, //total data
+  });
+  const [error, setError] = useState<string | null>(null);
+
+  // handle GET Data
+  const fetchBundles = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `${baseUrl}/bundle?page=${page.current}&q=${searchValue}`,
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      setBundles(response.data.data.resource.data);
+      setPage({
+        current: response.data.data.resource.current_page,
+        last: response.data.data.resource.last_page,
+        from: response.data.data.resource.from,
+        total: response.data.data.resource.total,
+      });
+    } catch (err: any) {
+      console.log("ERROR_GET_BUNDLES:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // useEffect(() => {
   //   if (accessToken) {
@@ -83,8 +106,10 @@ export const Client = () => {
   //   }
   // }, [searchValue, page, fetchCategory, accessToken]);
 
+  // handle search params
   const handleCurrentId = useCallback(
-    (q: string) => {
+    (q: string, f: string, p: number) => {
+      setFilter(f);
       let currentQuery = {};
 
       if (searchParams) {
@@ -94,10 +119,19 @@ export const Client = () => {
       const updateQuery: any = {
         ...currentQuery,
         q: q,
+        f: f,
+        page: p,
       };
 
       if (!q || q === "") {
         delete updateQuery.q;
+      }
+      if (!f || f === "") {
+        delete updateQuery.f;
+        setFilter("");
+      }
+      if (!p || p === 1) {
+        delete updateQuery.page;
       }
 
       const url = qs.stringifyUrl(
@@ -113,12 +147,24 @@ export const Client = () => {
     [searchParams, router]
   );
 
+  // effect update search & page
   useEffect(() => {
-    handleCurrentId(searchValue);
+    handleCurrentId(searchValue, filter, 1);
+    fetchBundles();
   }, [searchValue]);
+
+  // effect update when...
+  useEffect(() => {
+    if (cookies.get("bundle")) {
+      handleCurrentId(searchValue, filter, page.current);
+      fetchBundles();
+      return cookies.remove("bundle");
+    }
+  }, [cookies.get("bundle"), searchValue, page.current]);
 
   useEffect(() => {
     setIsMounted(true);
+    fetchBundles();
   }, []);
 
   if (!isMounted) {
@@ -134,6 +180,8 @@ export const Client = () => {
           <BreadcrumbItem>
             <BreadcrumbLink href="/">Home</BreadcrumbLink>
           </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>Inventory</BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>Moving Product</BreadcrumbItem>
           <BreadcrumbSeparator />
@@ -160,78 +208,103 @@ export const Client = () => {
             </div>
           </div>
           <div className="w-full p-4 rounded-md border border-sky-400/80">
-            <ScrollArea>
-              <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-2 font-semibold items-center hover:bg-sky-200/80">
-                <p className="w-10 text-center flex-none">No</p>
-                <p className="w-32 flex-none">Barcode Bundle</p>
-                <p className="w-full min-w-72">Bundle Name</p>
-                <p className="w-20 flex-none">Qty</p>
-                <p className="w-40 flex-none">Total Price</p>
-                <p className="w-28 flex-none">Status</p>
-                <p className="w-52 text-center flex-none">Action</p>
+            {loading ? (
+              <div className="h-[200px] flex items-center justify-center">
+                <Loader className="w-5 h-5 animate-spin" />
               </div>
-              {Array.from({ length: 5 }, (_, i) => (
-                <div
-                  className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
-                  key={i}
-                >
-                  <p className="w-10 text-center flex-none">{i + 1}</p>
-                  <p className="w-32 flex-none overflow-hidden text-ellipsis">
-                    LQB075831
-                  </p>
-                  <p className="w-full min-w-72 whitespace-pre-wrap">
-                    bundle dong
-                  </p>
-                  <p className="w-20 flex-none whitespace-pre-wrap">1</p>
-                  <p className="w-40 flex-none whitespace-pre-wrap">
-                    {formatRupiah(5500000000)}
-                  </p>
-                  <div className="w-28 flex-none">
-                    <Badge className="rounded w-20 px-0 justify-center text-black font-normal capitalize bg-sky-400 hover:bg-sky-400">
-                      Bundle
-                    </Badge>
-                  </div>
-                  <div className="w-52 flex-none flex gap-4 justify-center">
-                    <Link href={`/inventory/moving-product/bundle/${i + 1}`}>
+            ) : (
+              <ScrollArea>
+                <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-2 font-semibold items-center hover:bg-sky-200/80">
+                  <p className="w-10 text-center flex-none">No</p>
+                  <p className="w-32 flex-none">Barcode Bundle</p>
+                  <p className="w-full min-w-72">Bundle Name</p>
+                  <p className="w-20 flex-none">Qty</p>
+                  <p className="w-40 flex-none">Total Price</p>
+                  <p className="w-28 flex-none">Status</p>
+                  <p className="w-52 text-center flex-none">Action</p>
+                </div>
+                {bundles.map((bundle, i) => (
+                  <div
+                    className="flex w-full px-5 py-5 text-sm gap-2 border-b border-sky-100 items-center hover:border-sky-200"
+                    key={bundle.id}
+                  >
+                    <p className="w-10 text-center flex-none">
+                      {page.from + i}
+                    </p>
+                    <p className="w-32 flex-none overflow-hidden text-ellipsis">
+                      {bundle.barcode_bundle}
+                    </p>
+                    <p className="w-full min-w-72 whitespace-pre-wrap">
+                      {bundle.name_bundle}
+                    </p>
+                    <p className="w-20 flex-none whitespace-pre-wrap">
+                      {bundle.total_product_bundle}
+                    </p>
+                    <p className="w-40 flex-none whitespace-pre-wrap">
+                      {formatRupiah(bundle.total_price_bundle)}
+                    </p>
+                    <div className="w-28 flex-none">
+                      <Badge className="rounded w-20 px-0 justify-center text-black font-normal capitalize bg-sky-400 hover:bg-sky-400">
+                        {bundle.product_status}
+                      </Badge>
+                    </div>
+                    <div className="w-52 flex-none flex gap-4 justify-center">
+                      <Link href={`/inventory/moving-product/bundle/${i + 1}`}>
+                        <Button
+                          className="items-center w-full border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
+                          variant={"outline"}
+                          type="button"
+                        >
+                          <ReceiptText className="w-4 h-4 mr-1" />
+                          <p>Detail</p>
+                        </Button>
+                      </Link>
                       <Button
-                        className="items-center w-full border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
+                        className="items-center w-full border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
                         variant={"outline"}
                         type="button"
+                        onClick={() => alert("pop up")}
                       >
-                        <ReceiptText className="w-4 h-4 mr-1" />
-                        <p>Detail</p>
+                        <PackageOpen className="w-4 h-4 mr-1" />
+                        <p>Unbundle</p>
                       </Button>
-                    </Link>
-                    <Button
-                      className="items-center w-full border-red-400 text-red-700 hover:text-red-700 hover:bg-red-50"
-                      variant={"outline"}
-                      type="button"
-                      onClick={() => alert("pop up")}
-                    >
-                      <PackageOpen className="w-4 h-4 mr-1" />
-                      <p>Unbundle</p>
-                    </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
+                ))}
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            )}
           </div>
-          <div className="flex gap-5 ml-auto items-center">
-            <p className="text-sm">Page {page} of 3</p>
-            <div className="flex items-center gap-2">
-              <Button
-                className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
-                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-              <Button
-                className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
-                onClick={() => setPage((prev) => prev + 1)}
-              >
-                <ChevronRight className="w-5 h-5" />
-              </Button>
+          <div className="flex items-center justify-between">
+            <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
+              Total: {page.total}
+            </Badge>
+            <div className="flex gap-5 items-center">
+              <p className="text-sm">
+                Page {page.current} of {page.last}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
+                  onClick={() => {
+                    setPage((prev) => ({ ...prev, current: prev.current - 1 }));
+                    cookies.set("bundle", "remove");
+                  }}
+                  disabled={page.current === 1}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <Button
+                  className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
+                  onClick={() => {
+                    setPage((prev) => ({ ...prev, current: prev.current + 1 }));
+                    cookies.set("bundle", "add");
+                  }}
+                  disabled={page.current === page.last}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
