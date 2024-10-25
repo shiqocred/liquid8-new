@@ -9,46 +9,44 @@ import { useCookies } from "next-client-cookies";
 import { toast } from "sonner";
 import { baseUrl } from "@/lib/baseUrl";
 
-export const DoneCheckAllStaggingApproveModal = () => {
-  const { isOpen, onClose, type } = useModal();
+export const UnbundleQCDModal = () => {
+  const { isOpen, onClose, type, data } = useModal();
   const cookies = useCookies();
   const accessToken = cookies.get("accessToken");
 
-  const isModalOpen =
-    isOpen && type === "done-check-all-stagging-approve-modal";
+  const isModalOpen = isOpen && type === "unbundle-qcd-modal";
 
-  const handleDoneCheckAll = async (e: FormEvent) => {
+  const handleUnbundleQCD = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      await axios.get(`${baseUrl}/stagingTransactionApprove`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      toast.success("Product successfully checked all");
-      cookies.set("approveScanResult", "updated");
+      await axios.delete(
+        `${baseUrl}/bundle/qcd/${data}`,
+
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      toast.success("QCD successfully unbundled");
+      cookies.set("QCDPage", "moved");
       onClose();
     } catch (err: any) {
-      toast.error(
-        err.response.data.data.message ?? "Product failed to check all"
-      );
-      console.log("ERROR_DONE_CHECK_ALL_STAGGING_APRV:", err);
+      toast.error(err.response.data.data.message ?? "QCD failed to unbundle");
+      console.log("ERROR_UNBUNDLE_QCD:", err);
     }
   };
 
   return (
     <Modal
-      title="Check All Product"
+      title="Unbundle QCD"
       description="Are you Sure? This action cannot be undone."
       isOpen={isModalOpen}
       onClose={onClose}
       className="max-w-sm"
     >
-      <form
-        onSubmit={handleDoneCheckAll}
-        className="w-full flex flex-col gap-4"
-      >
+      <form onSubmit={handleUnbundleQCD} className="w-full flex flex-col gap-4">
         <div className="flex w-full gap-2">
           <Button
             className="w-full bg-transparent hover:bg-transparent text-black border-black/50 border hover:border-black"
@@ -58,10 +56,10 @@ export const DoneCheckAllStaggingApproveModal = () => {
             Cancel
           </Button>
           <Button
-            className="bg-sky-400 hover:bg-sky-400/80 text-black w-full"
+            className="bg-orange-400 hover:bg-orange-400/80 text-black w-full"
             type="submit"
           >
-            Done
+            Confirm
           </Button>
         </div>
       </form>

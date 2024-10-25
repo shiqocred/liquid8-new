@@ -79,7 +79,6 @@ export const Client = () => {
           },
         }
       );
-      console.log(response);
       const dataRes = response.data.data.resource;
       if (!dataRes.category) {
         setInput((prev) => ({

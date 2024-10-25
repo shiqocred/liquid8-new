@@ -25,6 +25,7 @@ import { DoneCheckAllStaggingApproveModal } from "@/app/(dashboard)/stagging/app
 import { DoneCheckAllStaggingProductModal } from "@/app/(dashboard)/stagging/product/_components/_modals/done-check-all-stagging-product-modal";
 import ApprovementProductsModal from "@/components/modal/approve-product-modal";
 import DeleteDetailManifestInboundModal from "@/components/modal/delete-detail-manifest-inbound-modal";
+import { ModalProviderIsro } from "@/lib-isro/modal-provider-isro";
 import { ModalProviderLusi } from "@/lib-lusi/modal-provider-lusi";
 
 const ModalProvider = () => {
@@ -56,6 +57,7 @@ const ModalProvider = () => {
       <BarcodePrinteredMovingProductDetailRepair />
       <QCDLPRModal />
       <ModalProviderLusi />
+      <ModalProviderIsro />
     </>
   );
 };

@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Grid2x2X,
+  Loader2,
   PlusCircle,
   Recycle,
   RefreshCw,
@@ -27,12 +28,13 @@ import { useCookies } from "next-client-cookies";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
-import { useCallback, useEffect, useState } from "react";
+import { MouseEvent, useCallback, useEffect, useState } from "react";
 import Loading from "../loading";
 import { Badge } from "@/components/ui/badge";
 import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
 import { useModal } from "@/hooks/use-modal";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 export const Client = () => {
   const searchParams = useSearchParams();
@@ -41,6 +43,7 @@ export const Client = () => {
 
   // state bool
   const [loading, setLoading] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
   // state search & page
@@ -72,7 +75,6 @@ export const Client = () => {
   const accessToken = cookies.get("accessToken");
 
   // state data
-
   const [data, setData] = useState<any[]>([]);
 
   // handle GET Data
@@ -100,6 +102,32 @@ export const Client = () => {
       console.log("ERROR_GET_DOCUMENT:", err);
     } finally {
       setLoading(false);
+    }
+  };
+  const handleGetDetail = async (
+    e: MouseEvent,
+    documentCode: any,
+    barcode: any
+  ) => {
+    e.preventDefault();
+    setLoadingDetail(true);
+    try {
+      const response = await axios.get(
+        `${baseUrl}/getProductRepair?code_document=${documentCode}&old_barcode_product=${barcode}`,
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      toast.success("Data successfully founded.");
+      onOpen("to-display-lpr-modal", response.data.data.resource.product);
+    } catch (err: any) {
+      toast.error("Data failed to found.");
+      console.log("ERROR_GET_DETAIL:", err);
+    } finally {
+      setLoadingDetail(false);
     }
   };
 
@@ -137,6 +165,7 @@ export const Client = () => {
     [searchParams, router]
   );
 
+  // update search & page
   useEffect(() => {
     handleCurrentId(searchValue, 1);
     handleGetData(1);
@@ -149,6 +178,7 @@ export const Client = () => {
     }
   }, [cookies.get("pageLPR"), searchValue, page.current]);
 
+  // auto update
   useEffect(() => {
     if (cookies.get("LPRPage")) {
       handleGetData();
@@ -286,9 +316,20 @@ export const Client = () => {
                             className="items-center border-sky-400 text-sky-700 hover:text-sky-700 hover:bg-sky-50"
                             variant={"outline"}
                             type="button"
-                            onClick={() => alert("pop up")}
+                            onClick={(e) =>
+                              handleGetDetail(
+                                e,
+                                item.code_document,
+                                item.old_barcode_product
+                              )
+                            }
+                            disabled={loadingDetail}
                           >
-                            <ShoppingBag className="w-4 h-4 mr-1" />
+                            {loadingDetail ? (
+                              <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                            ) : (
+                              <ShoppingBag className="w-4 h-4 mr-1" />
+                            )}
                             <p>To Display</p>
                           </Button>
                           <Button
