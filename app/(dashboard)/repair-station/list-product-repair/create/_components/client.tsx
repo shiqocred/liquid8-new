@@ -315,7 +315,7 @@ const Client = () => {
             <div className="flex flex-col gap-1 w-1/2">
               <Label>Repair Name</Label>
               <Input
-                className="border-sky-400/80 focus-visible:ring-0 border-0 border-b rounded-none focus-visible:border-sky-500"
+                className="border-sky-400/80 focus-visible:ring-0 border-0 border-b rounded-none focus-visible:border-sky-500 disabled:cursor-not-allowed disabled:opacity-100"
                 placeholder="Repair name..."
                 value={input.name}
                 disabled={loadingSubmit}
@@ -340,7 +340,7 @@ const Client = () => {
             <div className="flex flex-col gap-1 w-1/4">
               <Label>Custom Price</Label>
               <Input
-                className="border-sky-400/80 focus-visible:ring-0 border-0 border-b rounded-none focus-visible:border-sky-500"
+                className="border-sky-400/80 focus-visible:ring-0 border-0 border-b rounded-none focus-visible:border-sky-500 disabled:cursor-not-allowed disabled:opacity-100"
                 value={input.custom}
                 disabled={loadingSubmit}
                 onChange={(e) =>
@@ -582,7 +582,7 @@ const Client = () => {
                         <Button
                           className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
                           onClick={() => {
-                            setPageFiltered((prev) => ({
+                            setPage((prev) => ({
                               ...prev,
                               current: prev.current - 1,
                             }));
@@ -595,7 +595,7 @@ const Client = () => {
                         <Button
                           className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
                           onClick={() => {
-                            setPageFiltered((prev) => ({
+                            setPage((prev) => ({
                               ...prev,
                               current: prev.current + 1,
                             }));
