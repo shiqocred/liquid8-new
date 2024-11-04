@@ -172,7 +172,7 @@ const CreateClient = () => {
             <Search className="w-4 h-4" />
           </Button>
         </div>
-        <div className="flex flex-col w-full gap-4">
+        <div className="w-full p-4 rounded-md border border-sky-400/80">
           <div className="flex w-full px-5 py-3 bg-sky-100 rounded text-sm gap-4 font-semibold items-center hover:bg-sky-200/80">
             <p className="w-10 text-center flex-none">No</p>
             <p className="w-32 flex-none">Barcode</p>
@@ -216,26 +216,6 @@ const CreateClient = () => {
                 </div>
               </div>
             ))}
-          </div>
-          <div className="w-full flex justify-between items-center">
-            <p className="text-sm">Total Product: 20</p>
-            <div className="flex gap-5 items-center">
-              <p className="text-sm">Page {page} of 3</p>
-              <div className="flex items-center gap-2">
-                <Button
-                  className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
-                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </Button>
-                <Button
-                  className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
-                  onClick={() => setPage((prev) => prev + 1)}
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
       </div>

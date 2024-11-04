@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
-import { Client } from "./_components/client";
 import Loading from "./loading";
+import Client from "./_components/client";
 
 const DetailMigratePage = () => {
   return (

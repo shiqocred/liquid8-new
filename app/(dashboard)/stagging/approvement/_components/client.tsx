@@ -296,7 +296,7 @@ export const Client = () => {
                         </p>
                         <p className="w-48 flex-none text-ellipsis overflow-hidden whitespace-nowrap">
                           {format(
-                            new Date("10-09-2024" ?? new Date().toString()),
+                            new Date(item?.new_date_in_product),
                             "iiii, dd-MMM-yyyy"
                           )}
                         </p>
