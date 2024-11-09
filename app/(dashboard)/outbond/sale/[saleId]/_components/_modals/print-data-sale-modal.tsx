@@ -437,8 +437,8 @@ export const PrintDataSaleModal = () => {
                 dengan diskon atau harga jual yang telah ditentukan di atas dan{" "}
                 <span className="font-bold">SETUJU</span> untuk melakukan
                 transfer sebagaimana total{" "}
-                <span className="font-bold">"FINAL PRICE"</span> tertera
-                sebesar:
+                <span className="font-bold">&quot;FINAL PRICE&quot;</span>{" "}
+                tertera sebesar:
               </p>
               <div className="flex flex-col items-center my-3">
                 <p className="text-lg font-bold">
