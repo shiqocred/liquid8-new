@@ -5,6 +5,11 @@ import { DeleteBuyerModal } from "@/app/(dashboard)/outbond/buyer/_components/_m
 import { CreateEditDestinationModal } from "@/app/(dashboard)/outbond/destination/_components/_modals/create-edit-destination-modal";
 import { DeleteDestinationModal } from "@/app/(dashboard)/outbond/destination/_components/_modals/delete-destination-modal";
 import { RemoveProductCreateMigrateModal } from "@/app/(dashboard)/outbond/migrate/create/_components/_modals/remove-product-create-migrate-modal";
+import { DeleteProductSaleModal } from "@/app/(dashboard)/outbond/sale/[saleId]/_components/_modals/delete-product-sale-modal";
+import { GaborProductSaleModal } from "@/app/(dashboard)/outbond/sale/[saleId]/_components/_modals/gabor-product-sale-modal";
+import { PriceProductSaleModal } from "@/app/(dashboard)/outbond/sale/[saleId]/_components/_modals/price-product-sale-modal";
+import { PrintDataSaleModal } from "@/app/(dashboard)/outbond/sale/[saleId]/_components/_modals/print-data-sale-modal";
+import { PrintProductSaleModal } from "@/app/(dashboard)/outbond/sale/[saleId]/_components/_modals/print-product-sale-modal";
 import { BarcodePrinteredLPRModal } from "@/app/(dashboard)/repair-station/list-product-repair/_components/_modals/barcode-printered-lpr-modal";
 import { ToDisplayLPRModal } from "@/app/(dashboard)/repair-station/list-product-repair/_components/_modals/to-display-lpr-modal";
 import { BarcodePrinteredQCDDetailModal } from "@/app/(dashboard)/repair-station/qcd/[qcdId]/_components/_modals/barcode-printered-qcd-detail-modal";
@@ -30,6 +35,11 @@ export const ModalProviderIsro = () => {
       <DeleteBuyerModal />
       <CreateEditAccountModal />
       <DeleteAccountModal />
+      <DeleteProductSaleModal />
+      <GaborProductSaleModal />
+      <PriceProductSaleModal />
+      <PrintDataSaleModal />
+      <PrintProductSaleModal />
     </>
   );
 };

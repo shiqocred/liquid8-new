@@ -9,22 +9,8 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-  CommandShortcut,
-} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/use-debounce";
 import { baseUrl } from "@/lib/baseUrl";
 import { cn, formatRupiah } from "@/lib/utils";
@@ -32,16 +18,11 @@ import axios from "axios";
 import {
   ChevronLeft,
   ChevronRight,
-  CircleFadingPlus,
   Grid2x2X,
-  PackageOpen,
   PlusCircle,
   ReceiptText,
   RefreshCw,
   Search,
-  Trash2,
-  Unplug,
-  XCircle,
 } from "lucide-react";
 import { useCookies } from "next-client-cookies";
 import Link from "next/link";

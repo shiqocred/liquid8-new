@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
+import { cn } from "@/lib/utils";
 
 interface ModalProps {
   title: string;
@@ -16,6 +17,7 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   className?: string;
+  rightPanel?: ReactNode;
 }
 
 export const Modal = ({
@@ -25,6 +27,7 @@ export const Modal = ({
   isOpen,
   onClose,
   className,
+  rightPanel,
 }: ModalProps) => {
   const onChange = (open: boolean) => {
     if (!open) {
@@ -34,9 +37,17 @@ export const Modal = ({
   return (
     <Dialog open={isOpen} onOpenChange={onChange}>
       <DialogContent className={className}>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+        <DialogHeader
+          className={cn(
+            "flex items-center w-full flex-row",
+            rightPanel ? "justify-between" : "justify-start"
+          )}
+        >
+          <div className="flex flex-col">
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
+          </div>
+          {rightPanel}
         </DialogHeader>
         {children}
       </DialogContent>
