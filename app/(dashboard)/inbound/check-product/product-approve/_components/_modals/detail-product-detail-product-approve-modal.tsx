@@ -159,7 +159,8 @@ export const DetailProductDetailProductApproveModal = () => {
       className={cn(
         "bg-transparent border-none shadow-none rounded-none p-0 flex gap-0",
         data?.new_tag_product ||
-          findNotNull(data?.new_quality) === ("damaged" || "abnormal")
+          findNotNull(data?.new_quality) !== "damaged" ||
+          findNotNull(data?.new_quality) !== "abnormal"
           ? "max-w-5xl"
           : "max-w-6xl"
       )}
@@ -317,8 +318,8 @@ export const DetailProductDetailProductApproveModal = () => {
                     </div>
                   </div>
                   {!data?.new_tag_product &&
-                    findNotNull(data?.new_quality) !==
-                      ("damaged" || "abnormal") && (
+                    (findNotNull(data?.new_quality) !== "damaged" ||
+                      findNotNull(data?.new_quality) !== "abnormal") && (
                       <div className="flex flex-col gap-1 pl-6">
                         <Label className="text-xs font-medium">Category</Label>
                         <Button
