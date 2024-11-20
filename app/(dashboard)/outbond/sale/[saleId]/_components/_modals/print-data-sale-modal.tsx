@@ -77,7 +77,7 @@ export const PrintDataSaleModal = () => {
 
   const handlePrint = useReactToPrint({
     pageStyle: `@page { margin: 20mm 20mm 20mm 20mm !important; }`,
-    documentTitle: `Document By Product - ${data?.buyer.code_document_sale}`,
+    documentTitle: `Document By Product - ${data?.buyer?.code_document_sale}`,
     content: () => componentRef.current,
   });
 
@@ -261,7 +261,7 @@ export const PrintDataSaleModal = () => {
                 <div className="flex flex-col">
                   <h3 className="text-xl font-bold">FORM VALIDASI</h3>
                   <p>
-                    {data?.buyer.code_document_sale +
+                    {data?.buyer?.code_document_sale +
                       "/LMS/" +
                       convertToRoman(new Date().getMonth() + 1) +
                       "/" +
@@ -293,7 +293,7 @@ export const PrintDataSaleModal = () => {
                       Nama
                     </p>
                     <p className="w-full px-3 py-0.5 border-r border-black">
-                      {data?.buyer.buyer_name_document_sale}
+                      {data?.buyer?.buyer_name_document_sale}
                     </p>
                   </div>
                   <div className="flex w-1/3 flex-none">
@@ -309,7 +309,7 @@ export const PrintDataSaleModal = () => {
                       No. HP
                     </p>
                     <p className="w-full px-3 py-0.5 border-r border-black">
-                      {data?.buyer.buyer_phone_document_sale}
+                      {data?.buyer?.buyer_phone_document_sale}
                     </p>
                   </div>
                   <div className="flex w-1/3 flex-none">
@@ -319,7 +319,7 @@ export const PrintDataSaleModal = () => {
                     <p className="w-full px-3 py-0.5">
                       {format(
                         new Date(
-                          data?.buyer.created_at ?? new Date().toString()
+                          data?.buyer?.created_at ?? new Date().toString()
                         ),
                         "dd/MM/yyyy"
                       )}
@@ -332,7 +332,7 @@ export const PrintDataSaleModal = () => {
                       Alamat
                     </p>
                     <p className="w-full px-3 py-0.5">
-                      {data?.buyer.buyer_address_document_sale}
+                      {data?.buyer?.buyer_address_document_sale}
                     </p>
                   </div>
                 </div>
@@ -365,8 +365,8 @@ export const PrintDataSaleModal = () => {
                   </div>
                 </div>
                 <div className="flex w-full flex-col relative">
-                  {data?.data.category_report.category_list &&
-                    data?.data.category_report.category_list.map(
+                  {data?.data?.category_report.category_list &&
+                    data?.data?.category_report.category_list.map(
                       (item: any) => (
                         <div
                           key={item.category}
@@ -407,13 +407,13 @@ export const PrintDataSaleModal = () => {
                 <div className="flex">
                   <p className="px-3">
                     Kardus @
-                    {formatRupiah(data?.buyer.cardbox_unit_price) ?? "Rp 0"}
+                    {formatRupiah(data?.buyer?.cardbox_unit_price) ?? "Rp 0"}
                   </p>
                   <p className="w-12 flex-none text-center">
-                    {data?.buyer.cardbox_qty}
+                    {data?.buyer?.cardbox_qty}
                   </p>
                   <p className="w-32 flex-none pr-3 text-end tabular-nums">
-                    {formatRupiah(data?.buyer.cardbox_total_price) ?? "Rp 0"}
+                    {formatRupiah(data?.buyer?.cardbox_total_price) ?? "Rp 0"}
                   </p>
                 </div>
                 <div className="flex">
@@ -581,7 +581,7 @@ export const PrintDataSaleModal = () => {
                   <p></p>
                   <p className="h-20" />
                   <p className="uppercase border-b px-3 border-black">
-                    {data?.buyer.buyer_name_document_sale}
+                    {data?.buyer?.buyer_name_document_sale}
                   </p>
                   <p>Nama Pembeli</p>
                 </div>

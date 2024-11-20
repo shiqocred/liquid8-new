@@ -39,8 +39,8 @@ export const Modal = ({
       <DialogContent className={className}>
         <DialogHeader
           className={cn(
-            "flex items-center w-full flex-row",
-            rightPanel ? "justify-between" : "justify-start"
+            "flex items-center flex-row",
+            rightPanel ? "justify-between w-full" : "justify-start"
           )}
         >
           <div className="flex flex-col">

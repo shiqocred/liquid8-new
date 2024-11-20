@@ -53,7 +53,7 @@ export const PrintProductSaleModal = () => {
 
   const handlePrint = useReactToPrint({
     pageStyle: `@page { margin: 20mm 20mm 20mm 20mm !important; }`,
-    documentTitle: `Document By Product - ${data?.buyer.code_document_sale}`,
+    documentTitle: `Document By Product - ${data?.buyer?.code_document_sale}`,
     content: () => componentRef.current,
   });
 
@@ -97,7 +97,7 @@ export const PrintProductSaleModal = () => {
                 <div className="flex flex-col">
                   <h3 className="text-xl font-bold">FORM VALIDASI</h3>
                   <p>
-                    {data?.buyer.code_document_sale +
+                    {data?.buyer?.code_document_sale +
                       "/LMS/" +
                       convertToRoman(new Date().getMonth() + 1) +
                       "/" +
@@ -131,7 +131,7 @@ export const PrintProductSaleModal = () => {
                       Nama
                     </p>
                     <p className="w-full px-3 py-0.5 border-r border-black uppercase">
-                      {data?.buyer.buyer_name_document_sale}
+                      {data?.buyer?.buyer_name_document_sale}
                     </p>
                   </div>
                   <div className="flex w-1/3 flex-none">
@@ -147,7 +147,7 @@ export const PrintProductSaleModal = () => {
                       No. HP
                     </p>
                     <p className="w-full px-3 py-0.5 border-r border-black">
-                      {data?.buyer.buyer_phone_document_sale}
+                      {data?.buyer?.buyer_phone_document_sale}
                     </p>
                   </div>
                   <div className="flex w-1/3 flex-none">
@@ -157,7 +157,7 @@ export const PrintProductSaleModal = () => {
                     <p className="w-full px-3 py-0.5">
                       {format(
                         new Date(
-                          data?.buyer.created_at ?? new Date().toString()
+                          data?.buyer?.created_at ?? new Date().toString()
                         ),
                         "dd/MM/yyyy"
                       )}
@@ -170,7 +170,7 @@ export const PrintProductSaleModal = () => {
                       Alamat
                     </p>
                     <p className="w-full px-3 py-0.5 capitalize">
-                      {data?.buyer.buyer_address_document_sale}
+                      {data?.buyer?.buyer_address_document_sale}
                     </p>
                   </div>
                 </div>
@@ -245,13 +245,13 @@ export const PrintProductSaleModal = () => {
                 <div className="flex">
                   <p className="px-3">
                     Kardus @
-                    {formatRupiah(data?.buyer.cardbox_unit_price) ?? "Rp 0"}
+                    {formatRupiah(data?.buyer?.cardbox_unit_price) ?? "Rp 0"}
                   </p>
                   <p className="w-12 flex-none text-center">
-                    {data?.buyer.cardbox_qty}
+                    {data?.buyer?.cardbox_qty}
                   </p>
                   <p className="w-32 flex-none pr-3 text-end tabular-nums">
-                    {formatRupiah(data?.buyer.cardbox_total_price) ?? "Rp 0"}
+                    {formatRupiah(data?.buyer?.cardbox_total_price) ?? "Rp 0"}
                   </p>
                 </div>
                 <div className="flex">
@@ -293,7 +293,7 @@ export const PrintProductSaleModal = () => {
                   <p></p>
                   <p className="h-20" />
                   <p className="uppercase border-b px-3 border-black">
-                    {data?.buyer.buyer_name_document_sale}
+                    {data?.buyer?.buyer_name_document_sale}
                   </p>
                   <p>Nama Pembeli</p>
                 </div>

@@ -10,18 +10,19 @@ import { baseUrl } from "@/lib/baseUrl";
 import { useModal } from "@/hooks/use-modal";
 import { Modal } from "@/components/modal";
 
-export const RemoveMovingProductListDetailRepairModal = () => {
-  const { isOpen, onClose, type, data, onOpen } = useModal();
+export const QCDProductDetailRepairModal = () => {
+  const { isOpen, onClose, type, data } = useModal();
   const cookies = useCookies();
-  const accessToken = cookies.get("accessToken");
   const router = useRouter();
-const isModalOpen = isOpen && (type as string) === "remove-moving-product-list-detail-repair-modal";
+  const accessToken = cookies.get("accessToken");
+  const isModalOpen = isOpen && type === "qcd-product-detail-repair-modal";
 
   const onDelete = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      await axios.delete(
-        `${baseUrl}/delete_all_by_codeDocument?code_document=${data}`,
+      await axios.put(
+        `${baseUrl}/update-repair-dump/${data.id}`,
+        {},
         {
           headers: {
             Accept: "application/json",
@@ -29,19 +30,24 @@ const isModalOpen = isOpen && (type as string) === "remove-moving-product-list-d
           },
         }
       );
-      cookies.set("productApprove", "updated");
-      router.refresh();
-      toast.success("Document successfully deleted");
+      toast.success("Product successfully moved to QCD");
+      if (data.last) {
+        setTimeout(() => {
+          toast.success("Repair bundle successfully deleted");
+        }, 1000);
+        router.push("/inventory/moving-product/repair");
+      }
+      cookies.set("detailRepairPage", "updated");
       onClose();
     } catch (error) {
-      toast.error("Something went wrong");
-      console.log("ERROR_UPDATE_BARCODE:", error);
+      toast.error("Product failed move to QCD");
+      console.log("ERROR_PRODUCT_MOVE_TO_QCD:", error);
     }
   };
 
   return (
     <Modal
-      title="Delete Document Product Approve"
+      title="Move Product To QCD"
       description="Are you Sure? This action cannot be undone."
       isOpen={isModalOpen}
       onClose={onClose}
@@ -59,7 +65,7 @@ const isModalOpen = isOpen && (type as string) === "remove-moving-product-list-d
             className="bg-red-400 hover:bg-red-400/80 text-black w-full"
             type="submit"
           >
-            Delete
+            Confirm
           </Button>
         </div>
       </form>

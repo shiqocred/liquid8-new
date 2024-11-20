@@ -20,6 +20,7 @@ import {
   Box,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   CircleDollarSign,
   Edit2,
   Edit3,
@@ -56,19 +57,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import Pagination from "@/components/pagination";
 
 const DetailClient = () => {
   const router = useRouter();
@@ -723,82 +712,11 @@ const DetailClient = () => {
                       <ScrollBar orientation="horizontal" />
                     </ScrollArea>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-3 items-center">
-                      <Badge className="rounded-full hover:bg-sky-100 bg-sky-100 text-black border border-sky-500 text-sm">
-                        Total: {pageProduct.total}
-                      </Badge>
-                      <Badge className="rounded-full hover:bg-green-100 bg-green-100 text-black border border-green-500 text-sm">
-                        Row per page: {pageProduct.perPage}
-                      </Badge>
-                    </div>
-                    <div className="flex gap-5 items-center">
-                      <div className="text-sm">
-                        <Popover modal={true}>
-                          <PopoverTrigger>
-                            Page {pageProduct.current}
-                          </PopoverTrigger>
-                          <PopoverContent className="w-24 p-1">
-                            <Command>
-                              <CommandInput />
-                              <CommandList>
-                                <CommandEmpty>Data not found.</CommandEmpty>
-                                <CommandGroup>
-                                  {Array.from(
-                                    { length: pageProduct.last },
-                                    (_, i) => (
-                                      <CommandItem
-                                        key={i}
-                                        className="text-center"
-                                        onSelect={() => {
-                                          setPageProduct((prev) => ({
-                                            ...prev,
-                                            current: i + 1,
-                                          }));
-                                          cookies.set("productUpdate", "add");
-                                        }}
-                                      >
-                                        {i + 1}
-                                      </CommandItem>
-                                    )
-                                  )}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>{" "}
-                        of {pageProduct.last}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
-                          onClick={() => {
-                            setPageProduct((prev) => ({
-                              ...prev,
-                              current: prev.current - 1,
-                            }));
-                            cookies.set("productUpdate", "add");
-                          }}
-                          disabled={pageProduct.current === 1}
-                        >
-                          <ChevronLeft className="w-5 h-5" />
-                        </Button>
-                        <Button
-                          className="p-0 h-9 w-9 bg-sky-400/80 hover:bg-sky-400 text-black"
-                          onClick={() => {
-                            setPageProduct((prev) => ({
-                              ...prev,
-                              current: prev.current + 1,
-                            }));
-                            cookies.set("productUpdate", "add");
-                          }}
-                          disabled={pageProduct.current === pageProduct.last}
-                        >
-                          <ChevronRight className="w-5 h-5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                  <Pagination
+                    setPagination={setPageProduct}
+                    pagination={pageProduct}
+                    cookie="productUpdate"
+                  />
                 </div>
               </DialogContent>
             </Dialog>
