@@ -32,6 +32,8 @@
     "**/*.ts",
     "**/*.tsx",
     "llnext/types/**/*.ts",
+    "sdsdsd/types/**/*.ts",
+    "sdsd/types/**/*.ts",
     ".next/types/**/*.ts"
   ],
   "exclude": [

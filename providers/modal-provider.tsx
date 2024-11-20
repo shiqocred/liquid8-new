@@ -16,7 +16,8 @@ import { StaggingProductApproveModal } from "@/app/(dashboard)/inbound/check-pro
 import { ParcodePrinteredCheckProductScanResultModal } from "@/app/(dashboard)/inbound/check-product/scan-result/[scanResultId]/_components/_modals/barcode-printered-check-product-scan-result-modal";
 import { DeleteScanResultModal } from "@/app/(dashboard)/inbound/check-product/scan-result/_components/_modals/delete-scan-result-modal";
 import { BarcodePrinteredMovingProductDetailRepair } from "@/app/(dashboard)/inventory/moving-product/repair/[repairId]/_components/_modals/barcode-printered-moving-product-detail-repair-modal";
-import { RemoveMovingProductListDetailRepairModal } from "@/app/(dashboard)/inventory/moving-product/repair/[repairId]/_components/_modals/remove-moving-product-list-detail-repair-modal";
+import { DisplayProductDetailRepairModal } from "@/app/(dashboard)/inventory/moving-product/repair/[repairId]/_components/_modals/display-product-detail-repair-modal copy";
+import { QCDProductDetailRepairModal } from "@/app/(dashboard)/inventory/moving-product/repair/[repairId]/_components/_modals/qcd-product-detail-repair-modal";
 import { DeleteMovingProductRepairModal } from "@/app/(dashboard)/inventory/moving-product/repair/_components/_modals/delete-moving-product-repair-modal";
 import { QCDLPRModal } from "@/app/(dashboard)/repair-station/list-product-repair/_components/_modals/qcd-lpr-modal";
 import { DeleteProductStaggingApproveModal } from "@/app/(dashboard)/stagging/approvement/_components/_modals/delete-product-stagging-approve-modal";
@@ -52,7 +53,8 @@ const ModalProvider = () => {
       <DoneCheckAllStaggingApproveModal />
       <DoneCheckAllStaggingProductModal />
       <DeleteScanResultModal />
-      <RemoveMovingProductListDetailRepairModal />
+      <QCDProductDetailRepairModal />
+      <DisplayProductDetailRepairModal />
       <DeleteMovingProductRepairModal />
       <BarcodePrinteredMovingProductDetailRepair />
       <QCDLPRModal />

@@ -1,5 +1,14 @@
 import { CreateEditAccountModal } from "@/app/(dashboard)/account/setting/_components/_modals/create-edit-account-modal";
 import { DeleteAccountModal } from "@/app/(dashboard)/account/setting/_components/_modals/delete-account-modal";
+import { CreateEditCategoryModal } from "@/app/(dashboard)/inventory/category-setting/sub-category/_components/_modals/create-edit-category-modal";
+import { DeleteCategoryModal } from "@/app/(dashboard)/inventory/category-setting/sub-category/_components/_modals/delete-category-modal";
+import { CreateEditColorModal } from "@/app/(dashboard)/inventory/category-setting/tag-color/_components/_modals/create-edit-color-modal";
+import { DeleteColorModal } from "@/app/(dashboard)/inventory/category-setting/tag-color/_components/_modals/delete-color-modal";
+import { BarcodePrinteredBundleDetailModal } from "@/app/(dashboard)/inventory/moving-product/bundle/[bundleId]/_components/_modals/barcode-printered-bundle-detail-modal";
+import { DeleteProductBundleModal } from "@/app/(dashboard)/inventory/moving-product/bundle/[bundleId]/_components/_modals/remove-product-bundle-modal";
+import { DestroyBundleModal } from "@/app/(dashboard)/inventory/moving-product/bundle/_components/_modals/destroy-bundle-modal";
+import { DeleteListProductSMVModal } from "@/app/(dashboard)/inventory/slow-moving-product/list-product/_components/_modals/delete-list-product-smv-modal";
+import { DetailListProductSMVModal } from "@/app/(dashboard)/inventory/slow-moving-product/list-product/_components/_modals/detail-list-product-smv-modal";
 import { CreateEditBuyerModal } from "@/app/(dashboard)/outbond/buyer/_components/_modals/create-edit-buyer-modal";
 import { DeleteBuyerModal } from "@/app/(dashboard)/outbond/buyer/_components/_modals/delete-buyer-modal";
 import { CreateEditDestinationModal } from "@/app/(dashboard)/outbond/destination/_components/_modals/create-edit-destination-modal";
@@ -40,6 +49,15 @@ export const ModalProviderIsro = () => {
       <PriceProductSaleModal />
       <PrintDataSaleModal />
       <PrintProductSaleModal />
+      <CreateEditCategoryModal />
+      <DeleteCategoryModal />
+      <CreateEditColorModal />
+      <DeleteColorModal />
+      <DestroyBundleModal />
+      <BarcodePrinteredBundleDetailModal />
+      <DeleteProductBundleModal />
+      <DetailListProductSMVModal />
+      <DeleteListProductSMVModal />
     </>
   );
 };

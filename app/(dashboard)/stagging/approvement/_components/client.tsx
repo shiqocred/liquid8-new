@@ -36,20 +36,7 @@ import { useModal } from "@/hooks/use-modal";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface Category {
-  id: string;
-  new_barcode_product: string;
-  new_name_product: string;
-  new_category_product: string;
-  new_price_product: string;
-  new_status_product: "display";
-  display_price: string;
-  created_at: string;
-  new_date_in_product: string;
-}
-
 export const Client = () => {
-  const [isFilter, setIsFilter] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [dataSearch, setDataSearch] = useState("");
   const searchValue = useDebounce(dataSearch);
