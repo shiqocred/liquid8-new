@@ -125,7 +125,7 @@ const Navbar = () => {
             <div className="h-4 w-4 bg-white flex items-center justify-center text-yellow-500 rounded-full">
               <Crown className="w-2.5 h-2.5 fill-yellow-500" />
             </div>
-            Superadmin
+            {profileData?.role_name}
           </Badge>
         </div>
         <Separator orientation="vertical" />

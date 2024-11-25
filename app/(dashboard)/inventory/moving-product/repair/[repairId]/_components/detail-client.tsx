@@ -38,10 +38,10 @@ import { TooltipProviderPage } from "@/providers/tooltip-provider-page";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  PopoverPortal,
+  PopoverPortalContent,
+  PopoverPortalTrigger,
+} from "@/components/ui/popoverPortal";
 import {
   Command,
   CommandEmpty,
@@ -647,12 +647,12 @@ const DetailClient = () => {
                 ) : (
                   <div className="flex flex-col gap-1 w-full">
                     <Label>Category</Label>
-                    <Popover
+                    <PopoverPortal
                       modal={true}
                       open={isOpenCategory}
                       onOpenChange={setIsOpenCategory}
                     >
-                      <PopoverTrigger asChild>
+                      <PopoverPortalTrigger asChild>
                         <Button className="bg-transparent border-b border-sky-400 hover:bg-transparent text-black shadow-none rounded-none justify-between">
                           <p className="whitespace-nowrap text-ellipsis overflow-hidden w-3/4 text-start">
                             {input.category
@@ -661,8 +661,8 @@ const DetailClient = () => {
                           </p>
                           <ChevronDown className="size-4 flex-none" />
                         </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="p-0">
+                      </PopoverPortalTrigger>
+                      <PopoverPortalContent className="p-0">
                         <Command>
                           <CommandInput />
                           <CommandList className="p-1">
@@ -709,8 +709,8 @@ const DetailClient = () => {
                             </CommandGroup>
                           </CommandList>
                         </Command>
-                      </PopoverContent>
-                    </Popover>
+                      </PopoverPortalContent>
+                    </PopoverPortal>
                   </div>
                 )}
               </div>

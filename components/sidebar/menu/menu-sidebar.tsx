@@ -9,6 +9,7 @@ import {
   Blocks,
   Boxes,
   CandlestickChart,
+  Container,
   Drill,
   FileCog,
   FolderClock,
@@ -197,13 +198,42 @@ const sidebarMenu = [
             title: "promo product",
             href: "/inventory/slow-moving-product/promo-product",
           },
+          {
+            title: "BKL",
+            href: "/inventory/slow-moving-product/bkl",
+          },
         ],
       },
       {
         title: "Pallet",
-        href: "/inventory/pallet",
+        href: undefined,
         icon: <SwatchBook className="w-5 h-5 stroke-[1.5]" />,
-        sub_menu: [],
+        sub_menu: [
+          {
+            title: "list Pallet",
+            href: "/inventory/pallet/list",
+          },
+          {
+            title: "Warehouse",
+            href: "/inventory/pallet/warehouse",
+          },
+          {
+            title: "Condition",
+            href: "/inventory/pallet/condition",
+          },
+          {
+            title: "Status",
+            href: "/inventory/pallet/status",
+          },
+          {
+            title: "Brand",
+            href: "/inventory/pallet/brand",
+          },
+          {
+            title: "Transportation",
+            href: "/inventory/pallet/transportation",
+          },
+        ],
       },
     ],
   },
@@ -232,15 +262,24 @@ const sidebarMenu = [
     href: undefined,
     menu: [
       {
-        title: "migrate",
-        href: "/outbond/migrate",
+        title: "migrate color",
+        href: undefined,
         icon: <Truck className="w-5 h-5 stroke-[1.5]" />,
-        sub_menu: [],
+        sub_menu: [
+          {
+            title: "List Migrate",
+            href: "/outbond/migrate-color/list",
+          },
+          {
+            title: "destination",
+            href: "/outbond/migrate-color/destination",
+          },
+        ],
       },
       {
-        title: "destination",
-        href: "/outbond/destination",
-        icon: <MapPinned className="w-5 h-5 stroke-[1.5]" />,
+        title: "migrate category",
+        href: "/outbond/migrate-category",
+        icon: <Container className="w-5 h-5 stroke-[1.5]" />,
         sub_menu: [],
       },
       {
